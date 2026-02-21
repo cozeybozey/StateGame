@@ -1,0 +1,9 @@
+{
+	"turret": {
+		"id": 1,
+		"name": "Turret",
+		"texture": "res://sprites/units/blue_unit.png",
+		"atlas_coords": [1, 3],
+		"scene": "res://scenes/units/turret.tsnc"
+	}
+}

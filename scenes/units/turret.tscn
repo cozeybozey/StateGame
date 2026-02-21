@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://dgowpj6x8ii4n"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_g6rwo"]
+[ext_resource type="Script" uid="uid://cnatkc58i8o6y" path="res://scripts/units/Turret.cs" id="2_0t05h"]
+
+[node name="Turret" unique_id=995662800 instance=ExtResource("1_g6rwo")]
+script = ExtResource("2_0t05h")

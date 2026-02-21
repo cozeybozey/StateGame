@@ -2,29 +2,30 @@ using Godot;
 using System;
 using Godot.Collections;
 
-public partial class UnitGui : HBoxContainer
+public partial class UnitGui : HBoxContainer, IUnitDragSource
 {
-	[Export] public string ItemName = "DefaultItem";
-	[Export] public int ItemID = 0;
+	[Export] public UnitInfo Info;
+	[Export] public int Amount;
 
 	private TextureRect _sprite;
+	private Label _amountText;
 
 	public override void _Ready()
 	{
-		_sprite = GetNode<TextureRect>("Sprite"); // Adjust name if needed
+		_sprite = GetNode<TextureRect>("Sprite");
+		_amountText = GetNode<Label>("Amount");
+
+
+		Info = new UnitInfo(1, "Turret", GD.Load<Texture2D>("res://sprites/units/blue_unit.png"), new Vector2I(1, 3), "res://scenes/units/turret.tscn");
+		_sprite.Texture = Info.Texture;
+		_amountText.Text = Amount.ToString();
 	}
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		// Create metadata dictionary
-		var data = new Dictionary
-		{
-			{ "item_name", ItemName },
-			{ "item_id", ItemID },
-			{ "source_node", this }
-		};
+		if (Amount <= 0)
+			return default;
 
-		// Optional: create drag preview
 		if (_sprite != null)
 		{
 			var preview = new TextureRect();
@@ -36,9 +37,14 @@ public partial class UnitGui : HBoxContainer
 			SetDragPreview(preview);
 		}
 
-		return data;
+		return new DragPayload
+		{
+			Unit = Info,
+			Source = this
+		};
 	}
 
+	// TODO Fix
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
 		if (data.VariantType == Variant.Type.Dictionary)
@@ -50,6 +56,7 @@ public partial class UnitGui : HBoxContainer
 		return false;
 	}
 
+	// TODO Fix
 	public override void _DropData(Vector2 atPosition, Variant data)
 	{
 		var dict = (Dictionary)data;
@@ -57,5 +64,11 @@ public partial class UnitGui : HBoxContainer
 		GD.Print("Dropped item:");
 		GD.Print("Name: " + dict["item_name"]);
 		GD.Print("ID: " + dict["item_id"]);
+	}
+
+	public void OnUnitPlacedSuccessfully(UnitInfo unit)
+	{
+		Amount--;
+		_amountText.Text = Amount.ToString();
 	}
 }
