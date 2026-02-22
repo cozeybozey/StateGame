@@ -15,6 +15,10 @@ run/main_scene="uid://26rucxo5pjbr"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GlobalSignals="*uid://qp18ej2j3nf"
+
 [dotnet]
 
 project/assembly_name="StateGame"

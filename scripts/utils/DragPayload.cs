@@ -2,7 +2,14 @@ using Godot;
 
 public partial class DragPayload : RefCounted
 {
-    public UnitInfo Unit;
-    public Node Source;
-    public Vector2I? OriginCell;
+  public UnitInfo Unit;
+  public Node Source;
+  public Vector2I? OriginCell;
+
+  public DragPayload(UnitInfo unit, Node source, Vector2I? originCell)
+  {
+    Unit = unit;
+    Source = source;
+    OriginCell = originCell;
+  }
 }

@@ -125,7 +125,7 @@ text = "1"
 [node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/Panel/HBoxContainer" unique_id=2040826589]
 layout_mode = 2
 
-[node name="ControlButtons" type="HBoxContainer" parent="CanvasLayer" unique_id=1110027808]
+[node name="BottomUi" type="HBoxContainer" parent="CanvasLayer" unique_id=1110027808]
 anchors_preset = -1
 anchor_top = 0.892
 anchor_right = 0.5
@@ -136,13 +136,13 @@ offset_right = 1.0
 offset_bottom = -2.0
 grow_vertical = 2
 
-[node name="PlayButton" type="TextureButton" parent="CanvasLayer/ControlButtons" unique_id=422788990]
+[node name="PlayButton" type="TextureButton" parent="CanvasLayer/BottomUi" unique_id=422788990]
 layout_mode = 2
 texture_normal = SubResource("GradientTexture1D_0uv0p")
 texture_hover = SubResource("GradientTexture1D_ygioq")
 stretch_mode = 0
 
-[node name="Label" type="Label" parent="CanvasLayer/ControlButtons/PlayButton" unique_id=1521526838]
+[node name="Label" type="Label" parent="CanvasLayer/BottomUi/PlayButton" unique_id=1521526838]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -150,6 +150,37 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "Play"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=162195539]
+layout_mode = 2
+text = "Turn:"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=2100017693]
+layout_mode = 2
+text = "0"
+
+[node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
+visible = false
+anchors_preset = -1
+anchor_right = 0.5
+anchor_bottom = 0.887
+offset_left = 127.0
+offset_top = 223.0
+offset_right = -128.0
+offset_bottom = -222.776
+
+[node name="Message" type="RichTextLabel" parent="CanvasLayer/MessagePanel" unique_id=1058101359]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 

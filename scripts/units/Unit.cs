@@ -7,23 +7,25 @@ public partial class Unit : Node2D
   public int maxHealth = 10;
   public int health = 10;
   public int damage = 1;
-  public int armor = 1;
+  public int armor = 0;
   public int startingCooldown = 1;
   public int cooldown = 1;
   public int speed = 1;
-	public bool side = false; // false for player, true for enemy
+	public bool side = true; // true for player, false for enemy
 	public UnitInfo unitInfo;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
+  private GlobalSignals _globalSignals;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
 	{
 		_sprite = GetNode<Sprite2D>("Sprite");
 		_healthBar = GetNode<TextureProgressBar>("Health");
+    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
-		Initialize();
+    Initialize();
   }
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -73,7 +75,13 @@ public partial class Unit : Node2D
 		_healthBar.Value = health;
 		if (health <= 0)
 		{
-			QueueFree();
-		}
+			DeathRattle();
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitDied, this);
+    }
   }
+
+	public void DeathRattle()
+	{
+		
+	}
 }

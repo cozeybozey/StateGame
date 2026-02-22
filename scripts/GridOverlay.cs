@@ -5,19 +5,19 @@ using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect
 {
-	private TileMapLayer _backgroundLayer;
+	private TileMapLayer _backgroundLayer = null!;
 	//private TileMapLayer _unitsLayer;
 
 	// 2D array to track units in the 8x16 grid
 	private Unit[,] _unitGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-	Node unitsNode;
+	private Node _unitsNode = null!;
 
   public override void _Ready()
 	{
 		_backgroundLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("BackgroundLayer");
 		//_unitsLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("UnitsLayer");
 		MouseFilter = MouseFilterEnum.Stop;
-		unitsNode = GetTree().CurrentScene.GetNode("Units");
+		_unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
 
 	public override Variant _GetDragData(Vector2 atPosition)
@@ -28,7 +28,7 @@ public partial class GridOverlay : ReferenceRect
 			return default;
 
 		Vector2I relCel = AbsCellToRelCell(cell);
-	Unit unit = _unitGrid[relCel.X, relCel.Y];
+		Unit unit = _unitGrid[relCel.X, relCel.Y];
 		if (unit == null)
 			return default;
 
@@ -76,14 +76,14 @@ public partial class GridOverlay : ReferenceRect
 		Vector2I targetCell = GetCellUnderMouse(atPosition);
 		Vector2I relCel = AbsCellToRelCell(targetCell);
 
-	// Place the unit in the new cell
-	PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
-	Node instance = scene.Instantiate();
+		// Place the unit in the new cell
+		PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
+		Node instance = scene.Instantiate();
 		Unit unit = instance as Unit;
 		unit.GlobalPosition = RelCellToGlobalPosition(relCel);
 		unit.unitInfo = dragPayload.Unit;
-	unitsNode.AddChild(instance);
-	_unitGrid[relCel.X, relCel.Y] = unit;
+		_unitsNode.AddChild(instance);
+		_unitGrid[relCel.X, relCel.Y] = unit;
 
 		// Clear origin cell if it came from this overlay
 		if (dragPayload.Source == this && dragPayload.OriginCell != null)
