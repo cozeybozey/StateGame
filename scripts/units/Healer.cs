@@ -7,31 +7,39 @@ public partial class Healer : Unit
   public override int maxHealth { get; set; } = 5;
   public override int cooldown { get; set; } = 2;
   public override int startingCooldown { get; set; } = 2;
-  public override int damage { get; set; } = 2;
+  public override int damage { get; set; } = 8;
 
-  public override void Act(List<Unit> units)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
   {
-    cooldown -= 1;
-    if (cooldown <= 0)
+    foreach (Vector2I target in targets)
     {
-      List<Vector2I> targets = GetTargets(units);
-      cooldown = startingCooldown;
+      Unit targetUnit = unitsGrid[target.X, target.Y];
+      if (targetUnit != null)
+      {
+        targetUnit.ChangeHealth(damage);
+      }
     }
   }
 
-  protected override List<Vector2I> GetTargets(List<Unit> units)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
   {
-    foreach (var unit in units)
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
-      // Heal the first friendly ally with less than max health
-      if (unit.side == side && unit.health < unit.maxHealth)
+      if (side)
       {
-        unit.ChangeHealth(damage);
-
-        int cellX = Mathf.FloorToInt(unit.GlobalPosition.X / GlobalConstants.TileSize);
-        int cellY = Mathf.FloorToInt(unit.GlobalPosition.Y / GlobalConstants.TileSize);
-
-        return [new Vector2I(cellX, cellY)];
+        for (int y = GlobalConstants.GridSize.Y; y < GlobalConstants.GridSize.Y * 2; y++)
+        {
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+            return [new Vector2I(x, y)];
+        }
+      }
+      else
+      {
+        for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
+        {
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+            return [new Vector2I(x, y)];
+        }
       }
     }
 

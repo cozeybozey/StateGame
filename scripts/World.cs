@@ -20,22 +20,30 @@ public partial class World : Node2D
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
   private VBoxContainer _unitsSelectionContainer;
+  private TileMapLayer _overlayLayer;
 
   private List<Unit> _units;
+  private Unit[,] _unitsGrid;
   private int _unitIndex = 0;
 	private int _playerUnitsCount = 0;
 	private int _enemyUnitsCount = 0;
   private Godot.Collections.Dictionary<int, UnitGui> _unitsGui = null!;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
+  private Vector2I _selectedCell;
+  List<Vector2I> _selectedTargets;
 
   private bool _playing = false;
 	private int _level = 1;
   private int _turn = 0;
-  private double _turnCooldown = 0.1f;
-  private double _turnStartCooldown = 0.1f;
+  private double _turnStartCooldown = 1.0f;
+  private double _turnCooldown = 1.0f;
   bool _gameEnd = false;
   private double _gameEndCooldown = 4.0f;
   private double _gameEndStartCooldown = 4.0f;
+  private bool _acting = false;
+  private double _actingCooldown = 0.5f;
+  private double _actingStartCooldown = 0.5f;
+  private bool _targeting = false;
 
 	private Dictionary _unitsData;
 	private Dictionary _levelsData;
@@ -55,9 +63,11 @@ public partial class World : Node2D
 		_globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
     _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
+    _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
 
     _playButton.Pressed += OnPlayButtonPressed;
 		_units = new List<Unit>();
+    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y * 2];
     _globalSignals.UnitDied += OnUnitDied;
 
     string unitsJson = FileAccess.Open("res://scripts/units/units.json", FileAccess.ModeFlags.Read).GetAsText();
@@ -86,7 +96,40 @@ public partial class World : Node2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
-		if (_playing)
+    if (_acting)
+    {
+      _actingCooldown -= delta;
+      if (_actingCooldown <= 0)
+      {
+        _units[_unitIndex].Act(_selectedTargets, _unitsGrid);
+        _unitIndex += 1;
+        _turnCooldown = _turnStartCooldown;
+        _acting = false;
+        _actingCooldown = _actingStartCooldown;
+      }
+    }
+    else if (_targeting)
+    {
+      _actingCooldown -= delta;
+      if (_actingCooldown <= 0)
+      {
+        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid);
+        foreach (Vector2I target in _selectedTargets)
+        {
+          _overlayLayer.SetCell(target + new Vector2I(1, 1), 0, new Vector2I(3, 4)); // Show overlay on target cells, offset by (1, 1) to account for the boundary cells in the grid
+        }
+        if (_selectedTargets.Count > 0)
+          _acting = true;
+        else
+        {
+          _unitIndex += 1;
+          _turnCooldown = _turnStartCooldown;
+        }
+        _targeting = false;
+        _actingCooldown = _actingStartCooldown;
+      }
+    }
+    else if (_playing)
 		{
 			if (_unitIndex >= _units.Count)
 			{
@@ -98,9 +141,18 @@ public partial class World : Node2D
 			_turnCooldown -= delta;
 			if (_turnCooldown <= 0)
 			{
-				_units[_unitIndex].Act(_units);
-				_unitIndex += 1;
-				_turnCooldown = _turnStartCooldown;
+        _overlayLayer.Clear();
+        if (_units[_unitIndex].CanAct())
+        {
+          _selectedCell = GlobalFunctions.GlobalPositionToAbsCell(_units[_unitIndex].GlobalPosition, _units[_unitIndex].side);
+          _overlayLayer.SetCell(_selectedCell, 0, new Vector2I(2, 4)); // Show overlay on selected cell
+          _targeting = true;
+        }
+        else
+        {
+          _unitIndex += 1;
+          _turnCooldown = _turnStartCooldown;
+        } 
 			}
 		}
 		else if (_gameEnd)
@@ -128,12 +180,14 @@ public partial class World : Node2D
 				if (playerUnit != null)
 				{
 					_units.Add(playerUnit.UnitInstance!);
-					_playerUnitsCount += 1;
+          _unitsGrid[x, y + GlobalConstants.GridSize.Y] = playerUnit.UnitInstance!;
+          _playerUnitsCount += 1;
         }
 				if (enemyUnit != null)
 				{
 					_units.Add(enemyUnit);
-					_enemyUnitsCount += 1;
+          _unitsGrid[x, y] = enemyUnit;
+          _enemyUnitsCount += 1;
 				}
 			}
 		}
@@ -161,7 +215,7 @@ public partial class World : Node2D
       PackedScene scene = GD.Load<PackedScene>(scenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-      unit.GlobalPosition = _gridOverlay.RelCellToGlobalPosition(new Vector2I(x, y), false);
+      unit.GlobalPosition = GlobalFunctions.RelCellToGlobalPosition(new Vector2I(x, y), false);
       unit.side = false;
       _unitsNode.AddChild(instance);
       unitGrid[x, y] = unit;
@@ -187,6 +241,7 @@ public partial class World : Node2D
 		_gridOverlay.LoadUnits();
 		_playButton.Disabled = false;
     _levelCounter.Text = _level.ToString();
+    _overlayLayer.Clear();
 
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
@@ -265,6 +320,8 @@ public partial class World : Node2D
 		if (index <= _unitIndex)
 			_unitIndex -= 1;
 		_units.Remove(unit);
+    Vector2I unitsGridCell = GlobalFunctions.GlobalPositionToAbsCell(unit.GlobalPosition, unit.side) - new Vector2I(1, 1); // Convert global position to grid cell, adjusting for boundary cells
+    _unitsGrid[unitsGridCell.X, unitsGridCell.Y] = null;
 
 		if (unit.side)
 			_playerUnitsCount--;

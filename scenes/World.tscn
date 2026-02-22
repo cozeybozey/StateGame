@@ -53,6 +53,27 @@ colors = PackedColorArray(0, 0.9480956, 0, 1)
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_ygioq"]
 gradient = SubResource("Gradient_b3faq")
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7g83o"]
+texture = ExtResource("1_kqs1s")
+texture_region_size = Vector2i(32, 32)
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_d1c63"]
+tile_size = Vector2i(32, 32)
+sources/0 = SubResource("TileSetAtlasSource_7g83o")
+
 [node name="Node2D" type="Node2D" unique_id=878260971]
 script = ExtResource("1_1lgw5")
 
@@ -182,3 +203,6 @@ size_flags_vertical = 3
 alignment = 1
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
+
+[node name="OverlayLayer" type="TileMapLayer" parent="." unique_id=421687747]
+tile_set = SubResource("TileSet_d1c63")

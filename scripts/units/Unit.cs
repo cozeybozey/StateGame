@@ -16,6 +16,9 @@ public partial class Unit : Node2D
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
   private GlobalSignals _globalSignals;
+	private bool _affected = false;
+	private double _damageIndicatorDuration = 0.2f;
+  private double _damageIndicatorTime = 0.2f;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -30,7 +33,17 @@ public partial class Unit : Node2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
-	}
+		if (_affected)
+		{
+			_damageIndicatorTime -= delta;
+			if (_damageIndicatorTime <= 0)
+			{
+				_sprite.Modulate = new Color(1, 1, 1, 1);
+				_affected = false;
+				_damageIndicatorTime = _damageIndicatorDuration;
+			}
+    }
+  }
 
 	private void Initialize()
 	{
@@ -39,29 +52,49 @@ public partial class Unit : Node2D
 		_healthBar.Value = health;
   }
 
-	public virtual void Act(List<Unit> units)
+	public virtual bool CanAct()
 	{
-		cooldown -= 1;
-		if (cooldown <= 0)
-		{
-			List<Vector2I> targets = GetTargets(units);
-			cooldown = startingCooldown;
-		}
+    cooldown -= 1;
+    if (cooldown > 0)
+      return false;
+
+    cooldown = startingCooldown;
+		return true;
   }
 
-	protected virtual List<Vector2I> GetTargets(List<Unit> units)
+  public virtual void Act(List<Vector2I> targets, Unit[,] unitsGrid)
 	{
-		foreach (var unit in units)
+		foreach (Vector2I target in targets)
 		{
-			if (unit.side != side)
+			Unit targetUnit = unitsGrid[target.X, target.Y];
+			if (targetUnit != null)
 			{
-				unit.ChangeHealth(-damage);
+				targetUnit.ChangeHealth(-damage);
+      }
+    }
+  }
 
-				int cellX = Mathf.FloorToInt(unit.GlobalPosition.X / GlobalConstants.TileSize);
-				int cellY = Mathf.FloorToInt(unit.GlobalPosition.Y / GlobalConstants.TileSize);
-
-				return [new Vector2I(cellX, cellY)];
+	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid)
+	{
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+		{
+			// TODO fix looping when moving is enabled
+			if (side)
+			{
+				for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
+				{
+					if (unitsGrid[x, y] != null)
+						return [new Vector2I(x, y)];
+				}
 			}
+			else
+			{
+				for (int y = GlobalConstants.GridSize.Y; y < GlobalConstants.GridSize.Y * 2; y++)
+				{
+					if (unitsGrid[x, y] != null)
+						return [new Vector2I(x, y)];
+        }
+      }
 		}
 
 		return [];
@@ -87,6 +120,8 @@ public partial class Unit : Node2D
 			health = maxHealth;
     }
 
+		_affected = true;
+		_sprite.Modulate = new Color(1, 1, 1, 0.5f);
     _healthBar.Value = health;
   }
 
