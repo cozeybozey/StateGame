@@ -9,7 +9,7 @@ public partial class GridOverlay : ReferenceRect
 	//private TileMapLayer _unitsLayer;
 
 	// 2D array to track units in the 8x16 grid
-	private Unit[,] _unitGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+	private UnitInfo[,] _unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
 
   public override void _Ready()
@@ -28,14 +28,14 @@ public partial class GridOverlay : ReferenceRect
 			return default;
 
 		Vector2I relCel = AbsCellToRelCell(cell);
-		Unit unit = _unitGrid[relCel.X, relCel.Y];
+		UnitInfo unit = _unitGrid[relCel.X, relCel.Y];
 		if (unit == null)
 			return default;
 
-		if (unit.unitInfo.Texture != null)
+		if (unit.Texture != null)
 		{
 			var preview = new TextureRect();
-			preview.Texture = unit.unitInfo.Texture;
+			preview.Texture = unit.Texture;
 			preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
 			preview.CustomMinimumSize = new Vector2(32, 32);
 			preview.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
@@ -43,13 +43,8 @@ public partial class GridOverlay : ReferenceRect
 			SetDragPreview(preview);
 		}
 
-		return new DragPayload
-		{
-			Unit = unit.unitInfo,
-			Source = this,
-			OriginCell = relCel
-	};
-	}
+		return new DragPayload(unit, this, relCel);
+  }
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
@@ -76,21 +71,33 @@ public partial class GridOverlay : ReferenceRect
 		Vector2I targetCell = GetCellUnderMouse(atPosition);
 		Vector2I relCel = AbsCellToRelCell(targetCell);
 
-		// Place the unit in the new cell
-		PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
-		Node instance = scene.Instantiate();
-		Unit unit = instance as Unit;
-		unit.GlobalPosition = RelCellToGlobalPosition(relCel);
-		unit.unitInfo = dragPayload.Unit;
-		_unitsNode.AddChild(instance);
-		_unitGrid[relCel.X, relCel.Y] = unit;
-
-		// Clear origin cell if it came from this overlay
-		if (dragPayload.Source == this && dragPayload.OriginCell != null)
+    // Clear origin cell if it came from this overlay
+    if (dragPayload.Source == this)
+    {
+      _unitGrid[relCel.X, relCel.Y] = _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y];
+      _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y] = null!;
+      _unitGrid[relCel.X, relCel.Y].UnitInstance.GlobalPosition = RelCellToGlobalPosition(relCel);
+    }
+		else
 		{
-			_unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y].QueueFree();
-			_unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y] = null;
-		}
+      UnitInfo newUnitInfo = new UnitInfo(
+				dragPayload.Unit.Id,
+				dragPayload.Unit.Name,
+				dragPayload.Unit.Texture,
+				dragPayload.Unit.AtlasCoords,
+				dragPayload.Unit.ScenePath,
+				null
+			);
+
+      // Place the unit in the new cell
+      PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
+      Node instance = scene.Instantiate();
+      Unit unit = instance as Unit;
+      unit.GlobalPosition = RelCellToGlobalPosition(relCel);
+      _unitsNode.AddChild(instance);
+      _unitGrid[relCel.X, relCel.Y] = newUnitInfo;
+      _unitGrid[relCel.X, relCel.Y].UnitInstance = unit;
+    }
 
 		// Notify original source if it exists and isn’t this overlay
 		if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
@@ -158,8 +165,28 @@ public partial class GridOverlay : ReferenceRect
 	}
   }
 
-	public Unit[,] GetUnits()
+	public UnitInfo[,] GetUnits()
 	{
 			return _unitGrid;
   }
+
+	public void LoadUnits()
+	{
+		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+		{
+			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+			{
+				UnitInfo unitInfo = _unitGrid[x, y];
+				if (unitInfo != null)
+				{
+					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
+					Node instance = scene.Instantiate();
+					Unit unit = instance as Unit;
+					unit.GlobalPosition = RelCellToGlobalPosition(new Vector2I(x, y));
+					_unitsNode.AddChild(instance);
+					_unitGrid[x, y].UnitInstance = unit;
+				}
+      }
+		}
+	}
 }

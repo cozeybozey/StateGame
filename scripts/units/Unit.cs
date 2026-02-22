@@ -12,7 +12,6 @@ public partial class Unit : Node2D
   public int cooldown = 1;
   public int speed = 1;
 	public bool side = true; // true for player, false for enemy
-	public UnitInfo unitInfo;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
@@ -35,7 +34,6 @@ public partial class Unit : Node2D
 
 	private void Initialize()
 	{
-		_sprite.Texture = unitInfo.Texture;
 		_healthBar.MaxValue = maxHealth;
 		_healthBar.Value = health;
   }
@@ -56,12 +54,12 @@ public partial class Unit : Node2D
 		{
 			if (unit.side != side)
 			{
-			unit.TakeDamage(damage);
+				unit.TakeDamage(damage);
 
-			int cellX = Mathf.FloorToInt(unit.GlobalPosition.X / GlobalConstants.TileSize);
-			int cellY = Mathf.FloorToInt(unit.GlobalPosition.Y / GlobalConstants.TileSize);
+				int cellX = Mathf.FloorToInt(unit.GlobalPosition.X / GlobalConstants.TileSize);
+				int cellY = Mathf.FloorToInt(unit.GlobalPosition.Y / GlobalConstants.TileSize);
 
-			return [new Vector2I(cellX, cellY)];
+				return [new Vector2I(cellX, cellY)];
 			}
 		}
 

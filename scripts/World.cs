@@ -72,18 +72,19 @@ public partial class World : Node2D
 
 	private void OnPlayButtonPressed()
 	{
-		Unit[,] playerUnits = _gridOverlay.GetUnits();
+    _playButton.Disabled = true;
+    UnitInfo[,] playerUnits = _gridOverlay.GetUnits();
 		Unit[,] enemyUnits = loadLevel();
 
 		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 		{
 			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
-				Unit playerUnit = playerUnits[x, y];
+				UnitInfo playerUnit = playerUnits[x, y];
 				Unit enemyUnit = enemyUnits[x, y];
 				if (playerUnit != null)
 				{
-					_units.Add(playerUnit);
+					_units.Add(playerUnit.UnitInstance!);
 					_playerUnitsCount += 1;
         }
 				if (enemyUnit != null)
@@ -103,12 +104,10 @@ public partial class World : Node2D
 
 		// Place the unit in the new cell
 		Vector2I relCel = new Vector2I(4, 4);
-		UnitInfo unitInfo = new UnitInfo(1, "Turret", GD.Load<Texture2D>("res://sprites/units/blue_unit.png"), new Vector2I(1, 3), "res://scenes/units/turret.tscn");
-		PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
+		PackedScene scene = GD.Load<PackedScene>("res://scenes/units/turret.tscn");
 		Node instance = scene.Instantiate();
 		Unit unit = instance as Unit;
 		unit.GlobalPosition = _gridOverlay.RelCellToGlobalPosition(relCel, false);
-		unit.unitInfo = unitInfo;
 		unit.side = false;
     _unitsNode.AddChild(instance);
 		unitGrid[relCel.X, relCel.Y] = unit;
@@ -130,6 +129,8 @@ public partial class World : Node2D
     _messagePanel.GetNode<RichTextLabel>("Message").Text = "";
     _messagePanel.Hide();
 		_gameEnd = false;
+		_gridOverlay.LoadUnits();
+		_playButton.Disabled = false;
   }
 
 	private void win()

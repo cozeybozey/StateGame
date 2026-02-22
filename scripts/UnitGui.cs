@@ -16,7 +16,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 		_amountText = GetNode<Label>("Amount");
 
 
-		Info = new UnitInfo(1, "Turret", GD.Load<Texture2D>("res://sprites/units/blue_unit.png"), new Vector2I(1, 3), "res://scenes/units/turret.tscn");
+		Info = new UnitInfo(1, "Turret", GD.Load<Texture2D>("res://sprites/units/blue_unit.png"), new Vector2I(1, 3), "res://scenes/units/turret.tscn", null);
 		_sprite.Texture = Info.Texture;
 		_amountText.Text = Amount.ToString();
 	}
@@ -37,11 +37,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 			SetDragPreview(preview);
 		}
 
-		return new DragPayload
-		{
-			Unit = Info,
-			Source = this
-		};
+		return new DragPayload(Info, this, null);
 	}
 
 	// TODO Fix
