@@ -153,6 +153,17 @@ text = "Play"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=342629804]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/LevelCounter" unique_id=543323313]
+layout_mode = 2
+text = "Level:"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/LevelCounter" unique_id=1598653928]
+layout_mode = 2
+text = "1"
+
 [node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
 layout_mode = 2
 
