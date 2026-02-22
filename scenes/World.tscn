@@ -2,9 +2,7 @@
 
 [ext_resource type="Script" uid="uid://be4c2j8jo30lx" path="res://scripts/World.cs" id="1_1lgw5"]
 [ext_resource type="Texture2D" uid="uid://cbdsbuhs3k6t2" path="res://sprites/tilemaps/tilemap.png" id="1_kqs1s"]
-[ext_resource type="Script" uid="uid://cikvsxaa8k2ji" path="res://scripts/UnitGui.cs" id="2_7g83o"]
 [ext_resource type="Script" uid="uid://sujkawcgjl8o" path="res://scripts/GridOverlay.cs" id="2_d1c63"]
-[ext_resource type="Texture2D" uid="uid://bun8o320vv2wg" path="res://sprites/units/blue_unit.png" id="3_d1c63"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -75,7 +73,7 @@ script = ExtResource("2_d1c63")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=477101008]
 
-[node name="Panel" type="Panel" parent="CanvasLayer" unique_id=2060907660]
+[node name="SelectionUi" type="Panel" parent="CanvasLayer" unique_id=2060907660]
 anchors_preset = -1
 anchor_left = 0.503
 anchor_right = 1.0
@@ -85,7 +83,7 @@ offset_right = -1.0
 offset_bottom = 0.27996826
 grow_horizontal = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Panel" unique_id=1184375428]
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/SelectionUi" unique_id=1184375428]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -94,35 +92,14 @@ offset_bottom = -1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel/HBoxContainer" unique_id=1975347159]
+[node name="UnitsSelectionContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=1975347159]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer" unique_id=331378763]
+[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer" unique_id=331378763]
 layout_mode = 2
 text = "Units:"
 
-[node name="Unit" type="HBoxContainer" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer" unique_id=2005479363]
-layout_mode = 2
-script = ExtResource("2_7g83o")
-Amount = 2
-
-[node name="Sprite" type="TextureRect" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer/Unit" unique_id=767728656]
-layout_mode = 2
-texture = ExtResource("3_d1c63")
-
-[node name="Name" type="Label" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer/Unit" unique_id=1315935753]
-layout_mode = 2
-text = "Turret"
-
-[node name="X" type="Label" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer/Unit" unique_id=959104378]
-layout_mode = 2
-text = " x"
-
-[node name="Amount" type="Label" parent="CanvasLayer/Panel/HBoxContainer/VBoxContainer/Unit" unique_id=1031864882]
-layout_mode = 2
-text = "1"
-
-[node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/Panel/HBoxContainer" unique_id=2040826589]
+[node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=2040826589]
 layout_mode = 2
 
 [node name="BottomUi" type="HBoxContainer" parent="CanvasLayer" unique_id=1110027808]
@@ -185,14 +162,23 @@ offset_top = 223.0
 offset_right = -128.0
 offset_bottom = -222.776
 
-[node name="Message" type="RichTextLabel" parent="CanvasLayer/MessagePanel" unique_id=1058101359]
+[node name="MessageContainer" type="VBoxContainer" parent="CanvasLayer/MessagePanel" unique_id=2120907335]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Message" type="RichTextLabel" parent="CanvasLayer/MessagePanel/MessageContainer" unique_id=1058101359]
+layout_mode = 2
+size_flags_vertical = 3
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Responses" type="HBoxContainer" parent="CanvasLayer/MessagePanel/MessageContainer" unique_id=2108899385]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]

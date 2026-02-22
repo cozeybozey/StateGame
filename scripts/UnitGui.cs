@@ -4,20 +4,21 @@ using Godot.Collections;
 
 public partial class UnitGui : HBoxContainer, IUnitDragSource
 {
-	[Export] public UnitInfo Info;
+	[Export] public UnitInfo Info = null!;
 	[Export] public int Amount;
 
-	private TextureRect _sprite;
-	private Label _amountText;
+	private TextureRect _sprite = null!;
+	private Label _nameText = null!;
+	private Label _amountText = null!;
 
 	public override void _Ready()
 	{
 		_sprite = GetNode<TextureRect>("Sprite");
+    _nameText = GetNode<Label>("Name");
 		_amountText = GetNode<Label>("Amount");
 
-
-		Info = new UnitInfo(1, "Turret", GD.Load<Texture2D>("res://sprites/units/blue_unit.png"), new Vector2I(1, 3), "res://scenes/units/turret.tscn", null);
 		_sprite.Texture = Info.Texture;
+		_nameText.Text = Info.Name;
 		_amountText.Text = Amount.ToString();
 	}
 
@@ -64,7 +65,12 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 
 	public void OnUnitPlacedSuccessfully(UnitInfo unit)
 	{
-		Amount--;
-		_amountText.Text = Amount.ToString();
+    UpdateAmount(Amount - 1);
 	}
+
+	public void UpdateAmount(int newAmount)
+	{
+		Amount = newAmount;
+		_amountText.Text = Amount.ToString();
+  }
 }

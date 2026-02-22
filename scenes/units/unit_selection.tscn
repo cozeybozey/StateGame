@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://c0fm7pqoiilgi"]
+
+[ext_resource type="Script" uid="uid://cikvsxaa8k2ji" path="res://scripts/UnitGui.cs" id="1_xe61n"]
+[ext_resource type="Texture2D" uid="uid://bun8o320vv2wg" path="res://sprites/units/blue_unit.png" id="2_nbbkm"]
+
+[node name="UnitSelection" type="HBoxContainer" unique_id=912728828]
+script = ExtResource("1_xe61n")
+Amount = 2
+
+[node name="Sprite" type="TextureRect" parent="." unique_id=1648097564]
+layout_mode = 2
+texture = ExtResource("2_nbbkm")
+
+[node name="Name" type="Label" parent="." unique_id=1224713486]
+layout_mode = 2
+text = "Turret"
+
+[node name="X" type="Label" parent="." unique_id=1733821637]
+layout_mode = 2
+text = " x"
+
+[node name="Amount" type="Label" parent="." unique_id=372042491]
+layout_mode = 2
+text = "1"

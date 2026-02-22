@@ -84,7 +84,6 @@ public partial class GridOverlay : ReferenceRect
 				dragPayload.Unit.Id,
 				dragPayload.Unit.Name,
 				dragPayload.Unit.Texture,
-				dragPayload.Unit.AtlasCoords,
 				dragPayload.Unit.ScenePath,
 				null
 			);

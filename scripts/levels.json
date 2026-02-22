@@ -17,7 +17,7 @@
 		"units": [
             { "x": 7, "y": 4, "id": 1, "name": "turret"},
             { "x": 9, "y": 4, "id": 1, "name": "turret"},
-            { "x": 11, "y": 4, "id": 1, "name": "turret"}
+            { "x": 11, "y": 4, "id": 1, "name": "healer"}
         ]
 	},
     "level_4": {
@@ -26,7 +26,7 @@
             { "x": 6, "y": 3, "id": 1, "name": "turret"},
             { "x": 10, "y": 3, "id": 1, "name": "turret"},
             { "x": 6, "y": 5, "id": 1, "name": "turret"},
-            { "x": 10, "y": 7, "id": 1, "name": "turret"}
+            { "x": 10, "y": 7, "id": 1, "name": "healer"}
         ]
 	}
 }
