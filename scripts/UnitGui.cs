@@ -41,27 +41,39 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 		return new DragPayload(Info, this, null);
 	}
 
-	// TODO Fix
-	public override bool _CanDropData(Vector2 atPosition, Variant data)
-	{
-		if (data.VariantType == Variant.Type.Dictionary)
-		{
-			var dict = (Dictionary)data;
-			return dict.ContainsKey("item_id");
-		}
+  public override bool _CanDropData(Vector2 atPosition, Variant data)
+  {
+    if (data.Obj is not DragPayload dragPayload)
+      return false;
 
-		return false;
-	}
+		if (dragPayload.Unit.Id != Info.Id)
+	    return false;
 
-	// TODO Fix
-	public override void _DropData(Vector2 atPosition, Variant data)
-	{
-		var dict = (Dictionary)data;
+		return true;
+  }
 
-		GD.Print("Dropped item:");
-		GD.Print("Name: " + dict["item_name"]);
-		GD.Print("ID: " + dict["item_id"]);
-	}
+  public override void _DropData(Vector2 atPosition, Variant data)
+	{ 
+    if (data.Obj is not DragPayload dragPayload)
+      return;
+
+    // Return if it came from this UI to prevent self-drops
+    if (dragPayload.Source == this)
+    {
+			return;
+    }
+    else
+    {
+			UpdateAmount(Amount + 1);
+    }
+
+    // Notify original source if it exists and isn’t this UI
+    if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
+    {
+      source.OnUnitPlacedSuccessfully(dragPayload.Unit);
+    }
+  }
+
 
 	public void OnUnitPlacedSuccessfully(UnitInfo unit)
 	{

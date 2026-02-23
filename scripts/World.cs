@@ -2,6 +2,7 @@ using Godot;
 using Godot.Collections;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
 using static Godot.Control;
@@ -37,9 +38,6 @@ public partial class World : Node2D
   private int _turn = 0;
   private double _turnStartCooldown = 1.0f;
   private double _turnCooldown = 1.0f;
-  bool _gameEnd = false;
-  private double _gameEndCooldown = 4.0f;
-  private double _gameEndStartCooldown = 4.0f;
   private bool _acting = false;
   private double _actingCooldown = 0.5f;
   private double _actingStartCooldown = 0.5f;
@@ -144,7 +142,7 @@ public partial class World : Node2D
         _overlayLayer.Clear();
         if (_units[_unitIndex].CanAct())
         {
-          _selectedCell = GlobalFunctions.GlobalPositionToAbsCell(_units[_unitIndex].GlobalPosition, _units[_unitIndex].side);
+          _selectedCell = GlobalFunctions.GlobalPositionToAbsCell(_units[_unitIndex].GlobalPosition);
           _overlayLayer.SetCell(_selectedCell, 0, new Vector2I(2, 4)); // Show overlay on selected cell
           _targeting = true;
         }
@@ -155,19 +153,12 @@ public partial class World : Node2D
         } 
 			}
 		}
-		else if (_gameEnd)
-		{
-			if (!_messagePanel.Visible)
-				_messagePanel.Show();
-			_gameEndCooldown -= delta;
-			if (_gameEndCooldown <= 0)
-				Reset();
-    }
 	}
 
 	private void OnPlayButtonPressed()
 	{
     _playButton.Disabled = true;
+    _gridOverlay.SetInteractionLocked(true);
     UnitInfo[,] playerUnits = _gridOverlay.GetUnits();
 		Unit[,] enemyUnits = loadLevel();
 
@@ -182,17 +173,29 @@ public partial class World : Node2D
 					_units.Add(playerUnit.UnitInstance!);
           _unitsGrid[x, y + GlobalConstants.GridSize.Y] = playerUnit.UnitInstance!;
           _playerUnitsCount += 1;
+          int a = GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(playerUnit.UnitInstance!.GlobalPosition)).Y;
         }
 				if (enemyUnit != null)
 				{
 					_units.Add(enemyUnit);
           _unitsGrid[x, y] = enemyUnit;
           _enemyUnitsCount += 1;
+          int a = GlobalConstants.GridSize.Y - 1 - GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(enemyUnit.GlobalPosition), false).Y;
 				}
 			}
 		}
 
-		_playing = true;
+    // Sort units by speed, then by position for consistent turn order
+    _units = _units
+    .OrderByDescending(u => u.speed)  // Speed first
+    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
+    .ThenBy(u =>
+        u.side
+            ? GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(u.GlobalPosition)).Y  // Player: lower Y first
+            : GlobalConstants.GridSize.Y - 1 - GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(u.GlobalPosition), false).Y)  // Enemy: higher Y first
+    .ToList();
+
+    _playing = true;
   }
 
 	private Unit[,] loadLevel()
@@ -229,17 +232,16 @@ public partial class World : Node2D
 		foreach (Unit unit in _units)
 			unit.QueueFree();
     _units.Clear();
-		_enemyUnitsCount = 0;
+    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y * 2];
+    _unitIndex = 0;
+    _enemyUnitsCount = 0;
 		_playerUnitsCount = 0;
 		_turn = 0;
     _turnCounter.Text = _turn.ToString();
-    _gameEndCooldown = _gameEndStartCooldown;
 		_turnCooldown = _turnStartCooldown;
     _message.Text = "";
     _messagePanel.Hide();
-		_gameEnd = false;
 		_gridOverlay.LoadUnits();
-		_playButton.Disabled = false;
     _levelCounter.Text = _level.ToString();
     _overlayLayer.Clear();
 
@@ -248,9 +250,12 @@ public partial class World : Node2D
     {
       child.QueueFree();
     }
+
+    _gridOverlay.SetInteractionLocked(false);
+    _playButton.Disabled = false;
   }
 
-	private void Win()
+  private void Win()
 	{
 		_playing = false;
 		_message.Text = "You Win!\nChoose your reward:";
@@ -266,12 +271,9 @@ public partial class World : Node2D
     
     Button btn = new Button();
     btn.Text = "Return";
-    //btn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
     btn.SizeFlagsVertical = SizeFlags.ExpandFill;
     btn.Pressed += () => OnReturnButtonPressed();
-    // Add button to message responses
     _messageResponses.AddChild(btn);
-
     _messagePanel.Show();
   }
 
@@ -320,7 +322,7 @@ public partial class World : Node2D
 		if (index <= _unitIndex)
 			_unitIndex -= 1;
 		_units.Remove(unit);
-    Vector2I unitsGridCell = GlobalFunctions.GlobalPositionToAbsCell(unit.GlobalPosition, unit.side) - new Vector2I(1, 1); // Convert global position to grid cell, adjusting for boundary cells
+    Vector2I unitsGridCell = GlobalFunctions.GlobalPositionToAbsCell(unit.GlobalPosition) - new Vector2I(1, 1); // Convert global position to grid cell, adjusting for boundary cells
     _unitsGrid[unitsGridCell.X, unitsGridCell.Y] = null;
 
 		if (unit.side)

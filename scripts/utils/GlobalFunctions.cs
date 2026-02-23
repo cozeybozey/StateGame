@@ -26,7 +26,7 @@ public partial class GlobalFunctions : Node
     return relCel * GlobalConstants.TileSize + new Vector2I(Mathf.FloorToInt(0.5 * GlobalConstants.TileSize), Mathf.FloorToInt(0.5 * GlobalConstants.TileSize));
   }
 
-  public static Vector2I GlobalPositionToAbsCell(Vector2 position, bool player = true)
+  public static Vector2I GlobalPositionToAbsCell(Vector2 position)
   {
     Vector2I cell = new Vector2I(Mathf.FloorToInt(position.X / GlobalConstants.TileSize), Mathf.FloorToInt(position.Y / GlobalConstants.TileSize));
     return cell;

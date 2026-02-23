@@ -3,7 +3,7 @@ using Godot.Collections;
 using System;
 using static Godot.Control;
 
-public partial class GridOverlay : ReferenceRect
+public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
 	private TileMapLayer _backgroundLayer = null!;
 	//private TileMapLayer _unitsLayer;
@@ -11,6 +11,8 @@ public partial class GridOverlay : ReferenceRect
 	// 2D array to track units in the 8x16 grid
 	private UnitInfo[,] _unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
+
+  private bool _interactionLocked = false;
 
   public override void _Ready()
 	{
@@ -48,7 +50,10 @@ public partial class GridOverlay : ReferenceRect
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
-		if (data.Obj is not DragPayload)
+    if (_interactionLocked)
+      return false;
+
+    if (data.Obj is not DragPayload)
 			return false;
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
@@ -65,7 +70,10 @@ public partial class GridOverlay : ReferenceRect
 
 	public override void _DropData(Vector2 atPosition, Variant data)
 	{
-		if (data.Obj is not DragPayload dragPayload)
+    if (_interactionLocked)
+      return;
+
+    if (data.Obj is not DragPayload dragPayload)
 			return;
 
 		Vector2I targetCell = GetCellUnderMouse(atPosition);
@@ -146,6 +154,7 @@ public partial class GridOverlay : ReferenceRect
 				UnitInfo unitInfo = _unitGrid[x, y];
 				if (unitInfo != null)
 				{
+
 					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
 					Unit unit = instance as Unit;
@@ -156,4 +165,16 @@ public partial class GridOverlay : ReferenceRect
       }
 		}
 	}
+
+  public void SetInteractionLocked(bool locked)
+  {
+    _interactionLocked = locked;
+  }
+
+  public void OnUnitPlacedSuccessfully(UnitInfo unit)
+  {
+		Vector2I relCel = GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(unit.UnitInstance!.GlobalPosition));
+    _unitGrid[relCel.X, relCel.Y] = null!;
+    unit.UnitInstance!.QueueFree();
+  }
 }
