@@ -27,9 +27,9 @@ public partial class Healer : Unit
     {
       if (side)
       {
-        for (int y = GlobalConstants.GridSize.Y; y < GlobalConstants.GridSize.Y * 2; y++)
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
         {
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].side == side && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
             return [new Vector2I(x, y)];
         }
       }
@@ -37,7 +37,7 @@ public partial class Healer : Unit
       {
         for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
         {
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].side == side && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
             return [new Vector2I(x, y)];
         }
       }

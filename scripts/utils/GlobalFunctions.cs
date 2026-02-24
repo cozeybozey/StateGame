@@ -4,8 +4,7 @@ public partial class GlobalFunctions : Node
 {
   public static bool IsCellInsideGrid(Vector2I cell)
   {
-    Vector2I relCell = AbsCellToRelCell(cell);
-    return relCell.X >= 0 && relCell.X < GlobalConstants.GridSize.X && relCell.Y >= 0 && relCell.Y < GlobalConstants.GridSize.Y;
+    return cell.X >= 0 && cell.X < GlobalConstants.GridSize.X && cell.Y >= 0 && cell.Y < GlobalConstants.GridSize.Y;
   }
 
   public static Vector2I AbsCellToRelCell(Vector2I cell, bool player = true)
@@ -20,15 +19,8 @@ public partial class GlobalFunctions : Node
     return cell + addedPos;
   }
 
-  public static Vector2I RelCellToGlobalPosition(Vector2I cell, bool player = true)
+  public static Vector2I CellToGlobalPosition(Vector2I cell)
   {
-    Vector2I relCel = player ? cell + GlobalConstants.GridStartPosPlayer : cell + GlobalConstants.GridStartPosEnemy;
-    return relCel * GlobalConstants.TileSize + new Vector2I(Mathf.FloorToInt(0.5 * GlobalConstants.TileSize), Mathf.FloorToInt(0.5 * GlobalConstants.TileSize));
-  }
-
-  public static Vector2I GlobalPositionToAbsCell(Vector2 position)
-  {
-    Vector2I cell = new Vector2I(Mathf.FloorToInt(position.X / GlobalConstants.TileSize), Mathf.FloorToInt(position.Y / GlobalConstants.TileSize));
-    return cell;
+    return cell * GlobalConstants.TileSize + new Vector2I(Mathf.FloorToInt(0.5 * GlobalConstants.TileSize), Mathf.FloorToInt(0.5 * GlobalConstants.TileSize));
   }
 }

@@ -6,7 +6,6 @@ using static Godot.Control;
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
 	private TileMapLayer _backgroundLayer = null!;
-	//private TileMapLayer _unitsLayer;
 
 	// 2D array to track units in the 8x16 grid
 	private UnitInfo[,] _unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
@@ -17,7 +16,6 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
   public override void _Ready()
 	{
 		_backgroundLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("BackgroundLayer");
-		//_unitsLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("UnitsLayer");
 		MouseFilter = MouseFilterEnum.Stop;
 		_unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
@@ -26,11 +24,10 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	{
 		Vector2I cell = GetCellUnderMouse(atPosition);
 
-		if (!GlobalFunctions.IsCellInsideGrid(cell))
+		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
 			return default;
 
-		Vector2I relCel = GlobalFunctions.AbsCellToRelCell(cell);
-		UnitInfo unit = _unitGrid[relCel.X, relCel.Y];
+		UnitInfo unit = _unitGrid[cell.X, cell.Y];
 		if (unit == null)
 			return default;
 
@@ -45,7 +42,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			SetDragPreview(preview);
 		}
 
-		return new DragPayload(unit, this, relCel);
+		return new DragPayload(unit, this, cell);
   }
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
@@ -58,7 +55,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
 
-		if (!GlobalFunctions.IsCellInsideGrid(cell))
+		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
 			return false;
 
 		// Reject if no tile exists there
@@ -77,14 +74,13 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			return;
 
 		Vector2I targetCell = GetCellUnderMouse(atPosition);
-		Vector2I relCel = GlobalFunctions.AbsCellToRelCell(targetCell);
 
     // Clear origin cell if it came from this overlay
     if (dragPayload.Source == this)
     {
-      _unitGrid[relCel.X, relCel.Y] = _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y];
+      _unitGrid[targetCell.X, targetCell.Y] = _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y];
       _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y] = null!;
-      _unitGrid[relCel.X, relCel.Y].UnitInstance.GlobalPosition = GlobalFunctions.RelCellToGlobalPosition(relCel);
+			_unitGrid[targetCell.X, targetCell.Y].UnitInstance.MoveToCell(targetCell);
     }
 		else
 		{
@@ -100,10 +96,10 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-      unit.GlobalPosition = GlobalFunctions.RelCellToGlobalPosition(relCel);
+      unit.occupiedMainCell = targetCell;
       _unitsNode.AddChild(instance);
-      _unitGrid[relCel.X, relCel.Y] = newUnitInfo;
-      _unitGrid[relCel.X, relCel.Y].UnitInstance = unit;
+      _unitGrid[targetCell.X, targetCell.Y] = newUnitInfo;
+      _unitGrid[targetCell.X, targetCell.Y].UnitInstance = unit;
     }
 
 		// Notify original source if it exists and isn’t this overlay
@@ -124,17 +120,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		int backgroundSourceId = _backgroundLayer.GetCellSourceId(cell);
 		Vector2I backgroundAtlastCoords = _backgroundLayer.GetCellAtlasCoords(cell);
 
-		// -1 means empty
-		if (backgroundSourceId == -1)
-			return false;
-
 		// Cannot place if there is already a unit there
-		if (_unitGrid[GlobalFunctions.AbsCellToRelCell(cell).X, GlobalFunctions.AbsCellToRelCell(cell).Y] != null)
-			return false;
-
-	// Cannot be opponents side of the board or edge of the board
-	if (backgroundAtlastCoords.Equals(new Vector2I(4, 1)) ||
-			backgroundAtlastCoords.Equals(new Vector2I(4, 2)))
+		if (_unitGrid[cell.X, cell.Y] != null)
 			return false;
 
 		return true;
@@ -158,7 +145,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
 					Unit unit = instance as Unit;
-					unit.GlobalPosition = GlobalFunctions.RelCellToGlobalPosition(new Vector2I(x, y));
+					unit.occupiedMainCell = new Vector2I(x, y);
 					_unitsNode.AddChild(instance);
 					_unitGrid[x, y].UnitInstance = unit;
 				}
@@ -173,8 +160,10 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
   public void OnUnitPlacedSuccessfully(UnitInfo unit)
   {
-		Vector2I relCel = GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(unit.UnitInstance!.GlobalPosition));
-    _unitGrid[relCel.X, relCel.Y] = null!;
+		foreach (var cell in unit.UnitInstance!.GetOccupiedCells())
+		{
+			_unitGrid[cell.X, cell.Y] = null!;
+		}    
     unit.UnitInstance!.QueueFree();
   }
 }

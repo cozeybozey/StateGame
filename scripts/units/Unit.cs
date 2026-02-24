@@ -12,6 +12,7 @@ public partial class Unit : Node2D
   public virtual int cooldown { get; set; } = 1;
   public virtual int speed { get; set; } = 1;
 	public bool side = true; // true for player, false for enemy
+  public Vector2I occupiedMainCell;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
@@ -19,6 +20,7 @@ public partial class Unit : Node2D
 	private bool _affected = false;
 	private double _damageIndicatorDuration = 0.2f;
   private double _damageIndicatorTime = 0.2f;
+	private List<Vector2I> _extraOccupiedCells = new List<Vector2I>();
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -50,6 +52,7 @@ public partial class Unit : Node2D
 		_healthBar.MaxValue = maxHealth;
 		health = maxHealth;
 		_healthBar.Value = health;
+		GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell);
   }
 
 	public virtual bool CanAct()
@@ -78,20 +81,19 @@ public partial class Unit : Node2D
 	{
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 		{
-			// TODO fix looping when moving is enabled
 			if (side)
 			{
 				for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
 				{
-					if (unitsGrid[x, y] != null)
+					if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
 						return [new Vector2I(x, y)];
 				}
 			}
 			else
 			{
-				for (int y = GlobalConstants.GridSize.Y; y < GlobalConstants.GridSize.Y * 2; y++)
+				for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 				{
-					if (unitsGrid[x, y] != null)
+					if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
 						return [new Vector2I(x, y)];
         }
       }
@@ -129,4 +131,20 @@ public partial class Unit : Node2D
 	{
 		
 	}
+
+	public List<Vector2I> GetOccupiedCells()
+	{
+		List<Vector2I> occupiedCells = new List<Vector2I> { occupiedMainCell };
+		foreach (Vector2I relCell in _extraOccupiedCells)
+		{
+			occupiedCells.Add(occupiedMainCell + relCell);
+    }
+		return occupiedCells;
+  }
+
+	public void MoveToCell(Vector2I newCell)
+	{
+		occupiedMainCell = newCell;
+		GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell);
+  }
 }

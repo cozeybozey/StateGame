@@ -30,7 +30,6 @@ public partial class World : Node2D
 	private int _enemyUnitsCount = 0;
   private Godot.Collections.Dictionary<int, UnitGui> _unitsGui = null!;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
-  private Vector2I _selectedCell;
   List<Vector2I> _selectedTargets;
 
   private bool _playing = false;
@@ -65,7 +64,7 @@ public partial class World : Node2D
 
     _playButton.Pressed += OnPlayButtonPressed;
 		_units = new List<Unit>();
-    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y * 2];
+    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
 
     string unitsJson = FileAccess.Open("res://scripts/units/units.json", FileAccess.ModeFlags.Read).GetAsText();
@@ -114,7 +113,7 @@ public partial class World : Node2D
         _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid);
         foreach (Vector2I target in _selectedTargets)
         {
-          _overlayLayer.SetCell(target + new Vector2I(1, 1), 0, new Vector2I(3, 4)); // Show overlay on target cells, offset by (1, 1) to account for the boundary cells in the grid
+          _overlayLayer.SetCell(target, 0, new Vector2I(3, 4)); // Show overlay on target cells
         }
         if (_selectedTargets.Count > 0)
           _acting = true;
@@ -142,8 +141,9 @@ public partial class World : Node2D
         _overlayLayer.Clear();
         if (_units[_unitIndex].CanAct())
         {
-          _selectedCell = GlobalFunctions.GlobalPositionToAbsCell(_units[_unitIndex].GlobalPosition);
-          _overlayLayer.SetCell(_selectedCell, 0, new Vector2I(2, 4)); // Show overlay on selected cell
+          // Show overlay on selected cells
+          foreach (var cell in _units[_unitIndex].GetOccupiedCells())
+            _overlayLayer.SetCell(cell, 0, new Vector2I(2, 4)); 
           _targeting = true;
         }
         else
@@ -171,16 +171,14 @@ public partial class World : Node2D
 				if (playerUnit != null)
 				{
 					_units.Add(playerUnit.UnitInstance!);
-          _unitsGrid[x, y + GlobalConstants.GridSize.Y] = playerUnit.UnitInstance!;
+          _unitsGrid[x, y] = playerUnit.UnitInstance!;
           _playerUnitsCount += 1;
-          int a = GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(playerUnit.UnitInstance!.GlobalPosition)).Y;
         }
 				if (enemyUnit != null)
 				{
 					_units.Add(enemyUnit);
           _unitsGrid[x, y] = enemyUnit;
           _enemyUnitsCount += 1;
-          int a = GlobalConstants.GridSize.Y - 1 - GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(enemyUnit.GlobalPosition), false).Y;
 				}
 			}
 		}
@@ -191,8 +189,8 @@ public partial class World : Node2D
     .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
     .ThenBy(u =>
         u.side
-            ? GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(u.GlobalPosition)).Y  // Player: lower Y first
-            : GlobalConstants.GridSize.Y - 1 - GlobalFunctions.AbsCellToRelCell(GlobalFunctions.GlobalPositionToAbsCell(u.GlobalPosition), false).Y)  // Enemy: higher Y first
+            ? u.occupiedMainCell.Y  // Player: lower Y first
+            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
     .ToList();
 
     _playing = true;
@@ -218,7 +216,7 @@ public partial class World : Node2D
       PackedScene scene = GD.Load<PackedScene>(scenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-      unit.GlobalPosition = GlobalFunctions.RelCellToGlobalPosition(new Vector2I(x, y), false);
+      unit.occupiedMainCell = new Vector2I(x, y);
       unit.side = false;
       _unitsNode.AddChild(instance);
       unitGrid[x, y] = unit;
@@ -232,7 +230,7 @@ public partial class World : Node2D
 		foreach (Unit unit in _units)
 			unit.QueueFree();
     _units.Clear();
-    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y * 2];
+    _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _unitIndex = 0;
     _enemyUnitsCount = 0;
 		_playerUnitsCount = 0;
@@ -322,8 +320,10 @@ public partial class World : Node2D
 		if (index <= _unitIndex)
 			_unitIndex -= 1;
 		_units.Remove(unit);
-    Vector2I unitsGridCell = GlobalFunctions.GlobalPositionToAbsCell(unit.GlobalPosition) - new Vector2I(1, 1); // Convert global position to grid cell, adjusting for boundary cells
-    _unitsGrid[unitsGridCell.X, unitsGridCell.Y] = null;
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      _unitsGrid[cell.X, cell.Y] = null!;
+    }
 
 		if (unit.side)
 			_playerUnitsCount--;
