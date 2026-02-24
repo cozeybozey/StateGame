@@ -5,18 +5,24 @@ using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
+	public int maxUnitSlots = 20;
+
 	private TileMapLayer _backgroundLayer = null!;
+	private Label _unitsCounter = null;
 
 	// 2D array to track units in the 8x16 grid
 	private UnitInfo[,] _unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
 
   private bool _interactionLocked = false;
+	private int _currentUnitCount = 0;
 
   public override void _Ready()
 	{
 		_backgroundLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("BackgroundLayer");
-		MouseFilter = MouseFilterEnum.Stop;
+    _unitsCounter = GetTree().CurrentScene.GetNode<Label>("CanvasLayer/BottomUi/UnitCounter/Counter");
+		_unitsCounter.Text = $"{_currentUnitCount }/{maxUnitSlots}";
+    MouseFilter = MouseFilterEnum.Stop;
 		_unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
 
@@ -51,6 +57,9 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       return false;
 
     if (data.Obj is not DragPayload)
+			return false;
+
+		if (_currentUnitCount >= maxUnitSlots)
 			return false;
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
@@ -100,6 +109,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       _unitsNode.AddChild(instance);
       _unitGrid[targetCell.X, targetCell.Y] = newUnitInfo;
       _unitGrid[targetCell.X, targetCell.Y].UnitInstance = unit;
+			_currentUnitCount += unit.GetOccupiedCells().Count;
+      _unitsCounter.Text = $"{_currentUnitCount}/{maxUnitSlots}";
     }
 
 		// Notify original source if it exists and isn’t this overlay
@@ -165,5 +176,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			_unitGrid[cell.X, cell.Y] = null!;
 		}    
     unit.UnitInstance!.QueueFree();
+    _currentUnitCount -= unit.UnitInstance!.GetOccupiedCells().Count;
+    _unitsCounter.Text = $"{_currentUnitCount}/{maxUnitSlots}";
   }
 }

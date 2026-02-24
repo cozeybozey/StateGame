@@ -174,6 +174,17 @@ text = "Turn:"
 layout_mode = 2
 text = "0"
 
+[node name="UnitCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=1020753859]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=1966678577]
+layout_mode = 2
+text = "Units:"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=2050610620]
+layout_mode = 2
+text = "0/20"
+
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
 anchors_preset = -1
