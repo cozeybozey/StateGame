@@ -3,12 +3,21 @@
 		"id": 1,
 		"display_name": "Turret",
 		"texture": "res://sprites/units/blue_unit.png",
-		"scene": "res://scenes/units/turret.tscn"
+		"scene": "res://scenes/units/turret.tscn",
+		"cells": [[0, 0]]
 	},
 	"healer": {
 		"id": 2,
 		"display_name": "Healer",
 		"texture": "res://sprites/units/green_unit.png",
-		"scene": "res://scenes/units/healer.tscn"
+		"scene": "res://scenes/units/healer.tscn",
+		"cells": [[0, 0]]
+	},
+	"tank": {
+		"id": 3,
+		"display_name": "Tank",
+		"texture": "res://sprites/units/tank.png",
+		"scene": "res://scenes/units/tank.tscn",
+		"cells": [[-1, 0], [0, 0], [1, 0]]
 	}
 }

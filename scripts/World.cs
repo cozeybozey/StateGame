@@ -84,7 +84,17 @@ public partial class World : Node2D
     string texturePath = (string)turretData["texture"];
     Texture2D texture = GD.Load<Texture2D>(texturePath);
     string scenePath = (string)turretData["scene"];
-    unitGui.Info = new UnitInfo(id, displayName, texture, scenePath, null);
+
+    Godot.Collections.Array cells = (Godot.Collections.Array)turretData["cells"];
+    List<Vector2I> occupiedCells = new();
+    foreach (Godot.Collections.Array cell in cells)
+    {
+      int x = (int)cell[0];
+      int y = (int)cell[1];
+      occupiedCells.Add(new Vector2I(x, y));
+    }
+
+    unitGui.Info = new UnitInfo(id, displayName, texture, scenePath, occupiedCells, null);
     unitGui.Amount = 2;
     _unitsSelectionContainer.AddChild(unitGui);
     _unitsGui[id] = unitGui;
@@ -170,15 +180,21 @@ public partial class World : Node2D
 				Unit enemyUnit = enemyUnits[x, y];
 				if (playerUnit != null)
 				{
-					_units.Add(playerUnit.UnitInstance!);
+          if (!_units.Contains(playerUnit.UnitInstance!))
+          {
+            _units.Add(playerUnit.UnitInstance!);
+            _playerUnitsCount += 1;
+          }
           _unitsGrid[x, y] = playerUnit.UnitInstance!;
-          _playerUnitsCount += 1;
         }
 				if (enemyUnit != null)
 				{
-					_units.Add(enemyUnit);
+          if (!_units.Contains(enemyUnit))
+          {
+            _units.Add(enemyUnit);
+            _enemyUnitsCount += 1;
+          }
           _unitsGrid[x, y] = enemyUnit;
-          _enemyUnitsCount += 1;
 				}
 			}
 		}
@@ -212,14 +228,24 @@ public partial class World : Node2D
       // Parse template data
       string scenePath = (string)unitTemplate["scene"];
 
+      Godot.Collections.Array cells = (Godot.Collections.Array)unitTemplate["cells"];
+      List<Vector2I> occupiedCells = new();
+
       // Place the unit in the new cell
       PackedScene scene = GD.Load<PackedScene>(scenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
       unit.occupiedMainCell = new Vector2I(x, y);
+      foreach (Godot.Collections.Array cell in cells)
+      {
+        int relX = (int)cell[0];
+        int relY = (int)cell[1];
+        occupiedCells.Add(new Vector2I(relX, relY));
+        unitGrid[x + relX, y + relY] = unit;
+      }
+      unit.occupiedCells = occupiedCells;
       unit.side = false;
       _unitsNode.AddChild(instance);
-      unitGrid[x, y] = unit;
     }
 
 		return unitGrid;
@@ -351,7 +377,17 @@ public partial class World : Node2D
       string texturePath = (string)unitTemplate["texture"];
       Texture2D texture = GD.Load<Texture2D>(texturePath);
       string scenePath = (string)unitTemplate["scene"];
-      unitGui.Info = new UnitInfo(id, displayName, texture, scenePath, null);
+      
+      Godot.Collections.Array cells = (Godot.Collections.Array)unitTemplate["cells"];
+      List<Vector2I> occupiedCells = new();
+      foreach (Godot.Collections.Array cell in cells)
+      {
+        int x = (int)cell[0];
+        int y = (int)cell[1];
+        occupiedCells.Add(new Vector2I(x, y));
+      }
+
+      unitGui.Info = new UnitInfo(id, displayName, texture, scenePath, occupiedCells, null);
       unitGui.Amount = 1;
       _unitsSelectionContainer.AddChild(unitGui);
       _unitsGui[id] = unitGui;

@@ -2,7 +2,8 @@
 	"level_1": {
 		"id": 1,
 		"units": [
-            { "x": 8, "y": 4, "id": 1, "name": "turret"}
+            { "x": 8, "y": 4, "id": 1, "name": "turret"},
+            { "x": 8, "y": 7, "id": 3, "name": "tank"}
         ]
 	},
     "level_2": {
@@ -17,7 +18,7 @@
 		"units": [
             { "x": 7, "y": 4, "id": 1, "name": "turret"},
             { "x": 9, "y": 4, "id": 1, "name": "turret"},
-            { "x": 11, "y": 4, "id": 1, "name": "healer"}
+            { "x": 11, "y": 4, "id": 2, "name": "healer"}
         ]
 	},
     "level_4": {
@@ -26,7 +27,7 @@
             { "x": 6, "y": 3, "id": 1, "name": "turret"},
             { "x": 10, "y": 3, "id": 1, "name": "turret"},
             { "x": 6, "y": 5, "id": 1, "name": "turret"},
-            { "x": 10, "y": 7, "id": 1, "name": "healer"}
+            { "x": 10, "y": 7, "id": 2, "name": "healer"}
         ]
 	}
 }

@@ -15,13 +15,13 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	private Node _unitsNode = null!;
 
   private bool _interactionLocked = false;
-	private int _currentUnitCount = 0;
+	private int _currentUnitSlotsCount = 0;
 
   public override void _Ready()
 	{
 		_backgroundLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("BackgroundLayer");
     _unitsCounter = GetTree().CurrentScene.GetNode<Label>("CanvasLayer/BottomUi/UnitCounter/Counter");
-		_unitsCounter.Text = $"{_currentUnitCount }/{maxUnitSlots}";
+		_unitsCounter.Text = $"{_currentUnitSlotsCount }/{maxUnitSlots}";
     MouseFilter = MouseFilterEnum.Stop;
 		_unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
@@ -56,22 +56,19 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     if (_interactionLocked)
       return false;
 
-    if (data.Obj is not DragPayload)
+    if (data.Obj is not DragPayload dragPayLoad)
 			return false;
 
-		if (_currentUnitCount >= maxUnitSlots)
+		if (_currentUnitSlotsCount >= maxUnitSlots)
 			return false;
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
 
-		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
-			return false;
+    foreach (Vector2I occupiedCell in dragPayLoad.Unit.OccupiedCells)
+      if (!IsCellValid(cell + occupiedCell))
+        return false;
 
-		// Reject if no tile exists there
-		if (!IsCellValid(cell))
-			return false;
-
-		return true;
+    return true;
 	}
 
 	public override void _DropData(Vector2 atPosition, Variant data)
@@ -87,17 +84,32 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     // Clear origin cell if it came from this overlay
     if (dragPayload.Source == this)
     {
-      _unitGrid[targetCell.X, targetCell.Y] = _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y];
-      _unitGrid[dragPayload.OriginCell.Value.X, dragPayload.OriginCell.Value.Y] = null!;
-			_unitGrid[targetCell.X, targetCell.Y].UnitInstance.MoveToCell(targetCell);
+			UnitInfo unitInfo = _unitGrid[dragPayload!.OriginCell!.Value.X, dragPayload!.OriginCell!.Value.Y];
+
+      // Remove unit from previous cells
+      foreach (var cell in dragPayload.Unit.UnitInstance!.GetOccupiedCells())
+			{
+        _unitGrid[cell.X, cell.Y] = null!;
+      }
+
+      // Move unit to new cells
+      unitInfo.UnitInstance!.MoveToCell(targetCell);
+
+			// Assign unit to new cells
+      foreach (var cell in dragPayload.Unit.UnitInstance!.GetOccupiedCells())
+      {
+        _unitGrid[cell.X, cell.Y] = unitInfo;
+      }
+
     }
-		else
+    else
 		{
       UnitInfo newUnitInfo = new UnitInfo(
 				dragPayload.Unit.Id,
 				dragPayload.Unit.Name,
 				dragPayload.Unit.Texture,
 				dragPayload.Unit.ScenePath,
+				dragPayload.Unit.OccupiedCells,
 				null
 			);
 
@@ -106,11 +118,16 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
       unit.occupiedMainCell = targetCell;
+			unit.occupiedCells = dragPayload.Unit.OccupiedCells;
       _unitsNode.AddChild(instance);
-      _unitGrid[targetCell.X, targetCell.Y] = newUnitInfo;
-      _unitGrid[targetCell.X, targetCell.Y].UnitInstance = unit;
-			_currentUnitCount += unit.GetOccupiedCells().Count;
-      _unitsCounter.Text = $"{_currentUnitCount}/{maxUnitSlots}";
+			newUnitInfo.UnitInstance = unit;
+			foreach (var cell in dragPayload.Unit.OccupiedCells)
+			{
+				_unitGrid[targetCell.X + cell.X,targetCell.Y + cell.Y] = newUnitInfo;
+      }
+
+      _currentUnitSlotsCount += dragPayload.Unit.OccupiedCells.Count;
+      _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
     }
 
 		// Notify original source if it exists and isn’t this overlay
@@ -131,8 +148,12 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		int backgroundSourceId = _backgroundLayer.GetCellSourceId(cell);
 		Vector2I backgroundAtlastCoords = _backgroundLayer.GetCellAtlasCoords(cell);
 
-		// Cannot place if there is already a unit there
-		if (_unitGrid[cell.X, cell.Y] != null)
+    // Reject if cell is not on player's side of the board
+    if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
+      return false;
+
+    // Cannot place if there is already a unit there
+    if (_unitGrid[cell.X, cell.Y] != null)
 			return false;
 
 		return true;
@@ -150,14 +171,15 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
 				UnitInfo unitInfo = _unitGrid[x, y];
-				if (unitInfo != null)
+				Vector2I cell = new Vector2I(x, y);
+        if (unitInfo != null && unitInfo.UnitInstance!.occupiedMainCell == cell)
 				{
-
 					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
 					Unit unit = instance as Unit;
-					unit.occupiedMainCell = new Vector2I(x, y);
-					_unitsNode.AddChild(instance);
+					unit.occupiedMainCell = cell;
+					unit.occupiedCells = unitInfo.OccupiedCells;
+          _unitsNode.AddChild(instance);
 					_unitGrid[x, y].UnitInstance = unit;
 				}
       }
@@ -176,7 +198,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			_unitGrid[cell.X, cell.Y] = null!;
 		}    
     unit.UnitInstance!.QueueFree();
-    _currentUnitCount -= unit.UnitInstance!.GetOccupiedCells().Count;
-    _unitsCounter.Text = $"{_currentUnitCount}/{maxUnitSlots}";
+    _currentUnitSlotsCount -= unit.UnitInstance!.GetOccupiedCells().Count;
+    _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
   }
 }

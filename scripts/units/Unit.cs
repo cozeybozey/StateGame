@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 public partial class Unit : Node2D
 {
+	// Stats
   public virtual int maxHealth { get; set; } = 10;
   public virtual int health { get; set; } = 10;
   public virtual int damage { get; set; } = 1;
@@ -11,7 +12,10 @@ public partial class Unit : Node2D
   public virtual int startingCooldown { get; set; } = 1;
   public virtual int cooldown { get; set; } = 1;
   public virtual int speed { get; set; } = 1;
-	public bool side = true; // true for player, false for enemy
+  public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
+
+
+  public bool side = true; // true for player, false for enemy
   public Vector2I occupiedMainCell;
 
   private Sprite2D _sprite;
@@ -20,7 +24,6 @@ public partial class Unit : Node2D
 	private bool _affected = false;
 	private double _damageIndicatorDuration = 0.2f;
   private double _damageIndicatorTime = 0.2f;
-	private List<Vector2I> _extraOccupiedCells = new List<Vector2I>();
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -79,25 +82,28 @@ public partial class Unit : Node2D
 
 	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid)
 	{
-    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-		{
-			if (side)
-			{
-				for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
+    if (side)
+    {
+      for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
+      {
+				for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 				{
 					if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
 						return [new Vector2I(x, y)];
 				}
-			}
-			else
+      }
+    }
+		else
+		{
+			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
-				for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-				{
+				for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+				{ 
 					if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
 						return [new Vector2I(x, y)];
-        }
+				}
       }
-		}
+    }
 
 		return [];
   }
@@ -134,8 +140,8 @@ public partial class Unit : Node2D
 
 	public List<Vector2I> GetOccupiedCells()
 	{
-		List<Vector2I> occupiedCells = new List<Vector2I> { occupiedMainCell };
-		foreach (Vector2I relCell in _extraOccupiedCells)
+		List<Vector2I> occupiedCells = new List<Vector2I>();
+		foreach (Vector2I relCell in this.occupiedCells)
 		{
 			occupiedCells.Add(occupiedMainCell + relCell);
     }
