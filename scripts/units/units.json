@@ -19,5 +19,12 @@
 		"texture": "res://sprites/units/tank.png",
 		"scene": "res://scenes/units/tank.tscn",
 		"cells": [[-1, 0], [0, 0], [1, 0]]
+	},
+	"cluster": {
+		"id": 4,
+		"display_name": "Cluster",
+		"texture": "res://sprites/units/cluster.png",
+		"scene": "res://scenes/units/cluster.tscn",
+		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]]
 	}
 }
