@@ -13,12 +13,8 @@ public partial class Laser : Unit
   public override int cooldown { get; set; } = 1;
   public override int speed { get; set; } = 10;
 
-  private int _nrOfTargets = 16;
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
   {
-    Random random = new();
-
     List<Vector2I> cells = new();
 
     if (side)

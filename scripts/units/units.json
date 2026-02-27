@@ -33,5 +33,12 @@
 		"texture": "res://sprites/units/laser.png",
 		"scene": "res://scenes/units/laser.tscn",
 		"cells": [[0, 0], [1, 0]]
+	},
+	"booster": {
+		"id": 6,
+		"display_name": "Booster",
+		"texture": "res://sprites/units/booster.png",
+		"scene": "res://scenes/units/booster.tscn",
+		"cells": [[0, 0]]
 	}
 }

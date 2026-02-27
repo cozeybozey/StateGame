@@ -2,7 +2,9 @@
 	"level_1": {
 		"id": 1,
 		"units": [
-            { "x": 8, "y": 4, "id": 1, "name": "turret"}
+            { "x": 6, "y": 4, "id": 1, "name": "turret"},
+            { "x": 8, "y": 4, "id": 1, "name": "turret"},
+            { "x": 7, "y": 4, "id": 8, "name": "booster"}
         ]
 	},
     "level_2": {

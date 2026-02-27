@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://be4c2j8jo30lx" path="res://scripts/World.cs" id="1_1lgw5"]
 [ext_resource type="Texture2D" uid="uid://cbdsbuhs3k6t2" path="res://sprites/tilemaps/tilemap.png" id="1_kqs1s"]
 [ext_resource type="Script" uid="uid://sujkawcgjl8o" path="res://scripts/GridOverlay.cs" id="2_d1c63"]
+[ext_resource type="Script" uid="uid://fbmgojrslv63" path="res://scripts/utils/FloatingText.cs" id="4_d1c63"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -239,3 +240,8 @@ alignment = 1
 
 [node name="OverlayLayer" type="TileMapLayer" parent="." unique_id=421687747]
 tile_set = SubResource("TileSet_d1c63")
+
+[node name="FloatingText" type="Label" parent="." unique_id=786504789]
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("4_d1c63")

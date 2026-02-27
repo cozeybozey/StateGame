@@ -24,6 +24,7 @@ public partial class Unit : Node2D
 	private bool _affected = false;
 	private double _damageIndicatorDuration = 0.2f;
   private double _damageIndicatorTime = 0.2f;
+	private string _floatingTextPath = "res://scenes/FloatingText.tscn";
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -117,6 +118,7 @@ public partial class Unit : Node2D
 			int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - armor);
 			health -= effectiveDamage;
+      SpawnFloatingText(amount.ToString(), Colors.White);
       if (health <= 0)
       {
         DeathRattle();
@@ -128,12 +130,21 @@ public partial class Unit : Node2D
 			health += amount;
 			if (health > maxHealth)
 			health = maxHealth;
+      SpawnFloatingText(amount.ToString(), Colors.Green);
     }
 
 		_affected = true;
 		_sprite.Modulate = new Color(1, 1, 1, 0.5f);
     _healthBar.Value = health;
   }
+
+  public void ChangeDamage(int amount)
+  {
+    damage += amount;
+    _affected = true;
+    _sprite.Modulate = new Color(1, 1, 1, 0.5f);
+		SpawnFloatingText($"+{amount} Damage", Colors.White);
+	}
 
 	public void DeathRattle()
 	{
@@ -184,5 +195,17 @@ public partial class Unit : Node2D
     }
 
     return maxY - minY + 1;
+  }
+
+  public void SpawnFloatingText(string text, Color color = new Color())
+  {
+    PackedScene scene = GD.Load<PackedScene>(_floatingTextPath);
+    FloatingText floatingText = scene.Instantiate<FloatingText>();
+
+    floatingText.Text = text;
+		floatingText.Modulate = color;
+    floatingText.GlobalPosition = GlobalPosition - new Vector2(0, 0.5f * GlobalConstants.TileSize);
+
+    GetTree().CurrentScene.AddChild(floatingText);
   }
 }
