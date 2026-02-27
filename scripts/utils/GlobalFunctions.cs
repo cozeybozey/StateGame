@@ -19,8 +19,14 @@ public partial class GlobalFunctions : Node
     return cell + addedPos;
   }
 
-  public static Vector2I CellToGlobalPosition(Vector2I cell)
+  public static Vector2I CellToGlobalPosition(Vector2I cell, bool evenWidth, bool evenHeight)
   {
-    return cell * GlobalConstants.TileSize + new Vector2I(Mathf.FloorToInt(0.5 * GlobalConstants.TileSize), Mathf.FloorToInt(0.5 * GlobalConstants.TileSize));
+    Vector2I globalPos = cell * GlobalConstants.TileSize + new Vector2I(Mathf.FloorToInt(0.5 * GlobalConstants.TileSize), Mathf.FloorToInt(0.5 * GlobalConstants.TileSize));
+    if (evenWidth)
+      globalPos.X += Mathf.FloorToInt(0.5f * GlobalConstants.TileSize);
+    if (evenHeight)
+      globalPos.Y += Mathf.FloorToInt(0.5f * GlobalConstants.TileSize);
+
+    return globalPos;
   }
 }

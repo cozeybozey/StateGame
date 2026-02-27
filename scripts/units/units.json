@@ -26,5 +26,12 @@
 		"texture": "res://sprites/units/cluster.png",
 		"scene": "res://scenes/units/cluster.tscn",
 		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]]
+	},
+	"laser": {
+		"id": 5,
+		"display_name": "Laser",
+		"texture": "res://sprites/units/laser.png",
+		"scene": "res://scenes/units/laser.tscn",
+		"cells": [[0, 0], [1, 0]]
 	}
 }

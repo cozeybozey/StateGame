@@ -55,7 +55,9 @@ public partial class Unit : Node2D
 		_healthBar.MaxValue = maxHealth;
 		health = maxHealth;
 		_healthBar.Value = health;
-		GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell);
+    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, GetNrOfHorizontalCells() % 2 == 0, GetNrOfVerticalCells() % 2 == 0);
+		if (!side)
+			_sprite.FlipV = true; // Flip the sprite for enemy units
   }
 
 	public virtual bool CanAct()
@@ -151,6 +153,36 @@ public partial class Unit : Node2D
 	public void MoveToCell(Vector2I newCell)
 	{
 		occupiedMainCell = newCell;
-		GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell);
+		GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, GetNrOfHorizontalCells() % 2 == 0, GetNrOfVerticalCells() % 2 == 0);
+  }
+
+	public int GetNrOfHorizontalCells()
+	{
+		int minX = occupiedCells[0].X;
+		int maxX = occupiedCells[0].X;
+		foreach (Vector2I cell in occupiedCells)
+		{
+			if (cell.X < minX)
+				minX = cell.X;
+			if (cell.X > maxX)
+				maxX = cell.X;
+    }
+
+		return maxX - minX + 1;
+  }
+
+  public int GetNrOfVerticalCells()
+  {
+    int minY = occupiedCells[0].Y;
+    int maxY = occupiedCells[0].Y;
+    foreach (Vector2I cell in occupiedCells)
+    {
+      if (cell.Y < minY)
+        minY = cell.Y;
+      if (cell.Y > maxY)
+        maxY = cell.Y;
+    }
+
+    return maxY - minY + 1;
   }
 }

@@ -1,7 +1,7 @@
-[gd_scene format=3 uid="uid://hpkr6qhgwrcr"]
+[gd_scene format=3 uid="uid://chmgyyhsejrbm"]
 
-[ext_resource type="Script" uid="uid://cy1uhqgo8084i" path="res://scripts/units/Cluster.cs" id="1_gkxix"]
-[ext_resource type="Texture2D" uid="uid://ch6vrr6qfrn11" path="res://sprites/units/cluster.png" id="2_gkxix"]
+[ext_resource type="Script" uid="uid://dywwqmkor5lj" path="res://scripts/units/Laser.cs" id="1_8a8fb"]
+[ext_resource type="Texture2D" uid="uid://cm28dyo5leoy6" path="res://sprites/units/laser.png" id="2_8a8fb"]
 
 [sub_resource type="Gradient" id="Gradient_mgebg"]
 colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
@@ -18,10 +18,10 @@ gradient = SubResource("Gradient_44d7s")
 width = 24
 
 [node name="Unit" type="Node2D" unique_id=995662800]
-script = ExtResource("1_gkxix")
+script = ExtResource("1_8a8fb")
 
 [node name="Sprite" type="Sprite2D" parent="." unique_id=387835248]
-texture = ExtResource("2_gkxix")
+texture = ExtResource("2_8a8fb")
 
 [node name="Health" type="TextureProgressBar" parent="." unique_id=1791189684]
 anchors_preset = 10

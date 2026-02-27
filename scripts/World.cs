@@ -165,7 +165,6 @@ public partial class World : Node2D
         else
         {
           _unitIndex += 1;
-          _turnCooldown = _turnStartCooldown;
         } 
 			}
 		}
