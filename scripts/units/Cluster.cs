@@ -13,7 +13,7 @@ public partial class Cluster : Unit
   public override int cooldown { get; set; } = 1;
   public override int speed { get; set; } = 3;
 
-  private int _nrOfTargets = 10;
+  private int _nrOfTargets = 16;
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
   {

@@ -185,6 +185,23 @@ text = "Units:"
 layout_mode = 2
 text = "0/20"
 
+[node name="SpeedButton" type="MenuButton" parent="CanvasLayer/BottomUi" unique_id=482248829]
+layout_mode = 2
+text = "Speed: 1x"
+item_count = 6
+popup/item_0/text = "0.5x"
+popup/item_0/id = 0
+popup/item_1/text = "1x"
+popup/item_1/id = 1
+popup/item_2/text = "2x"
+popup/item_2/id = 2
+popup/item_3/text = "4x"
+popup/item_3/id = 3
+popup/item_4/text = "8x"
+popup/item_4/id = 4
+popup/item_5/text = "16x"
+popup/item_5/id = 5
+
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
 anchors_preset = -1

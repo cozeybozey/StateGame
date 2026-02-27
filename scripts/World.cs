@@ -22,6 +22,8 @@ public partial class World : Node2D
   private Node _unitsNode;
   private VBoxContainer _unitsSelectionContainer;
   private TileMapLayer _overlayLayer;
+  private MenuButton _speedButton;
+  private PopupMenu _speedPopup;
 
   private List<Unit> _units;
   private Unit[,] _unitsGrid;
@@ -41,6 +43,7 @@ public partial class World : Node2D
   private double _actingCooldown = 0.5f;
   private double _actingStartCooldown = 0.5f;
   private bool _targeting = false;
+  private double _speed = 1.0f;
 
 	private Dictionary _unitsData;
 	private Dictionary _levelsData;
@@ -61,9 +64,12 @@ public partial class World : Node2D
     _unitsNode = GetNode("Units");
     _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
     _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
+    _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
 
     _playButton.Pressed += OnPlayButtonPressed;
-		_units = new List<Unit>();
+    _speedPopup = _speedButton.GetPopup();
+    _speedPopup.IdPressed += OnSpeedSelected;
+    _units = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
 
@@ -399,5 +405,33 @@ public partial class World : Node2D
   private void OnReturnButtonPressed()
   {
     Reset();
+  }
+
+  private void OnSpeedSelected(long id)
+  {
+    switch (id)
+    {
+      case 0:
+        _speed = 0.5f;
+        break;
+      case 1:
+        _speed = 1.0f;
+        break;
+      case 2:
+        _speed = 2.0f;
+        break;
+      case 3:
+        _speed = 4.0f;
+        break;
+      case 4:
+        _speed = 8.0f;
+        break;
+      case 5:
+        _speed = 16.0f;
+        break;
+    }
+    _speedButton.Text = "Speed: " + _speedPopup.GetItemText((int)id);
+    _turnStartCooldown = 1.0f / _speed;
+    _actingStartCooldown = 0.5f / _speed;
   }
 }

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bp46e3unmuc47"]
 
-[ext_resource type="Script" uid="uid://cy1uhqgo8084i" path="res://scripts/units/Cluster.cs" id="1_ij7fw"]
+[ext_resource type="Script" uid="uid://c06kovdk574xe" path="res://scripts/units/Tank.cs" id="1_ij7fw"]
 [ext_resource type="Texture2D" uid="uid://hhhnfrsj6185" path="res://sprites/units/tank.png" id="2_ij7fw"]
 
 [sub_resource type="Gradient" id="Gradient_mgebg"]
