@@ -15,7 +15,9 @@ public partial class Booster : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
   {
-     return [new Vector2I(occupiedMainCell.X + 1, occupiedMainCell.Y)];
+    if (occupiedMainCell.X + 1 < GlobalConstants.GridSize.X && unitsGrid[occupiedMainCell.X + 1, occupiedMainCell.Y] != null)
+      return [new Vector2I(occupiedMainCell.X + 1, occupiedMainCell.Y)];
+    return [];
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)

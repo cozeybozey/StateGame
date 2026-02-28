@@ -74,10 +74,11 @@ public partial class World : Node2D
     _units = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
+    _globalSignals.UnitMoved += OnUnitMoved;
 
     _levelUnits = new List<UnitInfo>();
     _unitsPerStage = new List<List<UnitInfo>>(3);
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
       _unitsPerStage.Add(new List<UnitInfo>());
     }
@@ -121,15 +122,13 @@ public partial class World : Node2D
         {
           _overlayLayer.SetCell(target, 0, new Vector2I(3, 4)); // Show overlay on target cells
         }
+        _acting = true;
         if (_selectedTargets.Count > 0)
-          _acting = true;
+          _actingCooldown = _actingStartCooldown;
         else
-        {
-          _unitIndex += 1;
-          _turnCooldown = _turnStartCooldown;
-        }
+          _actingCooldown = 0; // If there are no targets, skip directly to acting phase
         _targeting = false;
-        _actingCooldown = _actingStartCooldown;
+        
       }
     }
     else if (_playing)
@@ -142,7 +141,7 @@ public partial class World : Node2D
           _unitIndex = 0;
           _turn += 1;
           _turnCounter.Text = _turn.ToString();
-          if (_turn > 1)
+          if (_turn > 10)
           {
             // Apply end of turn damage to all units
             int index = 0;
@@ -240,7 +239,7 @@ public partial class World : Node2D
       PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-      unit.occupiedMainCell = new Vector2I(x, y);
+      unit.startCell = new Vector2I(x, y);
       unit.occupiedCells = unitInfo.OccupiedCells;
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
@@ -302,9 +301,9 @@ public partial class World : Node2D
       }
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Name == "Tank" || unitInfo.Name == "Laser")
+      if (unitInfo.Name == "Tank" || unitInfo.Name == "Laser" || unitInfo.Name == "Saboteur")
       {
-        // Position tanks and lasers in the front portion of the grid
+        // Position tanks, lasers and saboteurs in the front portion of the grid
         List<Vector2I> frontPositions = new List<Vector2I>();
         int maxY = 0;
         foreach (Vector2I cell in possiblePositions)
@@ -322,13 +321,33 @@ public partial class World : Node2D
         }
         cellPos = frontPositions[rng.RandiRange(0, frontPositions.Count - 1)];
       }
+      else if (unitInfo.Name == "Pusher")
+      {
+        // Position pushers in the right portion of the grid
+        List<Vector2I> rightPositions = new List<Vector2I>();
+        int maxX = 0;
+        foreach (Vector2I cell in possiblePositions)
+        {
+          if (cell.X > maxX)
+          {
+            rightPositions.Clear();
+            maxX = cell.X;
+            rightPositions.Add(cell);
+          }
+          else if (cell.X == maxX)
+          {
+            rightPositions.Add(cell);
+          }
+        }
+        cellPos = rightPositions[rng.RandiRange(0, rightPositions.Count - 1)];
+      }
       else if (unitInfo.Name == "Booster")
       {
         // Position boosters next to another unit if possible
         Vector2I adjacentCell = new Vector2I(cellPos.X, cellPos.Y);
         foreach (Vector2I cell in possiblePositions)
         {
-          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null)
+          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null && unitGrid[cell.X + 1, cell.Y].damage > 0)
           {
             adjacentCell = cell;
             break;
@@ -338,7 +357,7 @@ public partial class World : Node2D
       }
 
       Unit unit = GD.Load<PackedScene>(unitInfo.ScenePath).Instantiate() as Unit;
-      unit.occupiedMainCell = cellPos;
+      unit.startCell = cellPos;
       unit.occupiedCells = unitInfo.OccupiedCells;
       unit.side = false;
       _unitsNode.AddChild(unit);
@@ -372,6 +391,7 @@ public partial class World : Node2D
     _levelCounter.Text = _level.ToString();
     _overlayLayer.Clear();
     _turnEndDamage = 1;
+    _levelUnits.Clear();
 
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
@@ -466,6 +486,31 @@ public partial class World : Node2D
       Lose();
   }
 
+  private void OnUnitMoved(Unit unit, Vector2I oldCell)
+  {
+    if (!_playing)
+      return;
+
+    foreach (Vector2I cell in unit.occupiedCells)
+    {
+      _unitsGrid[oldCell.X + cell.X, oldCell.Y + cell.Y] = null!;
+    }
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      _unitsGrid[cell.X, cell.Y] = unit;
+    }
+
+    // Sort units by speed, then by position for consistent turn order
+    _units = _units
+    .OrderByDescending(u => u.speed)  // Speed first
+    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
+    .ThenBy(u =>
+        u.side
+            ? u.occupiedMainCell.Y  // Player: lower Y first
+            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
+    .ToList();
+  }
+
   private void OnRewardButtonPressed(UnitInfo unitInfo)
   {
     if (_unitsGui.ContainsKey(unitInfo.Id))
@@ -557,6 +602,7 @@ public partial class World : Node2D
   {
     if (_level < 3) return 0;
     if (_level < 6) return 1;
-    return 2;
+    if (_level < 10) return 2;
+    return 3;
   }
 }

@@ -17,6 +17,7 @@ public partial class Unit : Node2D
 
   public bool side = true; // true for player, false for enemy
   public Vector2I occupiedMainCell;
+	public Vector2I startCell;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
@@ -56,6 +57,7 @@ public partial class Unit : Node2D
 		_healthBar.MaxValue = maxHealth;
 		health = maxHealth;
 		_healthBar.Value = health;
+		occupiedMainCell = startCell;
     Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
 		if (!side)
@@ -119,7 +121,7 @@ public partial class Unit : Node2D
 			int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - armor);
 			health -= effectiveDamage;
-      SpawnFloatingText(amount.ToString(), Colors.White);
+      SpawnFloatingText(effectiveDamage.ToString(), Colors.White);
       if (health <= 0)
       {
         DeathRattle();
@@ -162,11 +164,16 @@ public partial class Unit : Node2D
 		return occupiedCells;
   }
 
-	public void MoveToCell(Vector2I newCell)
+	public void MoveToCell(Vector2I newCell, bool playing = false)
 	{
-		occupiedMainCell = newCell;
+		Vector2I oldMainCell = occupiedMainCell;
+		if (!playing)
+			startCell = newCell;
+    occupiedMainCell = newCell;
 		Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
+		if (playing)
+			_globalSignals.EmitSignal(GlobalSignals.SignalName.UnitMoved, this, oldMainCell);
   }
 
   public void SpawnFloatingText(string text, Color color = new Color())
