@@ -5,9 +5,9 @@ using System.Collections.Generic;
 public partial class Healer : Unit
 {
   public override int maxHealth { get; set; } = 5;
-  public override int cooldown { get; set; } = 2;
-  public override int startingCooldown { get; set; } = 2;
-  public override int damage { get; set; } = 8;
+  public override int cooldown { get; set; } = 1;
+  public override int startingCooldown { get; set; } = 1;
+  public override int damage { get; set; } = 6;
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
   {
@@ -36,7 +36,7 @@ public partial class Healer : Unit
     }
     else
     {
-      for (int y = GlobalConstants.GridSize.Y - 1; y > 0; y--)
+      for (int y = GlobalConstants.GridSize.Y - 1; y >= 0; y--)
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {

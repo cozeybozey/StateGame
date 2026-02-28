@@ -4,41 +4,53 @@
 		"display_name": "Turret",
 		"texture": "res://sprites/units/blue_unit.png",
 		"scene": "res://scenes/units/turret.tscn",
-		"cells": [[0, 0]]
+		"cells": [[0, 0]],
+		"stage": 0,
+		"cost": 1
 	},
 	"healer": {
 		"id": 2,
 		"display_name": "Healer",
 		"texture": "res://sprites/units/green_unit.png",
 		"scene": "res://scenes/units/healer.tscn",
-		"cells": [[0, 0]]
+		"cells": [[0, 0]],
+		"stage": 1,
+		"cost": 1
 	},
 	"tank": {
 		"id": 3,
 		"display_name": "Tank",
 		"texture": "res://sprites/units/tank.png",
 		"scene": "res://scenes/units/tank.tscn",
-		"cells": [[-1, 0], [0, 0], [1, 0]]
+		"cells": [[0, 0], [1, 0], [2, 0]],
+		"stage": 1,
+		"cost": 2
 	},
 	"cluster": {
 		"id": 4,
 		"display_name": "Cluster",
 		"texture": "res://sprites/units/cluster.png",
 		"scene": "res://scenes/units/cluster.tscn",
-		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]]
+		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]],
+		"stage": 2,
+		"cost": 2
 	},
 	"laser": {
 		"id": 5,
 		"display_name": "Laser",
 		"texture": "res://sprites/units/laser.png",
 		"scene": "res://scenes/units/laser.tscn",
-		"cells": [[0, 0], [1, 0]]
+		"cells": [[0, 0], [1, 0]],
+		"stage": 2,
+		"cost": 2
 	},
 	"booster": {
 		"id": 6,
 		"display_name": "Booster",
 		"texture": "res://sprites/units/booster.png",
 		"scene": "res://scenes/units/booster.tscn",
-		"cells": [[0, 0]]
+		"cells": [[0, 0]],
+		"stage": 2,
+		"cost": 2
 	}
 }

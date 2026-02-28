@@ -56,15 +56,15 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     if (_interactionLocked)
       return false;
 
-    if (data.Obj is not DragPayload dragPayLoad)
+    if (data.Obj is not DragPayload dragPayload)
 			return false;
 
-		if (_currentUnitSlotsCount >= maxUnitSlots)
+		if (dragPayload.Source != this && _currentUnitSlotsCount + dragPayload.Unit.OccupiedCells.Count > maxUnitSlots)
 			return false;
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
 
-    foreach (Vector2I occupiedCell in dragPayLoad.Unit.OccupiedCells)
+    foreach (Vector2I occupiedCell in dragPayload.Unit.OccupiedCells)
       if (!IsCellValid(cell + occupiedCell))
         return false;
 
@@ -110,7 +110,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 				dragPayload.Unit.Texture,
 				dragPayload.Unit.ScenePath,
 				dragPayload.Unit.OccupiedCells,
-				null
+        dragPayload.Unit.Cost,
+        null
 			);
 
       // Place the unit in the new cell

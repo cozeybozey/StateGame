@@ -19,7 +19,7 @@ public partial class Laser : Unit
 
     if (side)
     {
-      for (int y = occupiedMainCell.Y - 1; y > 0; y--)
+      for (int y = occupiedMainCell.Y - 1; y >= 0; y--)
       {
         cells.Add(new Vector2I(occupiedMainCell.X, y));
         cells.Add(new Vector2I(occupiedMainCell.X + 1, y));
