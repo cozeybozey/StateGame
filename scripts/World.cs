@@ -321,6 +321,26 @@ public partial class World : Node2D
         }
         cellPos = frontPositions[rng.RandiRange(0, frontPositions.Count - 1)];
       }
+      else if (unitInfo.Name == "Sniper")
+      {
+        // Position snipers in back portion of the grid
+        List<Vector2I> backPositions = new List<Vector2I>();
+        int minY = GlobalConstants.GridSize.Y - 1;
+        foreach (Vector2I cell in possiblePositions)
+        {
+          if (cell.Y < minY)
+          {
+            backPositions.Clear();
+            minY = cell.Y;
+            backPositions.Add(cell);
+          }
+          else if (cell.Y == minY)
+          {
+            backPositions.Add(cell);
+          }
+        }
+        cellPos = backPositions[rng.RandiRange(0, backPositions.Count - 1)];
+      }
       else if (unitInfo.Name == "Pusher")
       {
         // Position pushers in the right portion of the grid
