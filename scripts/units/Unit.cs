@@ -23,9 +23,10 @@ public partial class Unit : Node2D
 	private TextureProgressBar _healthBar;
   private GlobalSignals _globalSignals;
 	private bool _affected = false;
-	private double _damageIndicatorDuration = 0.2f;
-  private double _damageIndicatorTime = 0.2f;
+	private double _damageIndicatorDuration = 0.3f;
+  private double _damageIndicatorTime = 0.3f;
 	private string _floatingTextPath = "res://scenes/FloatingText.tscn";
+	private Queue<Tuple<string, Color>> _floatingTextQueue = new Queue<Tuple<string, Color>>();
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -33,6 +34,15 @@ public partial class Unit : Node2D
 		_sprite = GetNode<Sprite2D>("Sprite");
 		_healthBar = GetNode<TextureProgressBar>("Health");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
+
+    _healthBar.MaxValue = maxHealth;
+    health = maxHealth;
+    _healthBar.Value = health;
+    occupiedMainCell = startCell;
+    Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
+    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
+    if (!side)
+      _sprite.FlipV = true; // Flip the sprite for enemy units
 
     Initialize();
   }
@@ -46,22 +56,23 @@ public partial class Unit : Node2D
 			if (_damageIndicatorTime <= 0)
 			{
 				_sprite.Modulate = new Color(1, 1, 1, 1);
-				_affected = false;
 				_damageIndicatorTime = _damageIndicatorDuration;
-			}
+				if (_floatingTextQueue.Count > 0)
+				{
+					Tuple<string, Color> floatingTextInfo = _floatingTextQueue.Dequeue();
+					SpawnFloatingText(floatingTextInfo.Item1, floatingTextInfo.Item2);
+				}
+				else
+				{
+					_affected = false;
+        }
+      }
     }
   }
 
-	private void Initialize()
+	protected virtual void Initialize()
 	{
-		_healthBar.MaxValue = maxHealth;
-		health = maxHealth;
-		_healthBar.Value = health;
-		occupiedMainCell = startCell;
-    Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
-    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
-		if (!side)
-			_sprite.FlipV = true; // Flip the sprite for enemy units
+
   }
 
 	public virtual bool CanAct()
@@ -116,12 +127,15 @@ public partial class Unit : Node2D
 
   public void ChangeHealth(int amount)
   {
+		string displayedText = amount.ToString();
+		Color displayedColor = Colors.White;
+
 		if (amount <= 0)
 		{
 			int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - armor);
 			health -= effectiveDamage;
-      SpawnFloatingText(effectiveDamage.ToString(), Colors.White);
+			displayedText = effectiveDamage.ToString();
       if (health <= 0)
       {
         DeathRattle();
@@ -133,20 +147,32 @@ public partial class Unit : Node2D
 			health += amount;
 			if (health > maxHealth)
 			health = maxHealth;
-      SpawnFloatingText(amount.ToString(), Colors.Green);
+			displayedColor = Colors.Green;
     }
-
-		_affected = true;
-		_sprite.Modulate = new Color(1, 1, 1, 0.5f);
     _healthBar.Value = health;
+
+    if (_affected)
+			_floatingTextQueue.Enqueue(new Tuple<string, Color>(displayedText, displayedColor));
+		else
+		{
+			_affected = true;
+			_sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      SpawnFloatingText(displayedText, displayedColor);
+    }
   }
 
   public void ChangeDamage(int amount)
   {
     damage += amount;
-    _affected = true;
-    _sprite.Modulate = new Color(1, 1, 1, 0.5f);
-		SpawnFloatingText($"+{amount} Damage", Colors.White);
+
+		if (_affected)
+			_floatingTextQueue.Enqueue(new Tuple<string, Color>($"+{amount} Damage", Colors.Yellow));
+		else
+		{
+			_affected = true;
+			_sprite.Modulate = new Color(1, 1, 1, 0.5f);
+			SpawnFloatingText($"+{amount} Damage", Colors.Yellow);
+		}
 	}
 
 	public void DeathRattle()
