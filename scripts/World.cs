@@ -52,6 +52,15 @@ public partial class World : Node2D
   private Dictionary _levelsData;
   private Random _rng = new Random();
 
+  // World generation
+  private Panel _worldUi;
+  private Godot.Collections.Dictionary<string, LevelInfo> _world = new Godot.Collections.Dictionary<string, LevelInfo>();
+  private int _numLayers = 5;
+  private int _maxNodesPerLayer = 3;
+  private int _buttonWidth = 75;
+  private int _buttonHeight = 35;
+  private LevelInfo _activeLevel = null!;
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
@@ -67,6 +76,7 @@ public partial class World : Node2D
     _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
     _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
+    _worldUi = GetNode<Panel>("CanvasLayer/WorldUi");
 
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
@@ -95,6 +105,8 @@ public partial class World : Node2D
     unitGui.Amount = 2;
     _unitsSelectionContainer.AddChild(unitGui);
     _unitsGui[_unitsData["turret"].Id] = unitGui;
+
+    GenerateWorld();
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -128,7 +140,7 @@ public partial class World : Node2D
         else
           _actingCooldown = 0; // If there are no targets, skip directly to acting phase
         _targeting = false;
-        
+
       }
     }
     else if (_playing)
@@ -176,19 +188,18 @@ public partial class World : Node2D
     }
   }
 
-  private void OnPlayButtonPressed()
+  private void StartLevel(UnitInfo[,] enemyUnits)
   {
     _playButton.Disabled = true;
     _gridOverlay.SetInteractionLocked(true);
     UnitInfo[,] playerUnits = _gridOverlay.GetUnits();
-    Unit[,] enemyUnits = LoadRandomLevel();
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         UnitInfo playerUnit = playerUnits[x, y];
-        Unit enemyUnit = enemyUnits[x, y];
+        UnitInfo enemyUnit = enemyUnits[x, y];
         if (playerUnit != null)
         {
           if (!_units.Contains(playerUnit.UnitInstance!))
@@ -200,12 +211,23 @@ public partial class World : Node2D
         }
         if (enemyUnit != null)
         {
-          if (!_units.Contains(enemyUnit))
+          if (enemyUnit.UnitInstance == null)
           {
-            _units.Add(enemyUnit);
+            Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
+            unitInstance.startCell = new Vector2I(x, y);
+            unitInstance.occupiedCells = enemyUnit.OccupiedCells;
+            unitInstance.side = false;
+            enemyUnit.UnitInstance = unitInstance;
+            _unitsNode.AddChild(unitInstance);
+            _levelUnits.Add(enemyUnit);
+          }
+
+          if (!_units.Contains(enemyUnit.UnitInstance!))
+          {
+            _units.Add(enemyUnit.UnitInstance!);
             _enemyUnitsCount += 1;
           }
-          _unitsGrid[x, y] = enemyUnit;
+          _unitsGrid[x, y] = enemyUnit.UnitInstance!;
         }
       }
     }
@@ -221,6 +243,12 @@ public partial class World : Node2D
     .ToList();
 
     _playing = true;
+  }
+
+  private void OnPlayButtonPressed()
+  {
+    UnitInfo[,] enemyUnits = LoadRandomLevel(_level);
+    StartLevel(enemyUnits);
   }
 
   private Unit[,] loadLevel()
@@ -253,11 +281,11 @@ public partial class World : Node2D
     return unitGrid;
   }
 
-  public Unit[,] LoadRandomLevel()
+  public UnitInfo[,] LoadRandomLevel(int difficulty)
   {
-    Unit[,] unitGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
-    int budget = _level + (_level / 2);
+    int budget = difficulty + (difficulty / 2);
     int maxStage = GetMaxStageForLevel();
 
     RandomNumberGenerator rng = new();
@@ -271,7 +299,18 @@ public partial class World : Node2D
       if (possibleUnits.Count == 0)
         continue;
 
-      UnitInfo unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
+
+      UnitInfo selectedUnitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
+      // Create a copy of the UnitInfo to avoid modifying the original data when assigning UnitInstance
+      UnitInfo unitInfo = new UnitInfo(
+        selectedUnitInfo.Id,
+        selectedUnitInfo.Name,
+        selectedUnitInfo.Texture,
+        selectedUnitInfo.ScenePath,
+        selectedUnitInfo.OccupiedCells,
+        selectedUnitInfo.Cost,
+        null
+      );
 
       if (unitInfo.Cost > budget)
         continue;
@@ -367,7 +406,7 @@ public partial class World : Node2D
         Vector2I adjacentCell = new Vector2I(cellPos.X, cellPos.Y);
         foreach (Vector2I cell in possiblePositions)
         {
-          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null && unitGrid[cell.X + 1, cell.Y].damage > 0)
+          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null) // TODO AKN reintroduce && unitGrid[cell.X + 1, cell.Y].damage > 0)
           {
             adjacentCell = cell;
             break;
@@ -376,16 +415,10 @@ public partial class World : Node2D
         cellPos = adjacentCell;
       }
 
-      Unit unit = GD.Load<PackedScene>(unitInfo.ScenePath).Instantiate() as Unit;
-      unit.startCell = cellPos;
-      unit.occupiedCells = unitInfo.OccupiedCells;
-      unit.side = false;
-      _unitsNode.AddChild(unit);
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
-        unitGrid[cellPos.X + cell.X, cellPos.Y + cell.Y] = unit;
+        unitGrid[cellPos.X + cell.X, cellPos.Y + cell.Y] = unitInfo;
       }
-      _levelUnits.Add(unitInfo);
 
       budget -= unitInfo.Cost;
     }
@@ -432,6 +465,26 @@ public partial class World : Node2D
     _level += 1;
     ShowRewards();
     _messagePanel.Show();
+
+    if (_activeLevel != null)
+    {
+      foreach (string nextNodeId in _activeLevel.NextNodes)
+      {
+        if (_world.ContainsKey(nextNodeId))
+        {
+          _world[nextNodeId].Unlocked = true;
+          // Also enable the corresponding button in the UI TODO fix
+          foreach (Button btn in _worldUi.GetChildren().OfType<Button>())
+          {
+            if (btn.Text == _world[nextNodeId].Name)
+            {
+              btn.Disabled = false;
+              break;
+            }
+          }
+        }
+      }
+    }
   }
 
   private void Lose()
@@ -624,5 +677,117 @@ public partial class World : Node2D
     if (_level < 6) return 1;
     if (_level < 10) return 2;
     return 3;
+  }
+
+  void GenerateWorld()
+  {
+    int currentNodesInLayer = 1; // Start with 1 node in the first layer
+    for (int layer = 0; layer < _numLayers; layer++)
+    {
+      int nextNodesInLayer = _rng.Next(1, _maxNodesPerLayer + 1);
+      for (int node = 0; node < currentNodesInLayer; node++)
+      {
+        string nodeId = $"L{layer}_N{node}";
+        List<string> nextNodes = new List<string>();
+        List<int> nextNodesIndices = new List<int>();
+        if (layer < _numLayers - 1)
+        {
+          if (nextNodesInLayer == 1)
+          {
+            nextNodes.Add($"L{layer + 1}_N0");
+            nextNodesIndices.Add(0);
+          }
+          else
+          {
+            int rndIndex = _rng.Next(0, nextNodesInLayer);
+            nextNodes.Add($"L{layer + 1}_N{rndIndex}");
+            nextNodesIndices.Add(rndIndex);
+
+            for (int j = 0; j < nextNodesInLayer; j++)
+            {
+              if (j == rndIndex)
+                continue;
+
+              if (_rng.NextDouble() < 0.5) // 50% chance to add an additional connection to this node
+              {
+                nextNodes.Add($"L{layer + 1}_N{j}");
+                nextNodesIndices.Add(j);
+              }
+            }
+          }
+        }
+        _world[nodeId] = new LevelInfo(
+          id: nodeId,
+          name: nodeId,
+          completed: false,
+          unlocked: layer == 0, // Only unlock first layer initially
+          layer: layer,
+          layerIndex: node,
+          isBoss: false,
+          nextNodes: nextNodes,
+          units: LoadRandomLevel(layer + 1)
+        );
+
+        AddLevelUi(_world[nodeId], currentNodesInLayer, nextNodesInLayer, nextNodesIndices);
+      }
+      currentNodesInLayer = nextNodesInLayer;
+    }
+  }
+
+  void AddLevelUi(LevelInfo levelNode, int nodesInLayer, int nextNodesCount, List<int> nextNodesIndices)
+  {
+    Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
+    Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
+    Button btn = new Button();
+    btn.Text = levelNode.Name;
+    btn.Disabled = !levelNode.Unlocked;
+    btn.CustomMinimumSize = buttonSize;
+    btn.Position = buttonPos;
+    btn.Pressed += () => OnLevelSelected(levelNode);
+    _worldUi.AddChild(btn);
+
+    //Vector2 fromCenter = btn.Position + btn.Size / 2.0f;
+    // Convert to global coordinates relative to the CanvasLayer so Line2D (a Node2D) can be added there
+    //Vector2 fromGlobal = _worldUi.RectGlobalPosition + fromCenter;
+    Vector2 fromGlobal = buttonPos + buttonSize / 2.0f;
+
+    foreach (int nextIndex in nextNodesIndices)
+    {
+      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextIndex, nextNodesCount);
+
+      //Vector2 toCenter = toBtn.Position + toBtn.RectSize / 2.0f;
+      Vector2 toGlobal = nextButtonPos + buttonSize / 2.0f;
+
+      Line2D line = new Line2D();
+      // Add to the parent CanvasLayer so Node2D drawing works correctly
+      Node? parentLayer = _worldUi.GetParent();
+      if (parentLayer == null)
+        parentLayer = _worldUi;
+
+      line.Points = new Vector2[] { fromGlobal, toGlobal };
+      line.Width = 2.0f;
+      line.DefaultColor = new Color(1, 1, 1, 0.8f);
+      _worldUi.AddChild(line);
+    }
+  }
+
+  Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInLayer)
+  {
+    // Calculate X so the nodes in the layer are centered around the panel's center.
+    // For n nodes we place them with a fixed spacing and center the group:
+    // startX = center - ((n-1) * spacing) / 2
+    double spacing = 100.0;
+    double centerX = _worldUi.Size.X / 2.0;
+    double totalWidth = spacing * (nodesInLayer - 1);
+    double startX = centerX - (totalWidth / 2.0);
+    double xPos = startX + layerIndex * spacing;
+    return new Vector2((float)xPos, 400 - layer * 50);
+  }
+
+  void OnLevelSelected(LevelInfo levelNode)
+  {
+    _worldUi.Visible = false;
+    _activeLevel = levelNode;
+    StartLevel(levelNode.Units!);
   }
 }
