@@ -54,6 +54,7 @@ public partial class World : Node2D
 
   // World generation
   private Panel _worldUi;
+  private Button _worldMapButton;
   private Godot.Collections.Dictionary<string, LevelInfo> _world = new Godot.Collections.Dictionary<string, LevelInfo>();
   private int _numLayers = 5;
   private int _maxNodesPerLayer = 3;
@@ -77,6 +78,7 @@ public partial class World : Node2D
     _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/WorldUi");
+    _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
 
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
@@ -85,6 +87,7 @@ public partial class World : Node2D
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
     _globalSignals.UnitMoved += OnUnitMoved;
+    _worldMapButton.Pressed += OnWorldMapPressed;
 
     _levelUnits = new List<UnitInfo>();
     _unitsPerStage = new List<List<UnitInfo>>(3);
@@ -191,6 +194,7 @@ public partial class World : Node2D
   private void StartLevel(UnitInfo[,] enemyUnits)
   {
     _playButton.Disabled = true;
+    _worldMapButton.Disabled = true;
     _gridOverlay.SetInteractionLocked(true);
     UnitInfo[,] playerUnits = _gridOverlay.GetUnits();
 
@@ -286,7 +290,7 @@ public partial class World : Node2D
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
     int budget = difficulty + (difficulty / 2);
-    int maxStage = GetMaxStageForLevel();
+    int maxStage = GetMaxStageForDifficulty(difficulty);
 
     RandomNumberGenerator rng = new();
     rng.Randomize();
@@ -454,6 +458,7 @@ public partial class World : Node2D
 
     _gridOverlay.SetInteractionLocked(false);
     _playButton.Disabled = false;
+    _worldMapButton.Disabled = false;
   }
 
   private void Win()
@@ -468,20 +473,13 @@ public partial class World : Node2D
 
     if (_activeLevel != null)
     {
+      _activeLevel.LevelButton.Disabled = true;
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
         if (_world.ContainsKey(nextNodeId))
         {
           _world[nextNodeId].Unlocked = true;
-          // Also enable the corresponding button in the UI TODO fix
-          foreach (Button btn in _worldUi.GetChildren().OfType<Button>())
-          {
-            if (btn.Text == _world[nextNodeId].Name)
-            {
-              btn.Disabled = false;
-              break;
-            }
-          }
+          _world[nextNodeId].LevelButton.Disabled = false;
         }
       }
     }
@@ -671,11 +669,11 @@ public partial class World : Node2D
     }
   }
 
-  int GetMaxStageForLevel()
+  int GetMaxStageForDifficulty(int difficulty)
   {
-    if (_level < 3) return 0;
-    if (_level < 6) return 1;
-    if (_level < 10) return 2;
+    if (difficulty < 3) return 0;
+    if (difficulty < 6) return 1;
+    if (difficulty < 10) return 2;
     return 3;
   }
 
@@ -725,6 +723,7 @@ public partial class World : Node2D
           layerIndex: node,
           isBoss: false,
           nextNodes: nextNodes,
+          levelButton: new Button(),
           units: LoadRandomLevel(layer + 1)
         );
 
@@ -738,13 +737,13 @@ public partial class World : Node2D
   {
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
     Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
-    Button btn = new Button();
-    btn.Text = levelNode.Name;
-    btn.Disabled = !levelNode.Unlocked;
-    btn.CustomMinimumSize = buttonSize;
-    btn.Position = buttonPos;
-    btn.Pressed += () => OnLevelSelected(levelNode);
-    _worldUi.AddChild(btn);
+
+    levelNode.LevelButton.Text = levelNode.Name;
+    levelNode.LevelButton.Disabled = !levelNode.Unlocked;
+    levelNode.LevelButton.CustomMinimumSize = buttonSize;
+    levelNode.LevelButton.Position = buttonPos;
+    levelNode.LevelButton.Pressed += () => OnLevelSelected(levelNode);
+    _worldUi.AddChild(levelNode.LevelButton);
 
     //Vector2 fromCenter = btn.Position + btn.Size / 2.0f;
     // Convert to global coordinates relative to the CanvasLayer so Line2D (a Node2D) can be added there
@@ -786,8 +785,13 @@ public partial class World : Node2D
 
   void OnLevelSelected(LevelInfo levelNode)
   {
-    _worldUi.Visible = false;
+    _worldUi.Hide();
     _activeLevel = levelNode;
     StartLevel(levelNode.Units!);
+  }
+
+  void OnWorldMapPressed()
+  {
+    _worldUi.Visible = !_worldUi.Visible;
   }
 }
