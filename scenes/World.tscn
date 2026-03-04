@@ -135,7 +135,12 @@ offset_top = 33.08795
 offset_bottom = 34.695923
 grow_vertical = 2
 
+[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=650212465]
+layout_mode = 2
+text = "World"
+
 [node name="PlayButton" type="TextureButton" parent="CanvasLayer/BottomUi" unique_id=422788990]
+visible = false
 layout_mode = 2
 texture_normal = SubResource("GradientTexture1D_0uv0p")
 texture_hover = SubResource("GradientTexture1D_ygioq")
@@ -153,6 +158,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=342629804]
+visible = false
 layout_mode = 2
 
 [node name="Text" type="Label" parent="CanvasLayer/BottomUi/LevelCounter" unique_id=543323313]
@@ -202,10 +208,6 @@ popup/item_4/id = 4
 popup/item_5/text = "16x"
 popup/item_5/id = 5
 
-[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=650212465]
-layout_mode = 2
-text = "World"
-
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
 anchors_preset = -1
@@ -239,13 +241,18 @@ layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
 
-[node name="WorldUi" type="Panel" parent="CanvasLayer" unique_id=2004628543]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer" unique_id=1402740388]
 visible = false
-anchors_preset = -1
-anchor_right = 0.97200006
-anchor_bottom = 0.94400007
-offset_right = -607.744
-offset_bottom = -100.712036
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -575.0
+offset_bottom = -71.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WorldUi" type="Panel" parent="CanvasLayer/ScrollContainer" unique_id=2004628543]
+layout_mode = 2
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 

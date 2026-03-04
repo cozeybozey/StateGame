@@ -56,11 +56,12 @@ public partial class World : Node2D
   private Panel _worldUi;
   private Button _worldMapButton;
   private Godot.Collections.Dictionary<string, LevelInfo> _world = new Godot.Collections.Dictionary<string, LevelInfo>();
-  private int _numLayers = 5;
+  private int _numLayers = 30;
   private int _maxNodesPerLayer = 3;
   private int _buttonWidth = 75;
   private int _buttonHeight = 35;
   private LevelInfo _activeLevel = null!;
+  private int _worldUiSpacing = 100;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -77,7 +78,7 @@ public partial class World : Node2D
     _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
     _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
-    _worldUi = GetNode<Panel>("CanvasLayer/WorldUi");
+    _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
 
     _playButton.Pressed += OnPlayButtonPressed;
@@ -213,7 +214,7 @@ public partial class World : Node2D
           }
           _unitsGrid[x, y] = playerUnit.UnitInstance!;
         }
-        if (enemyUnit != null)
+        if (enemyUnit != null) 
         {
           if (enemyUnit.UnitInstance == null)
           {
@@ -450,6 +451,18 @@ public partial class World : Node2D
     _turnEndDamage = 1;
     _levelUnits.Clear();
 
+    if (_activeLevel != null)
+    {
+      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      {
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+        {
+          if (_activeLevel.Units![x, y] != null)
+            _activeLevel.Units![x, y].UnitInstance = null;
+        }
+      }
+    }
+
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
     {
@@ -473,10 +486,11 @@ public partial class World : Node2D
 
     if (_activeLevel != null)
     {
+      _activeLevel.Completed = true;
       _activeLevel.LevelButton.Disabled = true;
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
-        if (_world.ContainsKey(nextNodeId))
+        if (_world.ContainsKey(nextNodeId) && !_world[nextNodeId].Unlocked)
         {
           _world[nextNodeId].Unlocked = true;
           _world[nextNodeId].LevelButton.Disabled = false;
@@ -679,41 +693,22 @@ public partial class World : Node2D
 
   void GenerateWorld()
   {
+    _worldUi.CustomMinimumSize = new Vector2(
+      _maxNodesPerLayer * _worldUiSpacing + 300,
+      _numLayers * 0.5f * _worldUiSpacing + 200
+    );
+    _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
+
+    List<List<LevelInfo>> layers = new();
+
     int currentNodesInLayer = 1; // Start with 1 node in the first layer
     for (int layer = 0; layer < _numLayers; layer++)
     {
-      int nextNodesInLayer = _rng.Next(1, _maxNodesPerLayer + 1);
+      List<LevelInfo> layerNodes = new();
       for (int node = 0; node < currentNodesInLayer; node++)
       {
         string nodeId = $"L{layer}_N{node}";
-        List<string> nextNodes = new List<string>();
-        List<int> nextNodesIndices = new List<int>();
-        if (layer < _numLayers - 1)
-        {
-          if (nextNodesInLayer == 1)
-          {
-            nextNodes.Add($"L{layer + 1}_N0");
-            nextNodesIndices.Add(0);
-          }
-          else
-          {
-            int rndIndex = _rng.Next(0, nextNodesInLayer);
-            nextNodes.Add($"L{layer + 1}_N{rndIndex}");
-            nextNodesIndices.Add(rndIndex);
 
-            for (int j = 0; j < nextNodesInLayer; j++)
-            {
-              if (j == rndIndex)
-                continue;
-
-              if (_rng.NextDouble() < 0.5) // 50% chance to add an additional connection to this node
-              {
-                nextNodes.Add($"L{layer + 1}_N{j}");
-                nextNodesIndices.Add(j);
-              }
-            }
-          }
-        }
         _world[nodeId] = new LevelInfo(
           id: nodeId,
           name: nodeId,
@@ -722,18 +717,73 @@ public partial class World : Node2D
           layer: layer,
           layerIndex: node,
           isBoss: false,
-          nextNodes: nextNodes,
+          nextNodes: new List<string>(),
           levelButton: new Button(),
           units: LoadRandomLevel(layer + 1)
         );
+        layerNodes.Add(_world[nodeId]);
 
-        AddLevelUi(_world[nodeId], currentNodesInLayer, nextNodesInLayer, nextNodesIndices);
       }
-      currentNodesInLayer = nextNodesInLayer;
+      layers.Add(layerNodes);
+      if (layer > 0)
+      {
+        ConnectLayers(layers[layer - 1], layers[layer]);
+        foreach (LevelInfo levelNode in layers[layer - 1])
+        {
+          AddLevelUi(levelNode, layers[layer - 1].Count, layers[layer]);
+        }
+      }
+      currentNodesInLayer = _rng.Next(1, _maxNodesPerLayer + 1);
     }
   }
 
-  void AddLevelUi(LevelInfo levelNode, int nodesInLayer, int nextNodesCount, List<int> nextNodesIndices)
+  void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next)
+  {
+    int prevCount = prev.Count;
+    int nextCount = next.Count;
+
+    // Guarantee every next node has at least one incoming
+    for (int j = 0; j < nextCount; j++)
+    {
+      int closestPrev = Mathf.RoundToInt(
+          (float)j / (nextCount - 1) * (prevCount - 1)
+      );
+
+      prev[closestPrev].NextNodes.Add(next[j].Id);
+    }
+
+    // Add some extra forward connections (optional)
+    for (int i = 0; i < prevCount; i++)
+    {
+      if (_rng.NextDouble() < 0.5)
+      {
+        int target = Mathf.Clamp(i + _rng.Next(-1, 2), 0, nextCount - 1);
+
+        // Block crossing connections
+        if (i > 0)
+        {
+          bool blockTarget = false;
+          foreach (string levelNode in prev[i - 1].NextNodes)
+          {
+            if (next.IndexOf(_world[levelNode]) > target)
+            {
+              blockTarget = true; 
+              break;
+            }
+          }
+          if (blockTarget)
+            continue;
+        }
+
+        if (!prev[i].NextNodes.Contains(next[target].Id))
+        {
+          prev[i].NextNodes.Add(next[target].Id);
+        }
+      }
+    }
+  }
+
+  void AddLevelUi(LevelInfo levelNode, int nodesInLayer, List<LevelInfo> nextLevelNodes)
   {
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
     Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
@@ -750,18 +800,15 @@ public partial class World : Node2D
     //Vector2 fromGlobal = _worldUi.RectGlobalPosition + fromCenter;
     Vector2 fromGlobal = buttonPos + buttonSize / 2.0f;
 
-    foreach (int nextIndex in nextNodesIndices)
+    foreach (string id in levelNode.NextNodes)
     {
-      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextIndex, nextNodesCount);
+
+      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextLevelNodes.IndexOf(_world[id]), nextLevelNodes.Count);
 
       //Vector2 toCenter = toBtn.Position + toBtn.RectSize / 2.0f;
       Vector2 toGlobal = nextButtonPos + buttonSize / 2.0f;
 
       Line2D line = new Line2D();
-      // Add to the parent CanvasLayer so Node2D drawing works correctly
-      Node? parentLayer = _worldUi.GetParent();
-      if (parentLayer == null)
-        parentLayer = _worldUi;
 
       line.Points = new Vector2[] { fromGlobal, toGlobal };
       line.Width = 2.0f;
@@ -775,23 +822,22 @@ public partial class World : Node2D
     // Calculate X so the nodes in the layer are centered around the panel's center.
     // For n nodes we place them with a fixed spacing and center the group:
     // startX = center - ((n-1) * spacing) / 2
-    double spacing = 100.0;
-    double centerX = _worldUi.Size.X / 2.0;
-    double totalWidth = spacing * (nodesInLayer - 1);
+    double centerX = _worldUi.CustomMinimumSize.X / 2.0;
+    double totalWidth = _worldUiSpacing * (nodesInLayer - 1);
     double startX = centerX - (totalWidth / 2.0);
-    double xPos = startX + layerIndex * spacing;
-    return new Vector2((float)xPos, 400 - layer * 50);
+    double xPos = startX + layerIndex * _worldUiSpacing;
+    return new Vector2((float)xPos, (float)(_worldUi.CustomMinimumSize.Y - 100 - layer * _worldUiSpacing * 0.5f));
   }
 
   void OnLevelSelected(LevelInfo levelNode)
   {
-    _worldUi.Hide();
+    _worldUi.GetParent<ScrollContainer>().Hide();
     _activeLevel = levelNode;
     StartLevel(levelNode.Units!);
   }
 
   void OnWorldMapPressed()
   {
-    _worldUi.Visible = !_worldUi.Visible;
+    _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
   }
 }
