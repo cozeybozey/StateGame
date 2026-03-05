@@ -29,6 +29,10 @@ public partial class Pusher : Unit
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
+      if (targetUnit != null && targetUnit.occupiedCells.Count == 4)
+      {
+        int a = 5;
+      }
       if (targetUnit != null && targetUnit.occupiedMainCell == target && target.X - 1 >= 0)
       {
         bool canMove = true;

@@ -1,6 +1,5 @@
 {
 	"turret": {
-		"id": 1,
 		"display_name": "Turret",
 		"texture": "res://sprites/units/blue_unit.png",
 		"scene": "res://scenes/units/turret.tscn",
@@ -9,7 +8,6 @@
 		"cost": 1
 	},
 	"healer": {
-		"id": 2,
 		"display_name": "Healer",
 		"texture": "res://sprites/units/green_unit.png",
 		"scene": "res://scenes/units/healer.tscn",
@@ -18,7 +16,6 @@
 		"cost": 1
 	},
 	"tank": {
-		"id": 3,
 		"display_name": "Tank",
 		"texture": "res://sprites/units/tank.png",
 		"scene": "res://scenes/units/tank.tscn",
@@ -27,7 +24,6 @@
 		"cost": 2
 	},
 	"cluster": {
-		"id": 4,
 		"display_name": "Cluster",
 		"texture": "res://sprites/units/cluster.png",
 		"scene": "res://scenes/units/cluster.tscn",
@@ -36,7 +32,6 @@
 		"cost": 2
 	},
 	"laser": {
-		"id": 5,
 		"display_name": "Laser",
 		"texture": "res://sprites/units/laser.png",
 		"scene": "res://scenes/units/laser.tscn",
@@ -45,7 +40,6 @@
 		"cost": 2
 	},
 	"booster": {
-		"id": 6,
 		"display_name": "Booster",
 		"texture": "res://sprites/units/booster.png",
 		"scene": "res://scenes/units/booster.tscn",
@@ -54,7 +48,6 @@
 		"cost": 2
 	},
 	"saboteur": {
-		"id": 7,
 		"display_name": "Saboteur",
 		"texture": "res://sprites/units/saboteur.png",
 		"scene": "res://scenes/units/saboteur.tscn",
@@ -63,7 +56,6 @@
 		"cost": 3
 	},
 	"pusher": {
-		"id": 8,
 		"display_name": "Pusher",
 		"texture": "res://sprites/units/pusher.png",
 		"scene": "res://scenes/units/pusher.tscn",
@@ -72,7 +64,6 @@
 		"cost": 1
 	},
 	"sniper": {
-		"id": 9,
 		"display_name": "Sniper",
 		"texture": "res://sprites/units/sniper.png",
 		"scene": "res://scenes/units/sniper.tscn",
@@ -81,12 +72,172 @@
 		"cost": 2
 	},
 	"tactician": {
-		"id": 10,
 		"display_name": "Tactician",
 		"texture": "res://sprites/units/tactician.png",
 		"scene": "res://scenes/units/tactician.tscn",
 		"cells": [[0, 0]],
 		"stage": 3, 
 		"cost": 1
+	},
+	"golden_turret": {
+		"display_name": "Golden Turret",
+		"texture": "res://sprites/units/golden_turret.png",
+		"scene": "res://scenes/units/golden_turret.tscn",
+		"cells": [[0, 0]],
+		"stage": 10, 
+		"cost": 1
+	},
+	"masochist": {
+		"display_name": "Masochist",
+		"texture": "res://sprites/units/masochist.png",
+		"scene": "res://scenes/units/masochist.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Gains damage equal to damage taken."
+	},
+	"nurse": {
+		"display_name": "Nurse",
+		"texture": "res://sprites/units/nurse.png",
+		"scene": "res://scenes/units/nurse.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Heals unit in front."
+	},
+	"zombie": {
+		"display_name": "Zombie",
+		"texture": "res://sprites/units/zombie.png",
+		"scene": "res://scenes/units/zombie.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Revives at the start of the next turn."
+	},
+	"priest": {
+		"display_name": "Priest",
+		"texture": "res://sprites/units/priest.png",
+		"scene": "res://scenes/units/priest.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Revives a random friendly unit."
+	},
+	"vampire": {
+		"display_name": "Vampire",
+		"texture": "res://sprites/units/vampire.png",
+		"scene": "res://scenes/units/vampire.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Heals equal to damage dealt."
+	},
+	"apocalypse": {
+		"display_name": "Apocalypse",
+		"texture": "res://sprites/units/apocalypse.png",
+		"scene": "res://scenes/units/apocalypse.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Deal damage to every unit."
+	},
+	"cleric": {
+		"display_name": "Cleric",
+		"texture": "res://sprites/units/clereic.png",
+		"scene": "res://scenes/units/cleric.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Heal every friendly unit"
+	},
+	"nerserker": {
+		"display_name": "Berserker",
+		"texture": "res://sprites/units/berserker.png",
+		"scene": "res://scenes/units/berserker.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Gains damage equal to healing received."
+	},
+	"nuke": {
+		"display_name": "Nuke",
+		"texture": "res://sprites/units/nuke.png",
+		"scene": "res://scenes/units/nuke.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Deal high damage to all enemies."
+	},
+	"supporter": {
+		"display_name": "Supporter",
+		"texture": "res://sprites/units/supporter.png",
+		"scene": "res://scenes/units/supporter.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Give closest unit max health."
+	},
+	"bomber": {
+		"display_name": "Bomber",
+		"texture": "res://sprites/units/bomber.png",
+		"scene": "res://scenes/units/bomber.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Deal damage to random unit and surrounding cells."
+	},
+	"blob": {
+		"display_name": "Blob",
+		"texture": "res://sprites/units/blob.png",
+		"scene": "res://scenes/units/blob.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Consume surrounding units to gain their stats and grow bigger."
+	},
+	"consumer": {
+		"display_name": "Consumer",
+		"texture": "res://sprites/units/consumer.png",
+		"scene": "res://scenes/units/consumer.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Consume closest unit and gain its stats. Attack like a regular turret."
+	},
+	"sergeant": {
+		"display_name": "Sergeant",
+		"texture": "res://sprites/units/sergeant.png",
+		"scene": "res://scenes/units/sergeant.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Reduce cooldown of unit behind."
+	},
+	"bulwark": {
+		"display_name": "Bulwark",
+		"texture": "res://sprites/units/bulwark.png",
+		"scene": "res://scenes/units/bulwark.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Gain one armor at the end of each turn."
+	},
+	"chaos": {
+		"display_name": "Chaos",
+		"texture": "res://sprites/units/chaos.png",
+		"scene": "res://scenes/units/chaos.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Move whenever this unit's stats or health was changed."
+	},
+	"paladin": {
+		"display_name": "Paladin",
+		"texture": "res://sprites/units/paladin.png",
+		"scene": "res://scenes/units/paladin.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Gain damage whenever a friendly unit is healed."
 	}
 }

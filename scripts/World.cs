@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.Serialization;
 using static Godot.Control;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -30,7 +31,7 @@ public partial class World : Node2D
   private int _unitIndex = 0;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
-  private Godot.Collections.Dictionary<int, UnitGui> _unitsGui = null!;
+  private Godot.Collections.Dictionary<string, UnitGui> _unitsGui = null!;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
   List<Vector2I> _selectedTargets;
 
@@ -91,8 +92,8 @@ public partial class World : Node2D
     _worldMapButton.Pressed += OnWorldMapPressed;
 
     _levelUnits = new List<UnitInfo>();
-    _unitsPerStage = new List<List<UnitInfo>>(3);
-    for (int i = 0; i < 4; i++)
+    _unitsPerStage = new List<List<UnitInfo>>(10);
+    for (int i = 0; i < 11; i++)
     {
       _unitsPerStage.Add(new List<UnitInfo>());
     }
@@ -103,7 +104,7 @@ public partial class World : Node2D
     _levelsData = (Dictionary)parsed;
 
     // Add initial turrent selection unit
-    _unitsGui = new Godot.Collections.Dictionary<int, UnitGui>();
+    _unitsGui = new Godot.Collections.Dictionary<string, UnitGui>();
     UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
     unitGui.Info = _unitsData["turret"];
     unitGui.Amount = 2;
@@ -256,31 +257,33 @@ public partial class World : Node2D
     StartLevel(enemyUnits);
   }
 
-  private Unit[,] loadLevel()
+  private UnitInfo[,] LoadLevel(string levelId)
   {
-    Unit[,] unitGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    Dictionary levelData = (Dictionary)_levelsData["level_" + _level.ToString()];
+    UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    Dictionary levelData = (Dictionary)_levelsData[levelId];
     Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
     foreach (Dictionary unitData in levelUnits)
     {
       int x = (int)unitData["x"];
       int y = (int)unitData["y"];
       string name = (string)unitData["name"];
-      UnitInfo unitInfo = _unitsData[name];
 
-      // Place the unit in the new cell
-      PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
-      Node instance = scene.Instantiate();
-      Unit unit = instance as Unit;
-      unit.startCell = new Vector2I(x, y);
-      unit.occupiedCells = unitInfo.OccupiedCells;
+      UnitInfo selectedUnitInfo = _unitsData[name];
+      // Create a copy of the UnitInfo to avoid modifying the original data when assigning UnitInstance
+      UnitInfo unitInfo = new UnitInfo(
+        selectedUnitInfo.Id,
+        selectedUnitInfo.Name,
+        selectedUnitInfo.Texture,
+        selectedUnitInfo.ScenePath,
+        selectedUnitInfo.OccupiedCells,
+        selectedUnitInfo.Cost,
+        null
+      );
+
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
-        unitGrid[x + cell.X, y + cell.Y] = unit;
+        unitGrid[x + cell.X, y + cell.Y] = unitInfo;
       }
-      unit.side = false;
-      _unitsNode.AddChild(instance);
-      _levelUnits.Add(unitInfo);
     }
 
     return unitGrid;
@@ -642,6 +645,9 @@ public partial class World : Node2D
       case 5:
         _speed = 16.0f;
         break;
+      case 6:
+        _speed = 32.0f;
+        break;
     }
     _speedButton.Text = "Speed: " + _speedPopup.GetItemText((int)id);
     _turnStartCooldown = 1.0f / _speed;
@@ -656,10 +662,9 @@ public partial class World : Node2D
     Dictionary unitsData = (Dictionary)parsed;
     foreach (KeyValuePair<Variant, Variant> entry in unitsData)
     {
-      string unitName = entry.Key.ToString();
+      string unitId = entry.Key.ToString();
       Dictionary unitData = (Dictionary)entry.Value;
 
-      int id = (int)unitData["id"];
       string displayName = (string)unitData["display_name"];
       string texturePath = (string)unitData["texture"];
       Texture2D texture = GD.Load<Texture2D>(texturePath);
@@ -676,10 +681,10 @@ public partial class World : Node2D
         occupiedCells.Add(new Vector2I(x, y));
       }
 
-      _unitsData[unitName] = new UnitInfo(id, displayName, texture, scenePath, occupiedCells, cost, null);
+      _unitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, cost, null);
 
       int stage = (int)unitData["stage"];
-      _unitsPerStage[stage].Add(_unitsData[unitName]);
+      _unitsPerStage[stage].Add(_unitsData[unitId]);
     }
   }
 
@@ -705,9 +710,12 @@ public partial class World : Node2D
     for (int layer = 0; layer < _numLayers; layer++)
     {
       List<LevelInfo> layerNodes = new();
-      for (int node = 0; node < currentNodesInLayer; node++)
+
+      bool isBoss = false;
+      if (layer == 10)
       {
-        string nodeId = $"L{layer}_N{node}";
+        isBoss = true;
+        string nodeId = "Golden Turret";
 
         _world[nodeId] = new LevelInfo(
           id: nodeId,
@@ -715,19 +723,41 @@ public partial class World : Node2D
           completed: false,
           unlocked: layer == 0, // Only unlock first layer initially
           layer: layer,
-          layerIndex: node,
+          layerIndex: 0,
           isBoss: false,
           nextNodes: new List<string>(),
           levelButton: new Button(),
-          units: LoadRandomLevel(layer + 1)
+          units: LoadLevel("golden_turret")
         );
         layerNodes.Add(_world[nodeId]);
-
       }
+      else
+      {
+        for (int node = 0; node < currentNodesInLayer; node++)
+        {
+          string nodeId = $"L{layer}_N{node}";
+
+          _world[nodeId] = new LevelInfo(
+            id: nodeId,
+            name: nodeId,
+            completed: false,
+            unlocked: layer == 0, // Only unlock first layer initially
+            layer: layer,
+            layerIndex: node,
+            isBoss: false,
+            nextNodes: new List<string>(),
+            levelButton: new Button(),
+            units: LoadRandomLevel(layer + 1)
+          );
+          layerNodes.Add(_world[nodeId]);
+
+        }
+      }
+
       layers.Add(layerNodes);
       if (layer > 0)
       {
-        ConnectLayers(layers[layer - 1], layers[layer]);
+        ConnectLayers(layers[layer - 1], layers[layer], isBoss);
         foreach (LevelInfo levelNode in layers[layer - 1])
         {
           AddLevelUi(levelNode, layers[layer - 1].Count, layers[layer]);
@@ -737,10 +767,20 @@ public partial class World : Node2D
     }
   }
 
-  void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next)
+  void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next, bool isBoss)
   {
     int prevCount = prev.Count;
     int nextCount = next.Count;
+
+    if (isBoss)
+    {
+      // Simply connect all nodes to the boss if there is one
+      for (int i = 0; i < prevCount; i++)
+      {
+        prev[i].NextNodes.Add(next[0].Id);
+      }
+      return;
+    }
 
     // Guarantee every next node has at least one incoming
     for (int j = 0; j < nextCount; j++)
