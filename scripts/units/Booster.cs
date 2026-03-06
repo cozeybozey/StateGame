@@ -5,14 +5,6 @@ using System.Linq;
 
 public partial class Booster : Unit
 {
-  public override int maxHealth { get; set; } = 4;
-  public override int health { get; set; } = 4;
-  public override int damage { get; set; } = 0;
-  public override int armor { get; set; } = 0;
-  public override int startingCooldown { get; set; } = 2;
-  public override int cooldown { get; set; } = 2;
-  public override int speed { get; set; } = 1;
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
   {
     if (occupiedMainCell.X + 1 < GlobalConstants.GridSize.X && unitsGrid[occupiedMainCell.X + 1, occupiedMainCell.Y] != null)

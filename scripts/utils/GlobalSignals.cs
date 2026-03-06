@@ -7,4 +7,7 @@ public partial class GlobalSignals : Node
 
   [Signal]
   public delegate void UnitMovedEventHandler(Unit unit, Vector2I oldCell);
+
+  [Signal]
+  public delegate void UnitInfoSelectedEventHandler(UnitInfo unitInfo);
 }

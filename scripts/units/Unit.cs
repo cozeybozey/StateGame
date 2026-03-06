@@ -18,6 +18,7 @@ public partial class Unit : Node2D
   public bool side = true; // true for player, false for enemy
   public Vector2I occupiedMainCell;
 	public Vector2I startCell;
+	public Texture2D texture;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
@@ -38,13 +39,15 @@ public partial class Unit : Node2D
     _healthBar.MaxValue = maxHealth;
     health = maxHealth;
     _healthBar.Value = health;
+		cooldown = startingCooldown;
     occupiedMainCell = startCell;
     Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
+		_sprite.Texture = texture;
     if (!side)
       _sprite.FlipV = true; // Flip the sprite for enemy units
 
-    Initialize();
+    Start();
   }
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -70,7 +73,20 @@ public partial class Unit : Node2D
     }
   }
 
-	protected virtual void Initialize()
+	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell)
+	{
+		maxHealth = unitInfo.Health;
+		damage = unitInfo.Damage;
+		armor = unitInfo.Armor;
+		speed = unitInfo.Speed;
+    startingCooldown = unitInfo.Cooldown;
+		occupiedCells = unitInfo.OccupiedCells;
+		texture = unitInfo.Texture;
+		side = _side;
+		startCell = _startCell;
+	}
+
+	protected virtual void Start()
 	{
 
   }

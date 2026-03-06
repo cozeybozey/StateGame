@@ -4,11 +4,6 @@ using System.Collections.Generic;
 
 public partial class Healer : Unit
 {
-  public override int maxHealth { get; set; } = 5;
-  public override int cooldown { get; set; } = 1;
-  public override int startingCooldown { get; set; } = 1;
-  public override int damage { get; set; } = 6;
-
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
   {
     foreach (Vector2I target in targets)

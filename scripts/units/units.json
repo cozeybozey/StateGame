@@ -5,7 +5,13 @@
 		"scene": "res://scenes/units/turret.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
-		"cost": 1
+		"cost": 1,
+		"description": "Target and deal damage to frontmost unit.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"healer": {
 		"display_name": "Healer",
@@ -13,7 +19,13 @@
 		"scene": "res://scenes/units/healer.tscn",
 		"cells": [[0, 0]],
 		"stage": 1,
-		"cost": 1
+		"cost": 1,
+		"description": "Heal frontmost unit.",
+		"health": 5,
+		"damage": 6,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"tank": {
 		"display_name": "Tank",
@@ -21,7 +33,13 @@
 		"scene": "res://scenes/units/tank.tscn",
 		"cells": [[0, 0], [1, 0], [2, 0]],
 		"stage": 1,
-		"cost": 2
+		"cost": 2,
+		"description": "Does nothing.",
+		"health": 20,
+		"damage": 0,
+		"armor": 1,
+		"speed": 0,
+		"cooldown": 0
 	},
 	"cluster": {
 		"display_name": "Cluster",
@@ -29,7 +47,13 @@
 		"scene": "res://scenes/units/cluster.tscn",
 		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]],
 		"stage": 2,
-		"cost": 2
+		"cost": 2,
+		"description": "Randomly target and deal damage to 16 cells on the enemy side.",
+		"health": 15,
+		"damage": 8,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1
 	},
 	"laser": {
 		"display_name": "Laser",
@@ -37,7 +61,13 @@
 		"scene": "res://scenes/units/laser.tscn",
 		"cells": [[0, 0], [1, 0]],
 		"stage": 2,
-		"cost": 2
+		"cost": 2,
+		"description": "Deal damage to every unit in front of this unit.",
+		"health": 10,
+		"damage": 10,
+		"armor": 0,
+		"speed": 10,
+		"cooldown": 1
 	},
 	"booster": {
 		"display_name": "Booster",
@@ -45,7 +75,13 @@
 		"scene": "res://scenes/units/booster.tscn",
 		"cells": [[0, 0]],
 		"stage": 2,
-		"cost": 2
+		"cost": 2,
+		"description": "Double the damage of the unit to the right of this unit.",
+		"health": 4,
+		"damage": 0,
+		"armor": 0,
+		"speed": 1,
+		"cooldown": 2
 	},
 	"saboteur": {
 		"display_name": "Saboteur",
@@ -53,7 +89,13 @@
 		"scene": "res://scenes/units/saboteur.tscn",
 		"cells": [[0, 0]],
 		"stage": 3,
-		"cost": 3
+		"cost": 3,
+		"description": "Move towards enemy side and explode on contact. This deals high damage in the surrounding area and kills this unit.",
+		"health": 30,
+		"damage": 12,
+		"armor": 0,
+		"speed": 8,
+		"cooldown": 1
 	},
 	"pusher": {
 		"display_name": "Pusher",
@@ -61,7 +103,13 @@
 		"scene": "res://scenes/units/pusher.tscn",
 		"cells": [[0, 0]],
 		"stage": 3, 
-		"cost": 1
+		"cost": 1,
+		"description": "Push all units to the left of this unit one spot to the left.",
+		"health": 16,
+		"damage": 0,
+		"armor": 0,
+		"speed": 8,
+		"cooldown": 1
 	},
 	"sniper": {
 		"display_name": "Sniper",
@@ -69,7 +117,13 @@
 		"scene": "res://scenes/units/sniper.tscn",
 		"cells": [[0, 0]],
 		"stage": 2, 
-		"cost": 2
+		"cost": 2,
+		"description": "Focus enemy units from the back to the front. Deal more damage the further units are away.",
+		"health": 8,
+		"damage": 1,
+		"armor": 0,
+		"speed": 1,
+		"cooldown": 1
 	},
 	"tactician": {
 		"display_name": "Tactician",
@@ -77,7 +131,13 @@
 		"scene": "res://scenes/units/tactician.tscn",
 		"cells": [[0, 0]],
 		"stage": 3, 
-		"cost": 1
+		"cost": 1,
+		"description": "Gain one damage whenever a friendly unit moves.",
+		"health": 10,
+		"damage": 1,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"golden_turret": {
 		"display_name": "Golden Turret",
@@ -85,7 +145,13 @@
 		"scene": "res://scenes/units/golden_turret.tscn",
 		"cells": [[0, 0]],
 		"stage": 10, 
-		"cost": 1
+		"cost": 1,
+		"description": "Damage is equal to number of active friendly turrets.",
+		"health": 15,
+		"damage": 0,
+		"armor": 0,
+		"speed": 6,
+		"cooldown": 1
 	},
 	"masochist": {
 		"display_name": "Masochist",
@@ -94,7 +160,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Gains damage equal to damage taken."
+		"description": "Gains damage equal to damage taken.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"nurse": {
 		"display_name": "Nurse",
@@ -103,7 +174,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Heals unit in front."
+		"description": "Heals unit in front.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"zombie": {
 		"display_name": "Zombie",
@@ -112,7 +188,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Revives at the start of the next turn."
+		"description": "Revives at the start of the next turn.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"priest": {
 		"display_name": "Priest",
@@ -121,7 +202,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Revives a random friendly unit."
+		"description": "Revives a random friendly unit.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"vampire": {
 		"display_name": "Vampire",
@@ -130,7 +216,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Heals equal to damage dealt."
+		"description": "Heals itself equal to damage dealt.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"apocalypse": {
 		"display_name": "Apocalypse",
@@ -139,7 +230,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Deal damage to every unit."
+		"description": "Deal damage to every unit.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"cleric": {
 		"display_name": "Cleric",
@@ -148,7 +244,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Heal every friendly unit"
+		"description": "Heal every friendly unit",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"nerserker": {
 		"display_name": "Berserker",
@@ -157,7 +258,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Gains damage equal to healing received."
+		"description": "Gains damage equal to healing received.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"nuke": {
 		"display_name": "Nuke",
@@ -166,7 +272,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Deal high damage to all enemies."
+		"description": "Deal high damage to all enemies.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"supporter": {
 		"display_name": "Supporter",
@@ -175,7 +286,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Give closest unit max health."
+		"description": "Give closest unit 4 max health.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"bomber": {
 		"display_name": "Bomber",
@@ -184,7 +300,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Deal damage to random unit and surrounding cells."
+		"description": "Deal damage to a random unit and surrounding cells.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"blob": {
 		"display_name": "Blob",
@@ -193,7 +314,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Consume surrounding units to gain their stats and grow bigger."
+		"description": "Consume surrounding units to gain their stats and grow bigger.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"consumer": {
 		"display_name": "Consumer",
@@ -202,7 +328,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Consume closest unit and gain its stats. Attack like a regular turret."
+		"description": "Consume closest unit and gain its stats. Attack like a regular turret.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"sergeant": {
 		"display_name": "Sergeant",
@@ -211,7 +342,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Reduce cooldown of unit behind."
+		"description": "Reduce action cooldown of the unit behind.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"bulwark": {
 		"display_name": "Bulwark",
@@ -220,7 +356,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Gain one armor at the end of each turn."
+		"description": "Gain one armor at the end of each turn.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"chaos": {
 		"display_name": "Chaos",
@@ -229,7 +370,12 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Move whenever this unit's stats or health was changed."
+		"description": "Move whenever this unit's stats or health was changed.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	},
 	"paladin": {
 		"display_name": "Paladin",
@@ -238,6 +384,39 @@
 		"cells": [[0, 0]],
 		"stage": 4, 
 		"cost": 1,
-		"description": "Gain damage whenever a friendly unit is healed."
+		"description": "Gain damage one whenever a friendly unit is healed.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
+	},
+	"trickster": {
+		"display_name": "Trickster",
+		"texture": "res://sprites/units/trickster.png",
+		"scene": "res://scenes/units/trickster.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Change the allegiance of a random unit for one turn.",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
+	},
+	"mover": {
+		"display_name": "Mover",
+		"texture": "res://sprites/units/mover.png",
+		"scene": "res://scenes/units/mover.tscn",
+		"cells": [[0, 0]],
+		"stage": 4, 
+		"cost": 1,
+		"description": "Target and deal damage to frontmost unit. Move from right to left, 1 cell per turn. ",
+		"health": 10,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1
 	}
 }

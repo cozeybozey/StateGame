@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://be4c2j8jo30lx" path="res://scripts/World.cs" id="1_1lgw5"]
 [ext_resource type="Texture2D" uid="uid://cbdsbuhs3k6t2" path="res://sprites/tilemaps/tilemap.png" id="1_kqs1s"]
 [ext_resource type="Script" uid="uid://sujkawcgjl8o" path="res://scripts/GridOverlay.cs" id="2_d1c63"]
+[ext_resource type="Script" uid="uid://dagxq2ao2w6gl" path="res://scripts/UnitsInfoGui.cs" id="4_d1c63"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -122,8 +123,86 @@ layout_mode = 2
 layout_mode = 2
 text = "Units:"
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=2040826589]
+[node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=2040826589]
+visible = false
 layout_mode = 2
+script = ExtResource("4_d1c63")
+
+[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1387435983]
+layout_mode = 2
+text = "Unit Info:"
+
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=716529401]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Id" unique_id=887211304]
+layout_mode = 2
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Id" unique_id=667948868]
+layout_mode = 2
+stretch_mode = 2
+
+[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1774858179]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Health" unique_id=2130200108]
+layout_mode = 2
+text = "Health: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Health" unique_id=1670683559]
+layout_mode = 2
+
+[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1271192212]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Damage" unique_id=1248566064]
+layout_mode = 2
+text = "Damage: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Damage" unique_id=1766909245]
+layout_mode = 2
+
+[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=299803042]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Armor" unique_id=800382474]
+layout_mode = 2
+text = "Armor: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Armor" unique_id=550631701]
+layout_mode = 2
+
+[node name="Speed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1304916229]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Speed" unique_id=313589130]
+layout_mode = 2
+text = "Speed: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Speed" unique_id=1705863185]
+layout_mode = 2
+
+[node name="Cooldown" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=321577487]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=616350665]
+layout_mode = 2
+text = "Cooldown: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=828379318]
+layout_mode = 2
+
+[node name="Description" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1654737533]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Description" unique_id=1979432891]
+layout_mode = 2
+text = "Description: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Description" unique_id=1463439410]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+autowrap_mode = 2
 
 [node name="BottomUi" type="HBoxContainer" parent="CanvasLayer" unique_id=1110027808]
 anchors_preset = -1

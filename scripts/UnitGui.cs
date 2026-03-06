@@ -10,14 +10,19 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 	private TextureRect _sprite = null!;
 	private Label _nameText = null!;
 	private Label _amountText = null!;
+  private GlobalSignals _globalSignals = null!;
 
-	public override void _Ready()
+  [Signal]
+  public delegate void ClickedEventHandler();
+
+  public override void _Ready()
 	{
 		_sprite = GetNode<TextureRect>("Sprite");
     _nameText = GetNode<Label>("Name");
 		_amountText = GetNode<Label>("Amount");
+    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
-		_sprite.Texture = Info.Texture;
+    _sprite.Texture = Info.Texture;
 		_nameText.Text = Info.Name;
 		_amountText.Text = Amount.ToString();
 	}
@@ -74,8 +79,17 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
     }
   }
 
+  public override void _GuiInput(InputEvent @event)
+  {
+    if (@event is InputEventMouseButton mouseEvent &&
+        mouseEvent.ButtonIndex == MouseButton.Left &&
+        mouseEvent.Pressed)
+    {
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitInfoSelected, Info);
+    }
+  }
 
-	public void OnUnitPlacedSuccessfully(UnitInfo unit)
+  public void OnUnitPlacedSuccessfully(UnitInfo unit)
 	{
     UpdateAmount(Amount - 1);
 	}

@@ -220,9 +220,7 @@ public partial class World : Node2D
           if (enemyUnit.UnitInstance == null)
           {
             Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
-            unitInstance.startCell = new Vector2I(x, y);
-            unitInstance.occupiedCells = enemyUnit.OccupiedCells;
-            unitInstance.side = false;
+            unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y));
             enemyUnit.UnitInstance = unitInstance;
             _unitsNode.AddChild(unitInstance);
             _levelUnits.Add(enemyUnit);
@@ -277,6 +275,12 @@ public partial class World : Node2D
         selectedUnitInfo.ScenePath,
         selectedUnitInfo.OccupiedCells,
         selectedUnitInfo.Cost,
+        selectedUnitInfo.Health,
+        selectedUnitInfo.Damage,
+        selectedUnitInfo.Armor,
+        selectedUnitInfo.Speed,
+        selectedUnitInfo.Cooldown,
+        selectedUnitInfo.Description,
         null
       );
 
@@ -317,6 +321,12 @@ public partial class World : Node2D
         selectedUnitInfo.ScenePath,
         selectedUnitInfo.OccupiedCells,
         selectedUnitInfo.Cost,
+        selectedUnitInfo.Health,
+        selectedUnitInfo.Damage,
+        selectedUnitInfo.Armor,
+        selectedUnitInfo.Speed,
+        selectedUnitInfo.Cooldown,
+        selectedUnitInfo.Description,
         null
       );
 
@@ -670,6 +680,12 @@ public partial class World : Node2D
       Texture2D texture = GD.Load<Texture2D>(texturePath);
       string scenePath = (string)unitData["scene"];
       int cost = (int)unitData["cost"];
+      int health = (int)unitData["health"];
+      int damage = (int)unitData["damage"];
+      int armor = (int)unitData["armor"];
+      int speed = (int)unitData["speed"];
+      int cooldown = (int)unitData["cooldown"];
+      string description = (string)unitData["description"];
 
       Godot.Collections.Array cells = (Godot.Collections.Array)unitData["cells"];
       List<Vector2I> occupiedCells = new();
@@ -681,7 +697,8 @@ public partial class World : Node2D
         occupiedCells.Add(new Vector2I(x, y));
       }
 
-      _unitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, cost, null);
+      _unitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
+        cost, health, damage, armor, speed, cooldown, description, null);
 
       int stage = (int)unitData["stage"];
       _unitsPerStage[stage].Add(_unitsData[unitId]);

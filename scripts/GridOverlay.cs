@@ -111,6 +111,12 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 				dragPayload.Unit.ScenePath,
 				dragPayload.Unit.OccupiedCells,
         dragPayload.Unit.Cost,
+				dragPayload.Unit.Health,
+				dragPayload.Unit.Damage,
+				dragPayload.Unit.Armor,
+				dragPayload.Unit.Speed,
+				dragPayload.Unit.Cooldown,
+				dragPayload.Unit.Description,
         null
 			);
 
@@ -118,8 +124,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-      unit.startCell = targetCell;
-			unit.occupiedCells = dragPayload.Unit.OccupiedCells;
+			unit!.Initialize(newUnitInfo, true, targetCell);
       _unitsNode.AddChild(instance);
 			newUnitInfo.UnitInstance = unit;
 			foreach (var cell in dragPayload.Unit.OccupiedCells)
@@ -178,8 +183,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
 					Unit unit = instance as Unit;
-					unit.startCell = cell;
-					unit.occupiedCells = unitInfo.OccupiedCells;
+					unit!.Initialize(unitInfo, true, new Vector2I(x, y));
           _unitsNode.AddChild(instance);
 					_unitGrid[x, y].UnitInstance = unit;
 				}
