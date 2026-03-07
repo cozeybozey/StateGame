@@ -13,8 +13,11 @@ public partial class Tactician : Unit
     _globalSignals.UnitMoved += OnUnitMoved;
   }
 
-  private void OnUnitMoved(Unit unit, Vector2I oldCell)
+  private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
   {
+    if (!playing)
+      return;
+
     if (!IsInsideTree())
       return;
 

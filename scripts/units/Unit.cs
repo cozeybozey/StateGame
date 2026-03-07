@@ -34,6 +34,7 @@ public partial class Unit : Node2D
   private double _damageIndicatorTime = 0.3f;
 	private string _floatingTextPath = "res://scenes/FloatingText.tscn";
 	private Queue<Tuple<string, Color>> _floatingTextQueue = new Queue<Tuple<string, Color>>();
+	private bool _dead = false;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -72,6 +73,8 @@ public partial class Unit : Node2D
 				else
 				{
 					_affected = false;
+					if (_dead)
+						QueueFree();
         }
       }
     }
@@ -164,8 +167,11 @@ public partial class Unit : Node2D
 		return [];
   }
 
-  public void ChangeHealth(int amount)
+  public virtual void ChangeHealth(int amount)
   {
+		if (_dead)
+			return;
+
 		string displayedText = amount.ToString();
 		Color displayedColor = Colors.White;
 
@@ -177,8 +183,11 @@ public partial class Unit : Node2D
 			displayedText = effectiveDamage.ToString();
       if (health <= 0)
       {
+				_dead = true;
         DeathRattle();
         _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitDied, this);
+				_healthBar.Hide();
+				_sprite.Hide();
       }
     }
 		else
@@ -200,8 +209,11 @@ public partial class Unit : Node2D
     }
   }
 
-  public void ChangeDamage(int amount)
+  public virtual void ChangeDamage(int amount)
   {
+		if (_dead)
+			return;
+
     damage += amount;
 
 		if (_affected)
@@ -237,8 +249,7 @@ public partial class Unit : Node2D
     occupiedMainCell = newCell;
 		Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
-		if (playing)
-			_globalSignals.EmitSignal(GlobalSignals.SignalName.UnitMoved, this, oldMainCell);
+		_globalSignals.EmitSignal(GlobalSignals.SignalName.UnitMoved, this, oldMainCell, playing);
   }
 
   public void SpawnFloatingText(string text, Color color = new Color())

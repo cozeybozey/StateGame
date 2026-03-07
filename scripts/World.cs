@@ -28,8 +28,11 @@ public partial class World : Node2D
   private MenuButton _speedButton;
   private PopupMenu _speedPopup;
   private UnitsInfoGui _unitsGuiInfo;
+  private Button _playPauseButton;
+  private Button _surrenderButton;
 
   private List<Unit> _units;
+  private List<Unit> _removedUnits;
   private Unit[,] _unitsGrid;
   private int _unitIndex = 0;
   private int _playerUnitsCount = 0;
@@ -49,6 +52,8 @@ public partial class World : Node2D
   private bool _targeting = false;
   private double _speed = 1.0f;
   private int _turnEndDamage = 1;
+  private Unit _activeUnit = null!;
+  private bool _paused = false;
 
   private Godot.Collections.Dictionary<string, UnitInfo> _unitsData;
   private List<List<UnitInfo>> _unitsPerStage;
@@ -87,11 +92,16 @@ public partial class World : Node2D
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
     _unitsGuiInfo = GetNode<UnitsInfoGui>("CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer");
+    _playPauseButton = GetNode<Button>("CanvasLayer/BottomUi/PlayPauseButton");
+    _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
 
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
     _speedPopup.IdPressed += OnSpeedSelected;
+    _playPauseButton.Pressed += OnPlayPauseButtonPressed;
+    _surrenderButton.Pressed += OnSurrenderButtonPressed;
     _units = new List<Unit>();
+    _removedUnits = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
     _globalSignals.UnitMoved += OnUnitMoved;
@@ -128,6 +138,9 @@ public partial class World : Node2D
   // Called every frame. 'delta' is the elapsed time since the previous frame.
   public override void _Process(double delta)
   {
+    if (_paused)
+      return;
+
     if (_acting)
     {
       _actingCooldown -= delta;
@@ -186,11 +199,13 @@ public partial class World : Node2D
         }
 
         _activeUnitLayer.Clear();
+        _activeUnit = null!;
         _targetedCellsLayer.Clear();
         if (_units[_unitIndex].CanAct())
         {
           // Show overlay on selected cells
           _activeUnitLayer.ShowCells(_units[_unitIndex].GetOccupiedCells());
+          _activeUnit = _units[_unitIndex];
           _targeting = true;
         }
         else
@@ -204,7 +219,9 @@ public partial class World : Node2D
   private void StartLevel(UnitInfo[,] enemyUnits)
   {
     _playButton.Disabled = true;
-    _worldMapButton.Disabled = true;
+    _worldMapButton.Visible = false;
+    _playPauseButton.Visible = true;
+    _surrenderButton.Visible = true;
     _gridOverlay.SetInteractionLocked(true);
     Unit[,] playerUnits = _gridOverlay.GetUnits();
 
@@ -332,9 +349,9 @@ public partial class World : Node2D
       }
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Name == "Tank" || unitInfo.Name == "Laser" || unitInfo.Name == "Saboteur")
+      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist")
       {
-        // Position tanks, lasers and saboteurs in the front portion of the grid
+        // Position these units in the front portion of the grid
         List<Vector2I> frontPositions = new List<Vector2I>();
         int maxY = 0;
         foreach (Vector2I cell in possiblePositions)
@@ -352,9 +369,9 @@ public partial class World : Node2D
         }
         cellPos = frontPositions[rng.RandiRange(0, frontPositions.Count - 1)];
       }
-      else if (unitInfo.Name == "Sniper")
+      else if (unitInfo.Id == "sniper")
       {
-        // Position snipers in back portion of the grid
+        // Position these units in back portion of the grid
         List<Vector2I> backPositions = new List<Vector2I>();
         int minY = GlobalConstants.GridSize.Y - 1;
         foreach (Vector2I cell in possiblePositions)
@@ -372,9 +389,9 @@ public partial class World : Node2D
         }
         cellPos = backPositions[rng.RandiRange(0, backPositions.Count - 1)];
       }
-      else if (unitInfo.Name == "Pusher")
+      else if (unitInfo.Id == "pusher")
       {
-        // Position pushers in the right portion of the grid
+        // Position these units in the right portion of the grid
         List<Vector2I> rightPositions = new List<Vector2I>();
         int maxX = 0;
         foreach (Vector2I cell in possiblePositions)
@@ -392,13 +409,13 @@ public partial class World : Node2D
         }
         cellPos = rightPositions[rng.RandiRange(0, rightPositions.Count - 1)];
       }
-      else if (unitInfo.Name == "Booster")
+      else if (unitInfo.Id == "booster")
       {
         // Position boosters next to another unit if possible
         Vector2I adjacentCell = new Vector2I(cellPos.X, cellPos.Y);
         foreach (Vector2I cell in possiblePositions)
         {
-          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null) // TODO AKN reintroduce && unitGrid[cell.X + 1, cell.Y].damage > 0)
+          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null && unitGrid[cell.X + 1, cell.Y].Damage > 0)
           {
             adjacentCell = cell;
             break;
@@ -422,6 +439,14 @@ public partial class World : Node2D
   {
     foreach (Unit unit in _units)
       unit.QueueFree();
+
+    // Removed units can still be active so make sure to remove those as well
+    foreach (Unit unit in _removedUnits)
+    {
+      if (GodotObject.IsInstanceValid(unit))
+        unit.QueueFree();
+    }
+
     _units.Clear();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _unitIndex = 0;
@@ -460,7 +485,9 @@ public partial class World : Node2D
 
     _gridOverlay.SetInteractionLocked(false);
     _playButton.Disabled = false;
-    _worldMapButton.Disabled = false;
+    _worldMapButton.Visible = true;
+    _playPauseButton.Visible = false;
+    _surrenderButton.Visible = false;
   }
 
   private void Win()
@@ -548,6 +575,7 @@ public partial class World : Node2D
       _selectedUnitLayer.Clear();
     }
     _units.Remove(unit);
+    _removedUnits.Add(unit);
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
       _unitsGrid[cell.X, cell.Y] = null!;
@@ -557,7 +585,6 @@ public partial class World : Node2D
       _playerUnitsCount--;
     else
       _enemyUnitsCount--;
-    unit.QueueFree();
 
     if (_enemyUnitsCount == 0)
       Win();
@@ -565,8 +592,19 @@ public partial class World : Node2D
       Lose();
   }
 
-  private void OnUnitMoved(Unit unit, Vector2I oldCell)
+  private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
   {
+    if (_unitsGuiInfo.selectedUnit == unit)
+    {
+      _selectedUnitLayer.Clear();
+      _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+    }
+    if (_activeUnit == unit)
+    {
+      _activeUnitLayer.Clear();
+      _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
+    }
+
     if (!_playing)
       return;
 
@@ -883,7 +921,7 @@ public partial class World : Node2D
   {
     if (@event is InputEventMouseButton mouse &&
         mouse.ButtonIndex == MouseButton.Left &&
-        !mouse.Pressed)
+        mouse.Pressed)
     {
       Vector2 mousePos = mouse.Position;
       Vector2I cell = _gridOverlay.GetCellUnderMouse(mousePos) - new Vector2I(1, 1);
@@ -917,10 +955,31 @@ public partial class World : Node2D
         Unit gridOverlayUnit = _gridOverlay.GetUnits()[cell.X, cell.Y];
         if (gridOverlayUnit != null)
         {
-          _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitInfoSelected, gridOverlayUnit.GetInfo());
+          _unitsGuiInfo.SetSelectedUnit(gridOverlayUnit);
           _selectedUnitLayer.ShowCells(gridOverlayUnit.GetOccupiedCells());
         }
       }
     }
+  }
+
+  public void OnPlayPauseButtonPressed()
+  {
+    if (_paused)
+    {
+      _paused = false;
+      _playPauseButton.Text = "Pause";
+    }
+    else
+    {
+      _paused = true;
+      _playPauseButton.Text = "Play";
+    }
+  }
+
+  public void OnSurrenderButtonPressed()
+  {
+    if (!_playing)
+      return;
+    Lose();
   }
 }

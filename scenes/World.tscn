@@ -219,28 +219,6 @@ offset_top = 33.08795
 offset_bottom = 34.695923
 grow_vertical = 2
 
-[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=650212465]
-layout_mode = 2
-text = "World"
-
-[node name="PlayButton" type="TextureButton" parent="CanvasLayer/BottomUi" unique_id=422788990]
-visible = false
-layout_mode = 2
-texture_normal = SubResource("GradientTexture1D_0uv0p")
-texture_hover = SubResource("GradientTexture1D_ygioq")
-stretch_mode = 0
-
-[node name="Label" type="Label" parent="CanvasLayer/BottomUi/PlayButton" unique_id=1521526838]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Play"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=342629804]
 visible = false
 layout_mode = 2
@@ -253,17 +231,6 @@ text = "Level:"
 layout_mode = 2
 text = "1"
 
-[node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=162195539]
-layout_mode = 2
-text = "Turn:"
-
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=2100017693]
-layout_mode = 2
-text = "0"
-
 [node name="UnitCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=1020753859]
 layout_mode = 2
 
@@ -274,6 +241,17 @@ text = "Units:"
 [node name="Counter" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=2050610620]
 layout_mode = 2
 text = "0/20"
+
+[node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=162195539]
+layout_mode = 2
+text = "Turn:"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=2100017693]
+layout_mode = 2
+text = "0"
 
 [node name="SpeedButton" type="MenuButton" parent="CanvasLayer/BottomUi" unique_id=482248829]
 layout_mode = 2
@@ -293,6 +271,38 @@ popup/item_5/text = "16x"
 popup/item_5/id = 5
 popup/item_6/text = "32x"
 popup/item_6/id = 6
+
+[node name="PlayButton" type="TextureButton" parent="CanvasLayer/BottomUi" unique_id=422788990]
+visible = false
+layout_mode = 2
+texture_normal = SubResource("GradientTexture1D_0uv0p")
+texture_hover = SubResource("GradientTexture1D_ygioq")
+stretch_mode = 0
+
+[node name="Label" type="Label" parent="CanvasLayer/BottomUi/PlayButton" unique_id=1521526838]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Play"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=650212465]
+layout_mode = 2
+text = "World"
+
+[node name="PlayPauseButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=1872227772]
+visible = false
+layout_mode = 2
+text = "Pause"
+
+[node name="SurrenderButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=889631460]
+visible = false
+layout_mode = 2
+text = "Surrender"
 
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
