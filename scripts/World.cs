@@ -196,6 +196,9 @@ public partial class World : Node2D
             _unitIndex = 0;  // Set to 0 again incase a unit died and change the _unitIndex value
             return;
           }
+
+          // Possibly respawn zombies
+          RespawnZombies();
         }
 
         _activeUnitLayer.Clear();
@@ -453,15 +456,16 @@ public partial class World : Node2D
   {
     foreach (Unit unit in _units)
       unit.QueueFree();
+    _units.Clear();
 
     // Removed units can still be active so make sure to remove those as well
     foreach (Unit unit in _removedUnits)
     {
-      if (GodotObject.IsInstanceValid(unit))
+      if (IsInstanceValid(unit))
         unit.QueueFree();
     }
+    _removedUnits.Clear();
 
-    _units.Clear();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _unitIndex = 0;
     _enemyUnitsCount = 0;
@@ -995,5 +999,60 @@ public partial class World : Node2D
     if (!_playing)
       return;
     Lose();
+  }
+
+  private void RespawnZombies()
+  {
+    List<Unit> removedZombies = new List<Unit>();
+    foreach (Unit unit in _removedUnits)
+    {
+      if (unit.id == "zombie")
+      {
+        removedZombies.Add(unit);
+
+        bool spawnPossible = true;
+        foreach (Vector2I cell in unit.GetOccupiedCells())
+        {
+          if (_unitsGrid[cell.X, cell.Y] != null)
+          {
+            spawnPossible = false;
+            break;
+          }
+        }
+        if (!spawnPossible)
+          continue;
+
+        Unit unitInstance = GD.Load<PackedScene>(unit.scenePath).Instantiate() as Unit;
+        unitInstance!.Initialize(unit.GetStartInfo(), unit.side, unit.startCell);
+        _unitsNode.AddChild(unitInstance);
+        foreach (Vector2I cell in unitInstance.GetOccupiedCells())
+        {
+          _unitsGrid[cell.X, cell.Y] = unitInstance;
+        }
+        _units.Add(unitInstance);
+        unitInstance.SpawnFloatingText("Revived", Colors.Green);
+        if (unit.side)
+          _playerUnitsCount++;
+        else
+          _enemyUnitsCount++;
+      }
+    }
+
+    // Sort units by speed, then by position for consistent turn order
+    _units = _units
+    .OrderByDescending(u => u.speed)  // Speed first
+    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
+    .ThenBy(u =>
+        u.side
+            ? u.occupiedMainCell.Y  // Player: lower Y first
+            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
+    .ToList();
+
+    foreach (Unit unit in removedZombies)
+    {
+      if (IsInstanceValid(unit))
+        unit.QueueFree();
+      _removedUnits.Remove(unit);
+    }
   }
 }

@@ -186,13 +186,13 @@
 		"texture": "res://sprites/units/zombie.png",
 		"scene": "res://scenes/units/zombie.tscn",
 		"cells": [[0, 0]],
-		"stage": 4, 
+		"stage": 0, 
 		"cost": 1,
-		"description": "Revives at the start of the next turn.",
-		"health": 10,
-		"damage": 4,
+		"description": "Revives on the same location at the start of the next turn if the location is empty.",
+		"health": 4,
+		"damage": 2,
 		"armor": 0,
-		"speed": 5,
+		"speed": 2,
 		"cooldown": 1
 	},
 	"priest": {
