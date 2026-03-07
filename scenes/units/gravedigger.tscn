@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://f2u3rqng2xis"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_eben3"]
+[ext_resource type="Script" uid="uid://dljgvrcfrm1pl" path="res://scripts/units/Gravedigger.cs" id="2_hhx2h"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_eben3")]
+script = ExtResource("2_hhx2h")
