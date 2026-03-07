@@ -13,7 +13,7 @@ public partial class UnitsInfoGui : VBoxContainer
   private Label _cooldown = null!;
   private Label _description = null!;
   private GlobalSignals _globalSignals = null!;
-  private Unit _selectedUnit = null!;
+  public Unit selectedUnit = null!;
 
   public override void _Ready()
   {
@@ -33,8 +33,8 @@ public partial class UnitsInfoGui : VBoxContainer
   // Called every frame. 'delta' is the elapsed time since the previous frame.
   public override void _Process(double delta)
   {
-    if (_selectedUnit != null)
-      DisplayInfo(_selectedUnit.GetInfo());
+    if (selectedUnit != null)
+      DisplayInfo(selectedUnit.GetInfo());
   }
 
   private void OnUnitInfoSelected(UnitInfo unitInfo)
@@ -58,12 +58,12 @@ public partial class UnitsInfoGui : VBoxContainer
 
   public void SetSelectedUnit(Unit unit)
   {
-    _selectedUnit = unit;
+    selectedUnit = unit;
   }
 
   public void ResetSelectedUnit()
   {
-    _selectedUnit = null!;
+    selectedUnit = null!;
     Visible = false;
   }
 }

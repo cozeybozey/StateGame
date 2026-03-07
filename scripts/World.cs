@@ -22,7 +22,9 @@ public partial class World : Node2D
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
   private VBoxContainer _unitsSelectionContainer;
-  private TileMapLayer _overlayLayer;
+  private OverlayLayer _selectedUnitLayer;
+  private OverlayLayer _activeUnitLayer;
+  private OverlayLayer _targetedCellsLayer;
   private MenuButton _speedButton;
   private PopupMenu _speedPopup;
   private UnitsInfoGui _unitsGuiInfo;
@@ -78,7 +80,9 @@ public partial class World : Node2D
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
     _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
-    _overlayLayer = GetNode<TileMapLayer>("OverlayLayer");
+    _selectedUnitLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
+    _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
+    _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
@@ -92,6 +96,11 @@ public partial class World : Node2D
     _globalSignals.UnitDied += OnUnitDied;
     _globalSignals.UnitMoved += OnUnitMoved;
     _worldMapButton.Pressed += OnWorldMapPressed;
+    _selectedUnitLayer.OutlineColor = Colors.Blue;
+    _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
+    _activeUnitLayer.OutlineColor = Colors.Yellow;
+    _activeUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
+    _targetedCellsLayer.OutlineColor = Colors.Red;
 
     _levelUnits = new List<UnitInfo>();
     _unitsPerStage = new List<List<UnitInfo>>(10);
@@ -137,10 +146,7 @@ public partial class World : Node2D
       if (_actingCooldown <= 0)
       {
         _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid);
-        foreach (Vector2I target in _selectedTargets)
-        {
-          _overlayLayer.SetCell(target, 0, new Vector2I(3, 4)); // Show overlay on target cells
-        }
+        _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
           _actingCooldown = _actingStartCooldown;
@@ -179,12 +185,12 @@ public partial class World : Node2D
           }
         }
 
-        _overlayLayer.Clear();
+        _activeUnitLayer.Clear();
+        _targetedCellsLayer.Clear();
         if (_units[_unitIndex].CanAct())
         {
           // Show overlay on selected cells
-          foreach (var cell in _units[_unitIndex].GetOccupiedCells())
-            _overlayLayer.SetCell(cell, 0, new Vector2I(2, 4));
+          _activeUnitLayer.ShowCells(_units[_unitIndex].GetOccupiedCells());
           _targeting = true;
         }
         else
@@ -428,7 +434,8 @@ public partial class World : Node2D
     _messagePanel.Hide();
     _gridOverlay.LoadUnits();
     _levelCounter.Text = _level.ToString();
-    _overlayLayer.Clear();
+    _activeUnitLayer.Clear();
+    _targetedCellsLayer.Clear();
     _turnEndDamage = 1;
     _levelUnits.Clear();
 
@@ -535,6 +542,11 @@ public partial class World : Node2D
     int index = _units.IndexOf(unit);
     if (index <= _unitIndex)
       _unitIndex -= 1;
+    if (_unitsGuiInfo.selectedUnit == unit)
+    {
+      _unitsGuiInfo.ResetSelectedUnit();
+      _selectedUnitLayer.Clear();
+    }
     _units.Remove(unit);
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
@@ -871,7 +883,7 @@ public partial class World : Node2D
   {
     if (@event is InputEventMouseButton mouse &&
         mouse.ButtonIndex == MouseButton.Left &&
-        mouse.Pressed)
+        !mouse.Pressed)
     {
       Vector2 mousePos = mouse.Position;
       Vector2I cell = _gridOverlay.GetCellUnderMouse(mousePos) - new Vector2I(1, 1);
@@ -879,6 +891,7 @@ public partial class World : Node2D
       if (!GlobalFunctions.IsCellInsideGrid(cell))
       {
         _unitsGuiInfo.ResetSelectedUnit();
+        _selectedUnitLayer.Clear();
         return;
       }
 
@@ -886,16 +899,27 @@ public partial class World : Node2D
       {
         Unit unit = _unitsGrid[cell.X, cell.Y];
         if (unit != null)
+        {
           _unitsGuiInfo.SetSelectedUnit(unit);
+          _selectedUnitLayer.Clear();
+          _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+        }
         else
+        {
           _unitsGuiInfo.ResetSelectedUnit();
+          _selectedUnitLayer.Clear();
+        }
       }
       else
       {
         _unitsGuiInfo.ResetSelectedUnit();
+        _selectedUnitLayer.Clear();
         Unit gridOverlayUnit = _gridOverlay.GetUnits()[cell.X, cell.Y];
         if (gridOverlayUnit != null)
+        {
           _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitInfoSelected, gridOverlayUnit.GetInfo());
+          _selectedUnitLayer.ShowCells(gridOverlayUnit.GetOccupiedCells());
+        }
       }
     }
   }

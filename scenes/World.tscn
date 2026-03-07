@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://cbdsbuhs3k6t2" path="res://sprites/tilemaps/tilemap.png" id="1_kqs1s"]
 [ext_resource type="Script" uid="uid://sujkawcgjl8o" path="res://scripts/GridOverlay.cs" id="2_d1c63"]
 [ext_resource type="Script" uid="uid://dagxq2ao2w6gl" path="res://scripts/UnitsInfoGui.cs" id="4_d1c63"]
+[ext_resource type="Script" uid="uid://cex0prnqmtw17" path="res://scripts/OverlayLayer.cs" id="5_1lgw5"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -341,5 +342,14 @@ layout_mode = 2
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 
-[node name="OverlayLayer" type="TileMapLayer" parent="." unique_id=421687747]
+[node name="SelectedUnitLayer" type="TileMapLayer" parent="." unique_id=421687747]
 tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("5_1lgw5")
+
+[node name="ActiveUnitLayer" type="TileMapLayer" parent="." unique_id=609261837]
+tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("5_1lgw5")
+
+[node name="TargetedCellsLayer" type="TileMapLayer" parent="." unique_id=537231530]
+tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("5_1lgw5")
