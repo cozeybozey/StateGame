@@ -423,6 +423,20 @@ public partial class World : Node2D
         }
         cellPos = adjacentCell;
       }
+      else if (unitInfo.Id == "nurse")
+      {
+        // Position nurses behind another unit if possible
+        Vector2I behindCell = new Vector2I(cellPos.X, cellPos.Y);
+        foreach (Vector2I cell in possiblePositions)
+        {
+          if (cell.Y + 1 < GlobalConstants.GridSize.Y && unitGrid[cell.X, cell.Y + 1] != null)
+          {
+            behindCell = cell;
+            break;
+          }
+        }
+        cellPos = behindCell;
+      }
 
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
