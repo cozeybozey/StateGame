@@ -123,6 +123,10 @@ layout_mode = 2
 layout_mode = 2
 text = "Units:"
 
+[node name="Spacer" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=421560759]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
 [node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=2040826589]
 visible = false
 layout_mode = 2

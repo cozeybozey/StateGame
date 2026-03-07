@@ -12,13 +12,19 @@ public partial class Unit : Node2D
   public virtual int startingCooldown { get; set; } = 1;
   public virtual int cooldown { get; set; } = 1;
   public virtual int speed { get; set; } = 1;
-  public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
-
-
+  
+	// Info
+	public string id { get; set; }
+	public string name { get; set; }
+	public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
+	public string description { get; set; }
   public bool side = true; // true for player, false for enemy
   public Vector2I occupiedMainCell;
 	public Vector2I startCell;
 	public Texture2D texture;
+	public string scenePath;
+	public int cost { get; set; }
+	public UnitInfo startUnitInfo;
 
   private Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
@@ -37,9 +43,7 @@ public partial class Unit : Node2D
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
     _healthBar.MaxValue = maxHealth;
-    health = maxHealth;
     _healthBar.Value = health;
-		cooldown = startingCooldown;
     occupiedMainCell = startCell;
     Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
@@ -75,15 +79,23 @@ public partial class Unit : Node2D
 
 	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell)
 	{
+		id = unitInfo.Id;
+		name = unitInfo.Name;
+		scenePath = unitInfo.ScenePath;
 		maxHealth = unitInfo.Health;
+		health = unitInfo.Health;
 		damage = unitInfo.Damage;
 		armor = unitInfo.Armor;
 		speed = unitInfo.Speed;
-    startingCooldown = unitInfo.Cooldown;
+    startingCooldown = unitInfo.StartCooldown;
+		cooldown = unitInfo.Cooldown;
 		occupiedCells = unitInfo.OccupiedCells;
 		texture = unitInfo.Texture;
+		cost = unitInfo.Cost;
+		description = unitInfo.Description;
 		side = _side;
 		startCell = _startCell;
+		startUnitInfo = unitInfo;
 	}
 
 	protected virtual void Start()
@@ -91,7 +103,18 @@ public partial class Unit : Node2D
 
   }
 
-	public virtual bool CanAct()
+	public UnitInfo GetInfo()
+	{
+		return new UnitInfo(id, name, texture, scenePath, occupiedCells, cost, maxHealth, 
+			health, damage, armor, speed, startingCooldown, cooldown, description);
+	}
+
+  public UnitInfo GetStartInfo()
+  {
+		return startUnitInfo;
+  }
+
+  public virtual bool CanAct()
 	{
     cooldown -= 1;
     if (cooldown > 0)

@@ -75,7 +75,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
     // Notify original source if it exists and isn’t this UI
     if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
     {
-      source.OnUnitPlacedSuccessfully(dragPayload.Unit);
+      source.OnUnitPlacedSuccessfully(dragPayload);
     }
   }
 
@@ -89,7 +89,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
     }
   }
 
-  public void OnUnitPlacedSuccessfully(UnitInfo unit)
+  public void OnUnitPlacedSuccessfully(DragPayload dragPayload)
 	{
     UpdateAmount(Amount - 1);
 	}

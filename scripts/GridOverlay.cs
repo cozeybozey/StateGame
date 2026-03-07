@@ -8,10 +8,10 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	public int maxUnitSlots = 20;
 
 	private TileMapLayer _backgroundLayer = null!;
-	private Label _unitsCounter = null;
+	private Label _unitsCounter = null!;
 
 	// 2D array to track units in the 8x16 grid
-	private UnitInfo[,] _unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+	private Unit[,] _unitGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
 
   private bool _interactionLocked = false;
@@ -33,14 +33,14 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
 			return default;
 
-		UnitInfo unit = _unitGrid[cell.X, cell.Y];
+		Unit unit = _unitGrid[cell.X, cell.Y];
 		if (unit == null)
 			return default;
 
-		if (unit.Texture != null)
+		if (unit.texture != null)
 		{
 			var preview = new TextureRect();
-			preview.Texture = unit.Texture;
+			preview.Texture = unit.texture;
 			preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
 			preview.CustomMinimumSize = new Vector2(32, 32);
 			preview.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
@@ -48,7 +48,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			SetDragPreview(preview);
 		}
 
-		return new DragPayload(unit, this, cell);
+		return new DragPayload(unit.GetStartInfo(), this, cell);
   }
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
@@ -84,52 +84,35 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     // Clear origin cell if it came from this overlay
     if (dragPayload.Source == this)
     {
-			UnitInfo unitInfo = _unitGrid[dragPayload!.OriginCell!.Value.X, dragPayload!.OriginCell!.Value.Y];
+			Unit unit = _unitGrid[dragPayload!.OriginCell!.Value.X, dragPayload!.OriginCell!.Value.Y];
 
       // Remove unit from previous cells
-      foreach (var cell in dragPayload.Unit.UnitInstance!.GetOccupiedCells())
+      foreach (var cell in unit.GetOccupiedCells())
 			{
         _unitGrid[cell.X, cell.Y] = null!;
       }
 
       // Move unit to new cells
-      unitInfo.UnitInstance!.MoveToCell(targetCell);
+      unit.MoveToCell(targetCell);
 
 			// Assign unit to new cells
-      foreach (var cell in dragPayload.Unit.UnitInstance!.GetOccupiedCells())
+      foreach (var cell in unit.GetOccupiedCells())
       {
-        _unitGrid[cell.X, cell.Y] = unitInfo;
+        _unitGrid[cell.X, cell.Y] = unit;
       }
 
     }
     else
-		{
-      UnitInfo newUnitInfo = new UnitInfo(
-				dragPayload.Unit.Id,
-				dragPayload.Unit.Name,
-				dragPayload.Unit.Texture,
-				dragPayload.Unit.ScenePath,
-				dragPayload.Unit.OccupiedCells,
-        dragPayload.Unit.Cost,
-				dragPayload.Unit.Health,
-				dragPayload.Unit.Damage,
-				dragPayload.Unit.Armor,
-				dragPayload.Unit.Speed,
-				dragPayload.Unit.Cooldown,
-				dragPayload.Unit.Description,
-        null
-			);
-
+		{ 
       // Place the unit in the new cell
       PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-			unit!.Initialize(newUnitInfo, true, targetCell);
+			unit!.Initialize(dragPayload.Unit, true, targetCell);
       _unitsNode.AddChild(instance);
-			newUnitInfo.UnitInstance = unit;
 			foreach (var cell in dragPayload.Unit.OccupiedCells)
 			{
-				_unitGrid[targetCell.X + cell.X,targetCell.Y + cell.Y] = newUnitInfo;
+				_unitGrid[targetCell.X + cell.X,targetCell.Y + cell.Y] = unit;
       }
 
       _currentUnitSlotsCount += dragPayload.Unit.OccupiedCells.Count;
@@ -139,11 +122,11 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		// Notify original source if it exists and isn’t this overlay
 		if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
 		{
-			source.OnUnitPlacedSuccessfully(dragPayload.Unit);
+			source.OnUnitPlacedSuccessfully(dragPayload);
 		}
 	}
 
-	private Vector2I GetCellUnderMouse(Vector2 atPosition)
+  public Vector2I GetCellUnderMouse(Vector2 atPosition)
 	{
 		Vector2 localPos = _backgroundLayer.ToLocal(atPosition);
 		return _backgroundLayer.LocalToMap(localPos);
@@ -165,7 +148,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		return true;
 	}
 
-	public UnitInfo[,] GetUnits()
+	public Unit[,] GetUnits()
 	{
 			return _unitGrid;
   }
@@ -176,17 +159,18 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		{
 			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
-				UnitInfo unitInfo = _unitGrid[x, y];
+				Unit unit = _unitGrid[x, y];
 				Vector2I cell = new Vector2I(x, y);
-        if (unitInfo != null && unitInfo.UnitInstance!.startCell == cell)
+        if (unit != null && unit.startCell == cell)
 				{
-					PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
+          UnitInfo unitInfo = _unitGrid[x, y].GetStartInfo();
+          PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
-					Unit unit = instance as Unit;
-					unit!.Initialize(unitInfo, true, new Vector2I(x, y));
+					Unit newUnit = instance as Unit;
+          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y));
           _unitsNode.AddChild(instance);
-					_unitGrid[x, y].UnitInstance = unit;
-				}
+					_unitGrid[x, y] = newUnit;
+        }
       }
 		}
 	}
@@ -196,14 +180,15 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     _interactionLocked = locked;
   }
 
-  public void OnUnitPlacedSuccessfully(UnitInfo unit)
+  public void OnUnitPlacedSuccessfully(DragPayload dragPayload)
   {
-		foreach (var cell in unit.UnitInstance!.GetOccupiedCells())
+		Unit unit = _unitGrid[dragPayload.OriginCell!.Value.X, dragPayload.OriginCell!.Value.Y];
+		foreach (var cell in unit.GetOccupiedCells())
 		{
 			_unitGrid[cell.X, cell.Y] = null!;
 		}    
-    unit.UnitInstance!.QueueFree();
-    _currentUnitSlotsCount -= unit.UnitInstance!.GetOccupiedCells().Count;
+    unit.QueueFree();
+    _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
   }
 }

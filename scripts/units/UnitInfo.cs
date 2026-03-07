@@ -9,13 +9,14 @@ public partial class UnitInfo : RefCounted
   public string ScenePath { get; set; }
 	public List<Vector2I> OccupiedCells { get; set; }
 	public int Cost { get; set; }
+	public int MaxHealth { get; set; }
 	public int Health { get; set; }
 	public int Damage { get; set; }
 	public int Armor { get; set; }
 	public int Speed { get; set; }
+	public int StartCooldown { get; set; }
 	public int Cooldown { get; set; }
 	public string Description { get; set; }
-  public Unit? UnitInstance { get; set; }
 
 	public UnitInfo(
 		string id,
@@ -24,13 +25,14 @@ public partial class UnitInfo : RefCounted
 		string scenePath,
 		List<Vector2I> occupiedCells,
 		int cost,
+		int maxHealth,
 		int health,
 		int damage,
 		int armor,
 		int speed,
+		int startCooldown,
 		int cooldown,
-		string description,
-		Unit? unitInstance)
+		string description)
 	{
 		Id = id;
 		Name = name;
@@ -38,12 +40,13 @@ public partial class UnitInfo : RefCounted
 		ScenePath = scenePath;
 		OccupiedCells = occupiedCells;
 		Cost = cost;
+		MaxHealth = maxHealth;
 		Health = health;
 		Damage = damage;
 		Armor = armor;
 		Speed = speed;
+		StartCooldown = startCooldown;
 		Cooldown = cooldown;
 		Description = description;
-    UnitInstance = unitInstance;
 	}
 }

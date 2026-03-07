@@ -25,6 +25,7 @@ public partial class World : Node2D
   private TileMapLayer _overlayLayer;
   private MenuButton _speedButton;
   private PopupMenu _speedPopup;
+  private UnitsInfoGui _unitsGuiInfo;
 
   private List<Unit> _units;
   private Unit[,] _unitsGrid;
@@ -81,6 +82,7 @@ public partial class World : Node2D
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
+    _unitsGuiInfo = GetNode<UnitsInfoGui>("CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer");
 
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
@@ -198,40 +200,39 @@ public partial class World : Node2D
     _playButton.Disabled = true;
     _worldMapButton.Disabled = true;
     _gridOverlay.SetInteractionLocked(true);
-    UnitInfo[,] playerUnits = _gridOverlay.GetUnits();
+    Unit[,] playerUnits = _gridOverlay.GetUnits();
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
-        UnitInfo playerUnit = playerUnits[x, y];
+        if (_unitsGrid[x, y] != null)
+          continue;
+
+        Unit playerUnit = playerUnits[x, y];
         UnitInfo enemyUnit = enemyUnits[x, y];
+
         if (playerUnit != null)
         {
-          if (!_units.Contains(playerUnit.UnitInstance!))
+          foreach (Vector2I cell in playerUnit.GetOccupiedCells())
           {
-            _units.Add(playerUnit.UnitInstance!);
-            _playerUnitsCount += 1;
+            _unitsGrid[cell.X, cell.Y] = playerUnit;
           }
-          _unitsGrid[x, y] = playerUnit.UnitInstance!;
+          _units.Add(playerUnit);
+          _playerUnitsCount += 1;
         }
         if (enemyUnit != null) 
         {
-          if (enemyUnit.UnitInstance == null)
+          Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
+          unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y));
+          _unitsNode.AddChild(unitInstance);
+          foreach (Vector2I cell in unitInstance.GetOccupiedCells())
           {
-            Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
-            unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y));
-            enemyUnit.UnitInstance = unitInstance;
-            _unitsNode.AddChild(unitInstance);
-            _levelUnits.Add(enemyUnit);
+            _unitsGrid[cell.X, cell.Y] = unitInstance;
           }
-
-          if (!_units.Contains(enemyUnit.UnitInstance!))
-          {
-            _units.Add(enemyUnit.UnitInstance!);
-            _enemyUnitsCount += 1;
-          }
-          _unitsGrid[x, y] = enemyUnit.UnitInstance!;
+          _levelUnits.Add(enemyUnit);
+          _units.Add(unitInstance);
+          _enemyUnitsCount += 1;
         }
       }
     }
@@ -266,23 +267,7 @@ public partial class World : Node2D
       int y = (int)unitData["y"];
       string name = (string)unitData["name"];
 
-      UnitInfo selectedUnitInfo = _unitsData[name];
-      // Create a copy of the UnitInfo to avoid modifying the original data when assigning UnitInstance
-      UnitInfo unitInfo = new UnitInfo(
-        selectedUnitInfo.Id,
-        selectedUnitInfo.Name,
-        selectedUnitInfo.Texture,
-        selectedUnitInfo.ScenePath,
-        selectedUnitInfo.OccupiedCells,
-        selectedUnitInfo.Cost,
-        selectedUnitInfo.Health,
-        selectedUnitInfo.Damage,
-        selectedUnitInfo.Armor,
-        selectedUnitInfo.Speed,
-        selectedUnitInfo.Cooldown,
-        selectedUnitInfo.Description,
-        null
-      );
+      UnitInfo unitInfo = _unitsData[name];
 
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
@@ -311,24 +296,7 @@ public partial class World : Node2D
       if (possibleUnits.Count == 0)
         continue;
 
-
-      UnitInfo selectedUnitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
-      // Create a copy of the UnitInfo to avoid modifying the original data when assigning UnitInstance
-      UnitInfo unitInfo = new UnitInfo(
-        selectedUnitInfo.Id,
-        selectedUnitInfo.Name,
-        selectedUnitInfo.Texture,
-        selectedUnitInfo.ScenePath,
-        selectedUnitInfo.OccupiedCells,
-        selectedUnitInfo.Cost,
-        selectedUnitInfo.Health,
-        selectedUnitInfo.Damage,
-        selectedUnitInfo.Armor,
-        selectedUnitInfo.Speed,
-        selectedUnitInfo.Cooldown,
-        selectedUnitInfo.Description,
-        null
-      );
+      UnitInfo unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
 
       if (unitInfo.Cost > budget)
         continue;
@@ -464,17 +432,18 @@ public partial class World : Node2D
     _turnEndDamage = 1;
     _levelUnits.Clear();
 
-    if (_activeLevel != null)
-    {
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-      {
-        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        {
-          if (_activeLevel.Units![x, y] != null)
-            _activeLevel.Units![x, y].UnitInstance = null;
-        }
-      }
-    }
+    // TODO check if necessary
+    //if (_activeLevel != null)
+    //{
+    //  for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    //  {
+    //    for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+    //    {
+    //      if (_activeLevel.Units![x, y] != null)
+    //        _activeLevel.Units![x, y] = null;
+    //    }
+    //  }
+    //}
 
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
@@ -698,7 +667,7 @@ public partial class World : Node2D
       }
 
       _unitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
-        cost, health, damage, armor, speed, cooldown, description, null);
+        cost, health, health, damage, armor, speed, cooldown, cooldown, description);
 
       int stage = (int)unitData["stage"];
       _unitsPerStage[stage].Add(_unitsData[unitId]);
@@ -896,5 +865,38 @@ public partial class World : Node2D
   void OnWorldMapPressed()
   {
     _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
+  }
+
+  public override void _Input(InputEvent @event)
+  {
+    if (@event is InputEventMouseButton mouse &&
+        mouse.ButtonIndex == MouseButton.Left &&
+        mouse.Pressed)
+    {
+      Vector2 mousePos = mouse.Position;
+      Vector2I cell = _gridOverlay.GetCellUnderMouse(mousePos) - new Vector2I(1, 1);
+
+      if (!GlobalFunctions.IsCellInsideGrid(cell))
+      {
+        _unitsGuiInfo.ResetSelectedUnit();
+        return;
+      }
+
+      if (_playing)
+      {
+        Unit unit = _unitsGrid[cell.X, cell.Y];
+        if (unit != null)
+          _unitsGuiInfo.SetSelectedUnit(unit);
+        else
+          _unitsGuiInfo.ResetSelectedUnit();
+      }
+      else
+      {
+        _unitsGuiInfo.ResetSelectedUnit();
+        Unit gridOverlayUnit = _gridOverlay.GetUnits()[cell.X, cell.Y];
+        if (gridOverlayUnit != null)
+          _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitInfoSelected, gridOverlayUnit.GetInfo());
+      }
+    }
   }
 }

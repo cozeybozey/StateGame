@@ -13,6 +13,7 @@ public partial class UnitsInfoGui : VBoxContainer
   private Label _cooldown = null!;
   private Label _description = null!;
   private GlobalSignals _globalSignals = null!;
+  private Unit _selectedUnit = null!;
 
   public override void _Ready()
   {
@@ -29,16 +30,40 @@ public partial class UnitsInfoGui : VBoxContainer
     _globalSignals.UnitInfoSelected += OnUnitInfoSelected;
   }
 
+  // Called every frame. 'delta' is the elapsed time since the previous frame.
+  public override void _Process(double delta)
+  {
+    if (_selectedUnit != null)
+      DisplayInfo(_selectedUnit.GetInfo());
+  }
+
   private void OnUnitInfoSelected(UnitInfo unitInfo)
+  {
+    ResetSelectedUnit();
+    DisplayInfo(unitInfo);
+  }
+
+  private void DisplayInfo(UnitInfo unitInfo)
   {
     Visible = true;
     _name.Text = unitInfo.Name;
     _texture.Texture = unitInfo.Texture;
-    _health.Text = unitInfo.Health.ToString();
+    _health.Text = unitInfo.Health.ToString() + '/' + unitInfo.MaxHealth.ToString();
     _damage.Text = unitInfo.Damage.ToString();
     _armor.Text = unitInfo.Armor.ToString();
     _speed.Text = unitInfo.Speed.ToString();
-    _cooldown.Text = unitInfo.Cooldown.ToString();
+    _cooldown.Text = unitInfo.Cooldown.ToString() + '/' + unitInfo.StartCooldown.ToString();
     _description.Text = unitInfo.Description.ToString();
+  }
+
+  public void SetSelectedUnit(Unit unit)
+  {
+    _selectedUnit = unit;
+  }
+
+  public void ResetSelectedUnit()
+  {
+    _selectedUnit = null!;
+    Visible = false;
   }
 }
