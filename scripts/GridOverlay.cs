@@ -1,6 +1,7 @@
 using Godot;
 using Godot.Collections;
 using System;
+using System.Collections.Generic;
 using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
@@ -64,9 +65,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
 
-    foreach (Vector2I occupiedCell in dragPayload.Unit.OccupiedCells)
-      if (!IsCellValid(cell + occupiedCell))
-        return false;
+    if (!IsCellValid(dragPayload, cell))
+      return false;
 
     return true;
 	}
@@ -132,25 +132,34 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		return _backgroundLayer.LocalToMap(localPos);
 	}
 
-	private bool IsCellValid(Vector2I cell)
+	private bool IsCellValid(DragPayload dragPayload, Vector2I cell)
 	{
-		int backgroundSourceId = _backgroundLayer.GetCellSourceId(cell);
-		Vector2I backgroundAtlastCoords = _backgroundLayer.GetCellAtlasCoords(cell);
+		List<Vector2I> originalCells = new List<Vector2I>();
+		if (dragPayload.Source == this)
+		{
+      foreach (Vector2I occupiedCell in dragPayload.Unit.OccupiedCells)
+			{
+				originalCells.Add(dragPayload.OriginCell!.Value + occupiedCell);
+			}
+		}
 
-    // Reject if cell is not on player's side of the board
-    if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
-      return false;
+		foreach (Vector2I occupiedCell in dragPayload.Unit.OccupiedCells)
+		{
+			// Reject if cell is not on player's side of the board
+			if (!GlobalFunctions.IsCellInsideGrid(cell + occupiedCell) || cell.Y + occupiedCell.Y < GlobalConstants.GridSize.Y * 0.5)
+				return false;
 
-    // Cannot place if there is already a unit there
-    if (_unitGrid[cell.X, cell.Y] != null)
-			return false;
+			// Cannot place if there is already a unit there and that unit is not this unit
+			if (_unitGrid[cell.X + occupiedCell.X, cell.Y + occupiedCell.Y] != null && !originalCells.Contains(cell + occupiedCell))
+				return false;
+		}
 
 		return true;
 	}
 
 	public Unit[,] GetUnits()
 	{
-			return _unitGrid;
+		return _unitGrid;
   }
 
 	public void LoadUnits()
