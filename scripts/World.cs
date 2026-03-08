@@ -260,6 +260,7 @@ public partial class World : Node2D
   private UnitInfo[,] LoadLevel(string levelId)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     Dictionary levelData = (Dictionary)_levelsData[levelId];
     Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
     foreach (Dictionary unitData in levelUnits)
@@ -274,14 +275,16 @@ public partial class World : Node2D
       {
         unitGrid[x + cell.X, y + cell.Y] = unitInfo;
       }
+      mainCellsUnitGrid[x, y] = unitInfo;
     }
 
-    return unitGrid;
+    return mainCellsUnitGrid;
   }
 
   public UnitInfo[,] LoadRandomLevel(int difficulty)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
     int budget = difficulty + (difficulty / 2);
     int maxStage = GetMaxStageForDifficulty(difficulty);
@@ -313,7 +316,8 @@ public partial class World : Node2D
           {
             int checkX = x + cell.X;
             int checkY = y + cell.Y;
-            if (checkX >= GlobalConstants.GridSize.X || checkY >= Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) || unitGrid[checkX, checkY] != null)
+            if (checkX >= GlobalConstants.GridSize.X || checkY >= Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) ||
+              checkX < 0 || checkY < 0 || unitGrid[checkX, checkY] != null)
             {
               canPlace = false;
               break;
@@ -420,11 +424,12 @@ public partial class World : Node2D
       {
         unitGrid[cellPos.X + cell.X, cellPos.Y + cell.Y] = unitInfo;
       }
+      mainCellsUnitGrid[cellPos.X, cellPos.Y] = unitInfo;
 
       budget -= unitInfo.Cost;
     }
 
-    return unitGrid;
+    return mainCellsUnitGrid;
   }
 
   private void Reset()
@@ -719,7 +724,8 @@ public partial class World : Node2D
     if (difficulty < 3) return 0;
     if (difficulty < 6) return 1;
     if (difficulty < 10) return 2;
-    return 3;
+    if (difficulty < 16) return 3;
+    return 4;
   }
 
   void GenerateWorld()

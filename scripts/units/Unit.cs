@@ -47,7 +47,8 @@ public partial class Unit : Node2D
     _healthBar.Value = health;
     occupiedMainCell = startCell;
     Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
-    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
+		Vector2I relPos = GlobalFunctions.GetRelPosInCells(occupiedCells, occupiedCells[0]);
+    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y, relPos);
 		_sprite.Texture = texture;
     //if (!side)
     //  _sprite.FlipV = true; // Flip the sprite for enemy units
@@ -250,7 +251,8 @@ public partial class Unit : Node2D
 			startCell = newCell;
     occupiedMainCell = newCell;
 		Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
-    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
+    Vector2I relPos = GlobalFunctions.GetRelPosInCells(occupiedCells, occupiedCells[0]);
+    GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y, relPos);
 		_globalSignals.EmitSignal(GlobalSignals.SignalName.UnitMoved, this, oldMainCell, playing);
   }
 
