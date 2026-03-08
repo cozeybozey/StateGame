@@ -105,6 +105,7 @@ public partial class World : Node2D
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
     _globalSignals.UnitMoved += OnUnitMoved;
+    _globalSignals.UnitSpawned += OnUnitSpawned;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _selectedUnitLayer.OutlineColor = Colors.Blue;
     _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
@@ -158,7 +159,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid);
+        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid, _removedUnits);
         _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
@@ -230,48 +231,22 @@ public partial class World : Node2D
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
-      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      for (int y = 0; y < GlobalConstants.GridSize.Y * 0.5; y++)
       {
         if (_unitsGrid[x, y] != null)
           continue;
 
-        Unit playerUnit = playerUnits[x, y];
         UnitInfo enemyUnit = enemyUnits[x, y];
 
-        if (playerUnit != null)
-        {
-          foreach (Vector2I cell in playerUnit.GetOccupiedCells())
-          {
-            _unitsGrid[cell.X, cell.Y] = playerUnit;
-          }
-          _units.Add(playerUnit);
-          _playerUnitsCount += 1;
-        }
         if (enemyUnit != null) 
         {
           Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
           unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y));
           _unitsNode.AddChild(unitInstance);
-          foreach (Vector2I cell in unitInstance.GetOccupiedCells())
-          {
-            _unitsGrid[cell.X, cell.Y] = unitInstance;
-          }
           _levelUnits.Add(enemyUnit);
-          _units.Add(unitInstance);
-          _enemyUnitsCount += 1;
         }
       }
     }
-
-    // Sort units by speed, then by position for consistent turn order
-    _units = _units
-    .OrderByDescending(u => u.speed)  // Speed first
-    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
-    .ThenBy(u =>
-        u.side
-            ? u.occupiedMainCell.Y  // Player: lower Y first
-            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
-    .ToList();
 
     _playing = true;
   }
@@ -622,9 +597,6 @@ public partial class World : Node2D
       _activeUnitLayer.Clear();
       _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
     }
-
-    if (!_playing)
-      return;
 
     foreach (Vector2I cell in unit.occupiedCells)
     {
@@ -1024,19 +996,31 @@ public partial class World : Node2D
 
         Unit unitInstance = GD.Load<PackedScene>(unit.scenePath).Instantiate() as Unit;
         unitInstance!.Initialize(unit.GetStartInfo(), unit.side, unit.startCell);
-        _unitsNode.AddChild(unitInstance);
-        foreach (Vector2I cell in unitInstance.GetOccupiedCells())
-        {
-          _unitsGrid[cell.X, cell.Y] = unitInstance;
-        }
-        _units.Add(unitInstance);
+        _unitsNode.AddChild(unit);
         unitInstance.SpawnFloatingText("Revived", Colors.Green);
-        if (unit.side)
-          _playerUnitsCount++;
-        else
-          _enemyUnitsCount++;
       }
     }
+
+    foreach (Unit unit in removedZombies)
+    {
+      if (IsInstanceValid(unit))
+        unit.QueueFree();
+      _removedUnits.Remove(unit);
+    }
+  }
+
+  private void OnUnitSpawned(Unit unit)
+  {
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      _unitsGrid[cell.X, cell.Y] = unit;
+    }
+    _units.Add(unit);
+
+    if (unit.side)
+      _playerUnitsCount++;
+    else
+      _enemyUnitsCount++;
 
     // Sort units by speed, then by position for consistent turn order
     _units = _units
@@ -1047,12 +1031,5 @@ public partial class World : Node2D
             ? u.occupiedMainCell.Y  // Player: lower Y first
             : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
     .ToList();
-
-    foreach (Unit unit in removedZombies)
-    {
-      if (IsInstanceValid(unit))
-        unit.QueueFree();
-      _removedUnits.Remove(unit);
-    }
   }
 }

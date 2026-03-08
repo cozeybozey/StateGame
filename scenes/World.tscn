@@ -76,7 +76,7 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_7g83o")
 
-[node name="Node2D" type="Node2D" unique_id=878260971]
+[node name="Root" type="Node2D" unique_id=878260971]
 script = ExtResource("1_1lgw5")
 
 [node name="BackgroundLayer" type="TileMapLayer" parent="." unique_id=1575364190]

@@ -213,15 +213,15 @@
 		"display_name": "Priest",
 		"texture": "res://sprites/units/priest.png",
 		"scene": "res://scenes/units/priest.tscn",
-		"cells": [[0, 0]],
-		"stage": 4, 
-		"cost": 1,
+		"cells": [[0, 0], [0, 1]],
+		"stage": 0, 
+		"cost": 2,
 		"description": "Revives a random friendly unit at a random location.",
-		"health": 10,
-		"damage": 4,
+		"health": 5,
+		"damage": 0,
 		"armor": 0,
-		"speed": 5,
-		"cooldown": 1
+		"speed": 7,
+		"cooldown": 2
 	},
 	"vampire": {
 		"display_name": "Vampire",

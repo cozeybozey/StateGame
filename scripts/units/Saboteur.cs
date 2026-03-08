@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Saboteur : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
     for (int dx = -2; dx <= 2; dx++)

@@ -49,8 +49,10 @@ public partial class Unit : Node2D
     Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(occupiedMainCell, cellDimensions.X, cellDimensions.Y);
 		_sprite.Texture = texture;
-    if (!side)
-      _sprite.FlipV = true; // Flip the sprite for enemy units
+    //if (!side)
+    //  _sprite.FlipV = true; // Flip the sprite for enemy units
+
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitSpawned, this);
 
     Start();
   }
@@ -99,7 +101,7 @@ public partial class Unit : Node2D
 		side = _side;
 		startCell = _startCell;
 		startUnitInfo = unitInfo;
-	}
+  }
 
 	protected virtual void Start()
 	{
@@ -139,7 +141,7 @@ public partial class Unit : Node2D
     }
   }
 
-	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid)
+	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
 	{
     if (side)
     {

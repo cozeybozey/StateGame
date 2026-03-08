@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Booster : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
   {
     if (occupiedMainCell.X + 1 < GlobalConstants.GridSize.X && unitsGrid[occupiedMainCell.X + 1, occupiedMainCell.Y] != null)
       return [new Vector2I(occupiedMainCell.X + 1, occupiedMainCell.Y)];

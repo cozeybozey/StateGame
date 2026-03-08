@@ -16,7 +16,7 @@ public partial class Healer : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
   {
     if (side)
     {
