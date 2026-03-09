@@ -49,7 +49,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			SetDragPreview(preview);
 		}
 
-		return new DragPayload(unit.GetStartInfo(), this, cell);
+		return new DragPayload(unit.GetStartInfo(), this, unit.occupiedMainCell);
   }
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
@@ -178,7 +178,9 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 					Unit newUnit = instance as Unit;
           newUnit!.Initialize(unitInfo, true, new Vector2I(x, y));
           _unitsNode.AddChild(instance);
-					_unitGrid[x, y] = newUnit;
+
+					foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
+						_unitGrid[occupiedCell.X, occupiedCell.Y] = newUnit;
         }
       }
 		}

@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c5yrxx0cmr0pt"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_tmovf"]
+[ext_resource type="Script" uid="uid://sb8rpsssxrw" path="res://scripts/units/Berserker.cs" id="2_6u5yx"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_tmovf")]
+script = ExtResource("2_6u5yx")

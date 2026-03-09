@@ -12,5 +12,8 @@ public partial class GlobalSignals : Node
   public delegate void UnitMovedEventHandler(Unit unit, Vector2I oldCell, bool playing);
 
   [Signal]
+  public delegate void UnitRemovedEventHandler(DragPayload dragPayload);
+
+  [Signal]
   public delegate void UnitInfoSelectedEventHandler(UnitInfo unitInfo);
 }

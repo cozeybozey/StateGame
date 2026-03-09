@@ -18,19 +18,17 @@ public partial class Pusher : Unit
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
   {
+    List<Unit> movedUnits = new List<Unit>();
+
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && targetUnit.occupiedCells.Count == 4)
-      {
-        int a = 5;
-      }
-      if (targetUnit != null && targetUnit.occupiedMainCell == target && target.X - 1 >= 0)
+      if (targetUnit != null && target.X - 1 >= 0 && !movedUnits.Contains(targetUnit))
       {
         bool canMove = true;
         foreach (Vector2I cell in targetUnit.GetOccupiedCells())
         {
-          if (unitsGrid[cell.X - 1, cell.Y] == targetUnit)
+          if (cell.X - 1 >= 0 && unitsGrid[cell.X - 1, cell.Y] == targetUnit)
             continue;
 
           if (cell.X - 1 < 0 || unitsGrid[cell.X - 1, cell.Y] != null)
@@ -41,7 +39,10 @@ public partial class Pusher : Unit
         }
 
         if (canMove)
-          targetUnit.MoveToCell(new Vector2I(target.X - 1, target.Y), playing:true);
+        {
+          targetUnit.MoveToCell(new Vector2I(target.X - 1, target.Y), playing: true);
+          movedUnits.Add(targetUnit);
+        }
       }
     }
   }

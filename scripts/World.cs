@@ -106,6 +106,7 @@ public partial class World : Node2D
     _globalSignals.UnitDied += OnUnitDied;
     _globalSignals.UnitMoved += OnUnitMoved;
     _globalSignals.UnitSpawned += OnUnitSpawned;
+    _globalSignals.UnitRemoved += OnUnitRemoved;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _selectedUnitLayer.OutlineColor = Colors.Blue;
     _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
@@ -563,17 +564,35 @@ public partial class World : Node2D
 
   private void OnUnitDied(Unit unit)
   {
-    // Remove from list
     int index = _units.IndexOf(unit);
     if (index <= _unitIndex)
       _unitIndex -= 1;
+
+    RemoveUnit(unit);
+    _removedUnits.Add(unit);
+
+    if (_enemyUnitsCount == 0)
+      Win();
+    else if (_playerUnitsCount == 0)
+      Lose();
+  }
+
+  private void OnUnitRemoved(DragPayload dragPayload)
+  {
+    Unit unit = _unitsGrid[dragPayload.OriginCell!.Value.X, dragPayload.OriginCell!.Value.Y];
+    RemoveUnit(unit);
+  }
+
+  private void RemoveUnit(Unit unit)
+  {
+    // Remove from list
     if (_unitsGuiInfo.selectedUnit == unit)
     {
       _unitsGuiInfo.ResetSelectedUnit();
       _selectedUnitLayer.Clear();
     }
     _units.Remove(unit);
-    _removedUnits.Add(unit);
+
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
       _unitsGrid[cell.X, cell.Y] = null!;
@@ -583,11 +602,6 @@ public partial class World : Node2D
       _playerUnitsCount--;
     else
       _enemyUnitsCount--;
-
-    if (_enemyUnitsCount == 0)
-      Win();
-    else if (_playerUnitsCount == 0)
-      Lose();
   }
 
   private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
@@ -1031,7 +1045,7 @@ public partial class World : Node2D
     // Sort units by speed, then by position for consistent turn order
     _units = _units
     .OrderByDescending(u => u.speed)  // Speed first
-    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
+    .ThenBy(u => u.occupiedMainCell.X)  // Leftmost first
     .ThenBy(u =>
         u.side
             ? u.occupiedMainCell.Y  // Player: lower Y first
