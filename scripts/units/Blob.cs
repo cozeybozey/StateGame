@@ -19,7 +19,6 @@ public partial class Blob : Unit
         // Consume the unit by killing it and gaining its stats
         unit.SpawnFloatingText("Consumed", Colors.Red);
         ChangeMaxHealth(unit.maxHealth);
-        ChangeHealth(unit.health);
         ChangeDamage(unit.damage);
         ChangeArmor(unit.armor);
         ChangeSpeed(unit.speed);

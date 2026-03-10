@@ -7,7 +7,7 @@
 		"stage": 0,
 		"cost": 1,
 		"description": "Deal damage to frontmost unit.",
-		"health": 50,
+		"health": 10,
 		"damage": 4,
 		"armor": 0,
 		"speed": 5,

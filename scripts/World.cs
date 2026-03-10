@@ -1057,7 +1057,7 @@ public partial class World : Node2D
 
         Unit unitInstance = GD.Load<PackedScene>(unit.scenePath).Instantiate() as Unit;
         unitInstance!.Initialize(unit.GetStartInfo(), unit.side, unit.startCell);
-        _unitsNode.AddChild(unit);
+        _unitsNode.AddChild(unitInstance);
         unitInstance.SpawnFloatingText("Revived", Colors.Green);
       }
     }
