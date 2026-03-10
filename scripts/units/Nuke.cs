@@ -2,14 +2,14 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
-public partial class Cleric : Unit
+public partial class Nuke : Unit
 {
   List<Vector2I> _targets = new List<Vector2I>();
 
   protected override void Start()
   {
-    int ystart = (side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : 0;
-    int yend = (side) ? GlobalConstants.GridSize.Y : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
+    int ystart = (side) ? 0 : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
+    int yend = (side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : GlobalConstants.GridSize.Y;
     for (int y = ystart; y < yend; y++)
     {
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
@@ -24,9 +24,9 @@ public partial class Cleric : Unit
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && targetUnit.side == side && targetUnit.health < targetUnit.maxHealth)
+      if (targetUnit != null && targetUnit.side != side)
       {
-        targetUnit.ChangeHealth(damage);
+        targetUnit.ChangeHealth(-damage);
       }
     }
   }

@@ -229,7 +229,27 @@ public partial class Unit : Node2D
 		}
 	}
 
-	public void DeathRattle()
+  public virtual void ChangeMaxHealth(int amount)
+  {
+    if (_dead)
+      return;
+
+    maxHealth += amount;
+		health += amount;
+		_healthBar.MaxValue = maxHealth;
+    _healthBar.Value = health;
+
+    if (_affected)
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>($"+{amount} Health", Colors.Green));
+    else
+    {
+      _affected = true;
+      _sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      SpawnFloatingText($"+{amount} Health", Colors.Green);
+    }
+  }
+
+  public void DeathRattle()
 	{
 		
 	}
