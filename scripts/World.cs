@@ -107,6 +107,8 @@ public partial class World : Node2D
     _globalSignals.UnitMoved += OnUnitMoved;
     _globalSignals.UnitSpawned += OnUnitSpawned;
     _globalSignals.UnitRemoved += OnUnitRemoved;
+    _globalSignals.SpeedChanged += OnSpeedChanged;
+    _globalSignals.SizeChanged += OnUnitSizeChanged;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _selectedUnitLayer.OutlineColor = Colors.Blue;
     _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
@@ -626,15 +628,38 @@ public partial class World : Node2D
       _unitsGrid[cell.X, cell.Y] = unit;
     }
 
-    // Sort units by speed, then by position for consistent turn order
-    _units = _units
-    .OrderByDescending(u => u.speed)  // Speed first
-    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
-    .ThenBy(u =>
-        u.side
-            ? u.occupiedMainCell.Y  // Player: lower Y first
-            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
-    .ToList();
+    SortUnits();
+  }
+
+  private void OnUnitSizeChanged(Unit unit, Godot.Collections.Array<Vector2I> oldOccupiedCells)
+  {
+    if (_unitsGuiInfo.selectedUnit == unit)
+    {
+      _selectedUnitLayer.Clear();
+      _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+    }
+    if (_activeUnit == unit)
+    {
+      _activeUnitLayer.Clear();
+      _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
+    }
+
+    foreach (Vector2I cell in oldOccupiedCells)
+    {
+      _unitsGrid[cell.X, cell.Y] = null!;
+    }
+
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      _unitsGrid[cell.X, cell.Y] = unit;
+    }
+
+    SortUnits();
+  }
+
+  private void OnSpeedChanged(Unit unit)
+  {
+    SortUnits();
   }
 
   private void OnRewardButtonPressed(UnitInfo unitInfo)
@@ -756,24 +781,39 @@ public partial class World : Node2D
     for (int layer = 0; layer < _numLayers; layer++)
     {
       List<LevelInfo> layerNodes = new();
+      string nodeId;
+      string nodeName;
 
-      bool isBoss = false;
-      if (layer == 10)
+      bool isBoss = (layer + 1) % 10 == 0;
+      if (isBoss)
       {
-        isBoss = true;
-        string nodeId = "Golden Turret";
+        string levelId;
+
+        if (layer + 1 == 20)
+        {
+          nodeName = "Golden Turret";
+          levelId = "golden_turret";
+
+        }
+        else
+        {
+          nodeName = "Blob";
+          levelId = "blob";
+        }
+        nodeId = layer.ToString() + '_' + nodeName;
+
 
         _world[nodeId] = new LevelInfo(
           id: nodeId,
-          name: nodeId,
+          name: nodeName,
           completed: false,
           unlocked: layer == 0, // Only unlock first layer initially
           layer: layer,
           layerIndex: 0,
-          isBoss: false,
+          isBoss: true,
           nextNodes: new List<string>(),
           levelButton: new Button(),
-          units: LoadLevel("golden_turret")
+          units: LoadLevel(levelId)
         );
         layerNodes.Add(_world[nodeId]);
       }
@@ -781,7 +821,8 @@ public partial class World : Node2D
       {
         for (int node = 0; node < currentNodesInLayer; node++)
         {
-          string nodeId = $"L{layer}_N{node}";
+          nodeName = $"L{layer}_N{node}";
+          nodeId = $"L{layer}_N{node}";
 
           _world[nodeId] = new LevelInfo(
             id: nodeId,
@@ -1042,10 +1083,15 @@ public partial class World : Node2D
     else
       _enemyUnitsCount++;
 
+    SortUnits();
+  }
+
+  private void SortUnits()
+  {     
     // Sort units by speed, then by position for consistent turn order
     _units = _units
     .OrderByDescending(u => u.speed)  // Speed first
-    .ThenBy(u => u.occupiedMainCell.X)  // Leftmost first
+    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
     .ThenBy(u =>
         u.side
             ? u.occupiedMainCell.Y  // Player: lower Y first

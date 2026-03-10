@@ -26,9 +26,9 @@ public partial class Unit : Node2D
 	public int cost { get; set; }
 	public UnitInfo startUnitInfo;
 
-  private Sprite2D _sprite;
+  protected Sprite2D _sprite;
 	private TextureProgressBar _healthBar;
-  private GlobalSignals _globalSignals;
+  protected GlobalSignals _globalSignals;
 	private bool _affected = false;
 	private double _damageIndicatorDuration = 0.3f;
   private double _damageIndicatorTime = 0.3f;
@@ -170,6 +170,15 @@ public partial class Unit : Node2D
 		return [];
   }
 
+	public void Die()
+	{
+    _dead = true;
+    DeathRattle();
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitDied, this);
+    _healthBar.Hide();
+    _sprite.Hide();
+  }
+
   public virtual void ChangeHealth(int amount)
   {
 		if (_dead)
@@ -186,11 +195,7 @@ public partial class Unit : Node2D
 			displayedText = effectiveDamage.ToString();
       if (health <= 0)
       {
-				_dead = true;
-        DeathRattle();
-        _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitDied, this);
-				_healthBar.Hide();
-				_sprite.Hide();
+        Die();
       }
     }
 		else
@@ -219,13 +224,21 @@ public partial class Unit : Node2D
 
     damage += amount;
 
-		if (_affected)
-			_floatingTextQueue.Enqueue(new Tuple<string, Color>($"+{amount} Damage", Colors.Yellow));
+		string text = $"+{amount} Damage";
+		Color color = Colors.Yellow;
+		if (amount < 0)
+		{
+			text = $"-{amount} Damage";
+			color = Colors.Red;
+    }
+
+    if (_affected)
+			_floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
 		else
 		{
 			_affected = true;
 			_sprite.Modulate = new Color(1, 1, 1, 0.5f);
-			SpawnFloatingText($"+{amount} Damage", Colors.Yellow);
+			SpawnFloatingText(text, color);
 		}
 	}
 
@@ -239,13 +252,97 @@ public partial class Unit : Node2D
 		_healthBar.MaxValue = maxHealth;
     _healthBar.Value = health;
 
+    string text = $"+{amount} Health";
+    Color color = Colors.Yellow;
+    if (amount < 0)
+    {
+      text = $"-{amount} Health";
+      color = Colors.Red;
+    }
+
     if (_affected)
-      _floatingTextQueue.Enqueue(new Tuple<string, Color>($"+{amount} Health", Colors.Green));
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
     else
     {
       _affected = true;
       _sprite.Modulate = new Color(1, 1, 1, 0.5f);
-      SpawnFloatingText($"+{amount} Health", Colors.Green);
+      SpawnFloatingText(text, color);
+    }
+  }
+
+  public virtual void ChangeArmor(int amount)
+  {
+    if (_dead)
+      return;
+
+    armor += amount;
+
+    string text = $"+{amount} Armor";
+    Color color = Colors.Yellow;
+    if (amount < 0)
+    {
+      text = $"-{amount} Armor";
+      color = Colors.Red;
+    }
+
+    if (_affected)
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
+    else
+    {
+      _affected = true;
+      _sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      SpawnFloatingText(text, color);
+    }
+  }
+
+  public virtual void ChangeSpeed(int amount)
+  {
+    if (_dead)
+      return;
+
+    speed += amount;
+
+    string text = $"+{amount} Speed";
+    Color color = Colors.Yellow;
+    if (amount < 0)
+    {
+      text = $"-{amount} Speed";
+      color = Colors.Red;
+    }
+
+    if (_affected)
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
+    else
+    {
+      _affected = true;
+      _sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      SpawnFloatingText(text, color);
+    }
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.SpeedChanged, this);
+  }
+
+  public virtual void ChangeCooldown(int amount)
+  {
+    if (_dead)
+      return;
+
+    cooldown += amount;
+
+    string text = $"+{amount} Cooldown";
+    Color color = Colors.Yellow;
+    if (amount < 0)
+    {
+      text = $"-{amount} Cooldown";
+      color = Colors.Red;
+    }
+
+    if (_affected)
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
+    else
+    {
+      _affected = true;
+      _sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      SpawnFloatingText(text, color);
     }
   }
 

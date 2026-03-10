@@ -57,7 +57,8 @@ public partial class Priest : Unit
         {
           int checkX = x + cell.X;
           int checkY = y + cell.Y;
-          if (checkX >= GlobalConstants.GridSize.X || checkY >= yEnd || unitsGrid[checkX, checkY] != null)
+          if (checkX >= GlobalConstants.GridSize.X || checkY >= yEnd ||
+              checkX < 0 || checkY < yStart || unitsGrid[checkX, checkY] != null)
           {
             canPlace = false;
             break;
