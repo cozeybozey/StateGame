@@ -75,7 +75,6 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
     // Notify original source if it exists and isn’t this UI
     if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
     {
-      _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitRemoved, dragPayload);
       source.OnUnitPlacedSuccessfully(dragPayload);
     }
   }

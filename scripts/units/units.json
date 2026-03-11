@@ -340,13 +340,13 @@
 		"texture": "res://sprites/units/consumer.png",
 		"scene": "res://scenes/units/consumer.tscn",
 		"cells": [[0, 0]],
-		"stage": 4, 
+		"stage": 5, 
 		"cost": 1,
-		"description": "Consume closest unit and gain its stats. Attack like a regular turret.",
+		"description": "Deal damage to frontmost unit. Consume closest unit and gain its stats.",
 		"health": 10,
-		"damage": 4,
+		"damage": 2,
 		"armor": 0,
-		"speed": 5,
+		"speed": 3,
 		"cooldown": 1
 	},
 	"sergeant": {

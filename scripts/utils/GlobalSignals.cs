@@ -7,7 +7,7 @@ public partial class GlobalSignals : Node
   public delegate void UnitDiedEventHandler(Unit unit);
 
   [Signal]
-  public delegate void UnitSpawnedEventHandler(Unit unit);
+  public delegate void UnitSpawnedEventHandler(Unit unit, bool playing);
 
   [Signal]
   public delegate void UnitMovedEventHandler(Unit unit, Vector2I oldCell, bool playing);
@@ -19,7 +19,7 @@ public partial class GlobalSignals : Node
   public delegate void SizeChangedEventHandler(Unit unit, Godot.Collections.Array<Vector2I> oldOccupiedCells);
 
   [Signal]
-  public delegate void UnitRemovedEventHandler(DragPayload dragPayload);
+  public delegate void UnitRemovedEventHandler(Unit unit);
 
   [Signal]
   public delegate void UnitInfoSelectedEventHandler(UnitInfo unitInfo);

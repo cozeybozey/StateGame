@@ -2,6 +2,7 @@ using Godot;
 using Godot.Collections;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
@@ -108,7 +109,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-			unit!.Initialize(dragPayload.Unit, true, targetCell);
+			unit!.Initialize(dragPayload.Unit, true, targetCell, placed:true);
       _unitsNode.AddChild(instance);
 			foreach (var cell in dragPayload.Unit.OccupiedCells)
 			{
@@ -176,7 +177,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
           PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
 					Node instance = scene.Instantiate();
 					Unit newUnit = instance as Unit;
-          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y));
+          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y), placed: true);
           _unitsNode.AddChild(instance);
 
 					foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
@@ -185,6 +186,49 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       }
 		}
 	}
+
+	public void LoadDeck(UnitInfo[,] unitsGrid)
+	{
+		ClearUnits();
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
+        UnitInfo unitInfo = unitsGrid[x, y];
+        Vector2I cell = new Vector2I(x, y);
+        if (unitInfo != null)
+        {
+          PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
+          Node instance = scene.Instantiate();
+          Unit newUnit = instance as Unit;
+          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y), placed: true);
+          _unitsNode.AddChild(instance);
+
+          foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
+            _unitGrid[occupiedCell.X, occupiedCell.Y] = newUnit;
+          _currentUnitSlotsCount += newUnit.GetOccupiedCells().Count;
+          _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
+        }
+      }
+    }
+  }
+
+	public void ClearUnits()
+	{
+		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+		{
+			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+			{
+				Unit unit = _unitGrid[x, y];
+				if (unit != null && IsInstanceValid(unit))
+					unit.Remove();
+				_unitGrid[x, y] = null!;
+			}
+		}
+    _currentUnitSlotsCount = 0;
+    _unitsCounter.Text = $"0/{maxUnitSlots}";
+  }
 
   public void SetInteractionLocked(bool locked)
   {
@@ -198,7 +242,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		{
 			_unitGrid[cell.X, cell.Y] = null!;
 		}    
-    unit.QueueFree();
+    unit.Remove();
     _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
   }

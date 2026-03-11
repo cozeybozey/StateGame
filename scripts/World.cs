@@ -21,7 +21,6 @@ public partial class World : Node2D
   private GridOverlay _gridOverlay;
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
-  private VBoxContainer _unitsSelectionContainer;
   private OverlayLayer _selectedUnitLayer;
   private OverlayLayer _activeUnitLayer;
   private OverlayLayer _targetedCellsLayer;
@@ -30,6 +29,7 @@ public partial class World : Node2D
   private UnitsInfoGui _unitsGuiInfo;
   private Button _playPauseButton;
   private Button _surrenderButton;
+  private DecksHandler _decksHandler;
 
   private List<Unit> _units;
   private List<Unit> _removedUnits;
@@ -37,8 +37,6 @@ public partial class World : Node2D
   private int _unitIndex = 0;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
-  private Godot.Collections.Dictionary<string, UnitGui> _unitsGui = null!;
-  private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
   List<Vector2I> _selectedTargets;
 
   private bool _playing = false;
@@ -84,7 +82,6 @@ public partial class World : Node2D
     _gridOverlay = GetNode<GridOverlay>("GridOverlay");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
-    _unitsSelectionContainer = GetNode<VBoxContainer>("CanvasLayer/SelectionUi/HBoxContainer/UnitsSelectionContainer");
     _selectedUnitLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
     _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
     _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
@@ -94,6 +91,7 @@ public partial class World : Node2D
     _unitsGuiInfo = GetNode<UnitsInfoGui>("CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer");
     _playPauseButton = GetNode<Button>("CanvasLayer/BottomUi/PlayPauseButton");
     _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
+    _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
 
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
@@ -128,13 +126,9 @@ public partial class World : Node2D
     Variant parsed = Json.ParseString(levelsJson);
     _levelsData = (Dictionary)parsed;
 
-    // Add initial turrent selection unit
-    _unitsGui = new Godot.Collections.Dictionary<string, UnitGui>();
-    UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
-    unitGui.Info = _unitsData["turret"];
-    unitGui.Amount = 2;
-    _unitsSelectionContainer.AddChild(unitGui);
-    _unitsGui[_unitsData["turret"].Id] = unitGui;
+    // Start with 2 turrets
+    _decksHandler.AddUnit(_unitsData["turret"]);
+    _decksHandler.AddUnit(_unitsData["turret"]);
 
     GenerateWorld();
   }
@@ -244,7 +238,7 @@ public partial class World : Node2D
         if (enemyUnit != null) 
         {
           Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
-          unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y));
+          unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y), placed: true);
           _unitsNode.AddChild(unitInstance);
           _levelUnits.Add(enemyUnit);
         }
@@ -579,9 +573,8 @@ public partial class World : Node2D
       Lose();
   }
 
-  private void OnUnitRemoved(DragPayload dragPayload)
+  private void OnUnitRemoved(Unit unit)
   {
-    Unit unit = _unitsGrid[dragPayload.OriginCell!.Value.X, dragPayload.OriginCell!.Value.Y];
     RemoveUnit(unit);
   }
 
@@ -664,20 +657,8 @@ public partial class World : Node2D
 
   private void OnRewardButtonPressed(UnitInfo unitInfo)
   {
-    if (_unitsGui.ContainsKey(unitInfo.Id))
-    {
-      _unitsGui[unitInfo.Id].UpdateAmount(_unitsGui[unitInfo.Id].Amount + 1);
-    }
-    else
-    {
-      UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
-
-      unitGui.Info = unitInfo;
-      unitGui.Amount = 1;
-      _unitsSelectionContainer.AddChild(unitGui);
-      _unitsGui[unitInfo.Id] = unitGui;
-    }
-
+    _decksHandler.AddUnit(unitInfo);
+    _decksHandler.ResetUnitsSelection();
     Reset();
   }
 
@@ -1070,7 +1051,7 @@ public partial class World : Node2D
     }
   }
 
-  private void OnUnitSpawned(Unit unit)
+  private void OnUnitSpawned(Unit unit, bool playing)
   {
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {

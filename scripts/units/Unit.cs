@@ -35,6 +35,7 @@ public partial class Unit : Node2D
 	private string _floatingTextPath = "res://scenes/FloatingText.tscn";
 	private Queue<Tuple<string, Color>> _floatingTextQueue = new Queue<Tuple<string, Color>>();
 	private bool _dead = false;
+  private bool _placed = false;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -53,7 +54,7 @@ public partial class Unit : Node2D
     //if (!side)
     //  _sprite.FlipV = true; // Flip the sprite for enemy units
 
-    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitSpawned, this);
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitSpawned, this, !_placed);
 
     Start();
   }
@@ -83,7 +84,7 @@ public partial class Unit : Node2D
     }
   }
 
-	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell)
+	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell, bool placed = false)
 	{
 		id = unitInfo.Id;
 		name = unitInfo.Name;
@@ -102,6 +103,7 @@ public partial class Unit : Node2D
 		side = _side;
 		startCell = _startCell;
 		startUnitInfo = unitInfo;
+    _placed = placed;
   }
 
 	protected virtual void Start()
@@ -177,6 +179,12 @@ public partial class Unit : Node2D
     _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitDied, this);
     _healthBar.Hide();
     _sprite.Hide();
+  }
+
+  public void Remove()
+  {
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitRemoved, this);
+    QueueFree();
   }
 
   public virtual void ChangeHealth(int amount)
