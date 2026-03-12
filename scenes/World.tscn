@@ -3,9 +3,11 @@
 [ext_resource type="Script" uid="uid://be4c2j8jo30lx" path="res://scripts/World.cs" id="1_1lgw5"]
 [ext_resource type="Texture2D" uid="uid://cbdsbuhs3k6t2" path="res://sprites/tilemaps/tilemap.png" id="1_kqs1s"]
 [ext_resource type="Script" uid="uid://sujkawcgjl8o" path="res://scripts/GridOverlay.cs" id="2_d1c63"]
+[ext_resource type="Script" uid="uid://b78oc5tw6d5f" path="res://scripts/MainMenu.cs" id="4_b3faq"]
 [ext_resource type="Script" uid="uid://dagxq2ao2w6gl" path="res://scripts/UnitsInfoGui.cs" id="4_d1c63"]
 [ext_resource type="Script" uid="uid://c75kv2ravi8k6" path="res://scripts/DecksHandler.cs" id="4_hlk0d"]
 [ext_resource type="Script" uid="uid://cex0prnqmtw17" path="res://scripts/OverlayLayer.cs" id="5_1lgw5"]
+[ext_resource type="Script" uid="uid://d2aedhulpavp2" path="res://scripts/MainMenuButton.cs" id="7_ygioq"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -77,7 +79,7 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_7g83o")
 
-[node name="Root" type="Node2D" unique_id=878260971]
+[node name="World" type="Node2D" unique_id=878260971]
 script = ExtResource("1_1lgw5")
 
 [node name="BackgroundLayer" type="TileMapLayer" parent="." unique_id=1575364190]
@@ -96,6 +98,54 @@ offset_bottom = 576.0
 script = ExtResource("2_d1c63")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=477101008]
+
+[node name="MainMenu" type="Panel" parent="CanvasLayer" unique_id=928757555]
+visible = false
+anchors_preset = -1
+anchor_right = 0.5
+anchor_bottom = 0.89000005
+offset_left = 162.0
+offset_top = 129.0
+offset_right = -225.0
+offset_bottom = -194.72003
+script = ExtResource("4_b3faq")
+
+[node name="Buttons" type="VBoxContainer" parent="CanvasLayer/MainMenu" unique_id=259222532]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 1
+anchors_preset = 13
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -48.0
+offset_right = 48.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/MainMenu/Buttons" unique_id=1707061794]
+layout_mode = 2
+text = "Main Menu"
+horizontal_alignment = 1
+
+[node name="OptionsButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=1780698448]
+layout_mode = 2
+text = "Options"
+
+[node name="SaveGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=259414056]
+layout_mode = 2
+text = "Save Game"
+
+[node name="LoadGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=2110177063]
+layout_mode = 2
+text = "Load Game"
+
+[node name="QuitGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=579963492]
+layout_mode = 2
+text = "Quit Game"
+
+[node name="CloseButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=502908350]
+layout_mode = 2
+text = "Close"
 
 [node name="SelectionUi" type="Panel" parent="CanvasLayer" unique_id=2060907660]
 anchors_preset = -1
@@ -402,6 +452,20 @@ grow_vertical = 2
 
 [node name="WorldUi" type="Panel" parent="CanvasLayer/ScrollContainer" unique_id=2004628543]
 layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="CanvasLayer" unique_id=1791439870]
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.9710001
+anchor_bottom = 0.9480001
+offset_left = 446.0
+offset_top = 581.0
+offset_right = -0.592041
+offset_bottom = -2.3040771
+grow_horizontal = 0
+grow_vertical = 0
+text = "Main Menu"
+script = ExtResource("7_ygioq")
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 

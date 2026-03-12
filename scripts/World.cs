@@ -53,16 +53,16 @@ public partial class World : Node2D
   private Unit _activeUnit = null!;
   private bool _paused = false;
 
-  private Godot.Collections.Dictionary<string, UnitInfo> _unitsData;
+  public Godot.Collections.Dictionary<string, UnitInfo> UnitsData;
   private List<List<UnitInfo>> _unitsPerStage;
   private List<UnitInfo> _levelUnits; // List of units in the current level, used for rewards
   private Dictionary _levelsData;
   private Random _rng = new Random();
 
   // World generation
+  public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private Godot.Collections.Dictionary<string, LevelInfo> _world = new Godot.Collections.Dictionary<string, LevelInfo>();
   private int _numLayers = 30;
   private int _maxNodesPerLayer = 3;
   private int _buttonWidth = 75;
@@ -127,8 +127,8 @@ public partial class World : Node2D
     _levelsData = (Dictionary)parsed;
 
     // Start with 2 turrets
-    _decksHandler.AddUnit(_unitsData["turret"]);
-    _decksHandler.AddUnit(_unitsData["turret"]);
+    _decksHandler.AddUnit(UnitsData["turret"]);
+    _decksHandler.AddUnit(UnitsData["turret"]);
 
     GenerateWorld();
   }
@@ -266,7 +266,7 @@ public partial class World : Node2D
       int y = (int)unitData["y"];
       string name = (string)unitData["name"];
 
-      UnitInfo unitInfo = _unitsData[name];
+      UnitInfo unitInfo = UnitsData[name];
 
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
@@ -501,10 +501,10 @@ public partial class World : Node2D
       _activeLevel.LevelButton.Disabled = true;
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
-        if (_world.ContainsKey(nextNodeId) && !_world[nextNodeId].Unlocked)
+        if (Levels.ContainsKey(nextNodeId) && !Levels[nextNodeId].Unlocked)
         {
-          _world[nextNodeId].Unlocked = true;
-          _world[nextNodeId].LevelButton.Disabled = false;
+          Levels[nextNodeId].Unlocked = true;
+          Levels[nextNodeId].LevelButton.Disabled = false;
         }
       }
     }
@@ -700,7 +700,7 @@ public partial class World : Node2D
 
   private void ParseUnitsJson()
   {
-    _unitsData = new Godot.Collections.Dictionary<string, UnitInfo>();
+    UnitsData = new Godot.Collections.Dictionary<string, UnitInfo>();
     string unitsJson = FileAccess.Open("res://scripts/units/units.json", FileAccess.ModeFlags.Read).GetAsText();
     Variant parsed = Json.ParseString(unitsJson);
     Dictionary unitsData = (Dictionary)parsed;
@@ -731,11 +731,11 @@ public partial class World : Node2D
         occupiedCells.Add(new Vector2I(x, y));
       }
 
-      _unitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
+      UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
         cost, health, health, damage, armor, speed, cooldown, cooldown, description);
 
       int stage = (int)unitData["stage"];
-      _unitsPerStage[stage].Add(_unitsData[unitId]);
+      _unitsPerStage[stage].Add(UnitsData[unitId]);
     }
   }
 
@@ -784,7 +784,7 @@ public partial class World : Node2D
         nodeId = layer.ToString() + '_' + nodeName;
 
 
-        _world[nodeId] = new LevelInfo(
+        Levels[nodeId] = new LevelInfo(
           id: nodeId,
           name: nodeName,
           completed: false,
@@ -796,7 +796,7 @@ public partial class World : Node2D
           levelButton: new Button(),
           units: LoadLevel(levelId)
         );
-        layerNodes.Add(_world[nodeId]);
+        layerNodes.Add(Levels[nodeId]);
       }
       else
       {
@@ -805,7 +805,7 @@ public partial class World : Node2D
           nodeName = $"L{layer}_N{node}";
           nodeId = $"L{layer}_N{node}";
 
-          _world[nodeId] = new LevelInfo(
+          Levels[nodeId] = new LevelInfo(
             id: nodeId,
             name: nodeId,
             completed: false,
@@ -817,7 +817,7 @@ public partial class World : Node2D
             levelButton: new Button(),
             units: LoadRandomLevel(layer + 1)
           );
-          layerNodes.Add(_world[nodeId]);
+          layerNodes.Add(Levels[nodeId]);
 
         }
       }
@@ -873,7 +873,7 @@ public partial class World : Node2D
           bool blockTarget = false;
           foreach (string levelNode in prev[i - 1].NextNodes)
           {
-            if (next.IndexOf(_world[levelNode]) > target)
+            if (next.IndexOf(Levels[levelNode]) > target)
             {
               blockTarget = true; 
               break;
@@ -911,7 +911,7 @@ public partial class World : Node2D
     foreach (string id in levelNode.NextNodes)
     {
 
-      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextLevelNodes.IndexOf(_world[id]), nextLevelNodes.Count);
+      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextLevelNodes.IndexOf(Levels[id]), nextLevelNodes.Count);
 
       //Vector2 toCenter = toBtn.Position + toBtn.RectSize / 2.0f;
       Vector2 toGlobal = nextButtonPos + buttonSize / 2.0f;

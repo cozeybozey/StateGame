@@ -5,9 +5,10 @@ using System.Runtime.CompilerServices;
 
 public partial class DecksHandler : Control
 {
-  private Dictionary<string, UnitInfo[,]> _decks = new Dictionary<string, UnitInfo[,]>();
-  private List<UnitInfo> _availableUnits = new List<UnitInfo>();
-  private Dictionary<string, int> _amountPerUnit = new Dictionary<string, int>();
+  public Dictionary<string, UnitInfo[,]> Decks = new Dictionary<string, UnitInfo[,]>();
+  public List<UnitInfo> AvailableUnits = new List<UnitInfo>();
+  public Dictionary<string, int> AmountPerUnit = new Dictionary<string, int>();
+
   private string _selectedDeck;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
 
@@ -58,12 +59,12 @@ public partial class DecksHandler : Control
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
-    _decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
   }
 
   private void OnUnitRemoved(Unit unit)
   {
-    _decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
+    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
   }
 
   private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
@@ -73,8 +74,8 @@ public partial class DecksHandler : Control
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
-    _decks[_selectedDeck][oldCell.X, oldCell.Y] = null!;
-    _decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][oldCell.X, oldCell.Y] = null!;
+    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
   }
 
   private void OnCreateDeckPressed()
@@ -91,17 +92,17 @@ public partial class DecksHandler : Control
     Button deckButton = new();
     deckButton.Text = deckName;
     _decksList.AddChild(deckButton);
-    _decks[deckName] = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    Decks[deckName] = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     deckButton.Pressed += () => OnDeckSelected(deckButton);
   }
 
   private void OnDeckSelected(Button button)
   {
     _selectedDeck = button.Text;
-    _gridOverlay.LoadDeck(_decks[_selectedDeck]);
+    _gridOverlay.LoadDeck(Decks[_selectedDeck]);
     _decksContainer.Hide();
     _unitsSelectionContainer.Show();
-    AddUnitsSelection(_decks[_selectedDeck]);
+    AddUnitsSelection(Decks[_selectedDeck]);
   }
 
   private void OnChangeDeckPressed()
@@ -130,12 +131,12 @@ public partial class DecksHandler : Control
       }
     }
 
-    foreach (UnitInfo availableUnit in _availableUnits)
+    foreach (UnitInfo availableUnit in AvailableUnits)
     {
       // Add initial turrent selection unit
       UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
       unitGui!.Info = availableUnit;
-      unitGui.Amount = _amountPerUnit[availableUnit.Id];
+      unitGui.Amount = AmountPerUnit[availableUnit.Id];
       if (_amountPlacedPerUnit.ContainsKey(availableUnit.Id))
         unitGui.Amount -= _amountPlacedPerUnit[availableUnit.Id];
       _unitsList.AddChild(unitGui);
@@ -153,17 +154,43 @@ public partial class DecksHandler : Control
   public void ResetUnitsSelection()
   {
     ClearUnitsSelection();
-    AddUnitsSelection(_decks[_selectedDeck]);
+    if (Decks.ContainsKey(_selectedDeck))
+      AddUnitsSelection(Decks[_selectedDeck]);
   }
 
   public void AddUnit(UnitInfo unitInfo)
   {
-    if (_amountPerUnit.ContainsKey(unitInfo.Id))
-      _amountPerUnit[unitInfo.Id]++;
+    if (AmountPerUnit.ContainsKey(unitInfo.Id))
+      AmountPerUnit[unitInfo.Id]++;
     else
     {
-      _availableUnits.Add(unitInfo);
-      _amountPerUnit[unitInfo.Id] = 1;
+      AvailableUnits.Add(unitInfo);
+      AmountPerUnit[unitInfo.Id] = 1;
     }
+  }
+
+  public void LoadDecks()
+  {
+    // This function is called after main menu already set the public variables here correctly
+    foreach (var child in _decksList.GetChildren())
+    {
+      child.QueueFree();
+    }
+    _decksContainer.Show();
+    _unitsSelectionContainer.Hide();
+
+    string newSelectedDeck = null!;
+    foreach (var deck in Decks)
+    {
+      if (newSelectedDeck == null)
+        newSelectedDeck = deck.Key;
+      Button deckButton = new();
+      deckButton.Text = deck.Key;
+      _decksList.AddChild(deckButton);
+      deckButton.Pressed += () => OnDeckSelected(deckButton);
+    }
+
+    _selectedDeck = newSelectedDeck;
+    ResetUnitsSelection();
   }
 }
