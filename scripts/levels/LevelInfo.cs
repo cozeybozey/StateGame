@@ -11,7 +11,6 @@ public partial class LevelInfo : RefCounted
 	public int LayerIndex { get; set; }
   public bool IsBoss { get; set; }
   public List<string> NextNodes { get; set; }
-	public Button LevelButton { get; set; }
 	public UnitInfo[,]? Units { get; set; }
 
 	public LevelInfo(
@@ -23,7 +22,6 @@ public partial class LevelInfo : RefCounted
 		int layerIndex,
 		bool isBoss,
 		List<string> nextNodes,
-		Button levelButton,
 		UnitInfo[,]? units)
 	{
 		Id = id;
@@ -34,7 +32,6 @@ public partial class LevelInfo : RefCounted
 		LayerIndex = layerIndex;
 		IsBoss = isBoss;
 		NextNodes = nextNodes;
-		LevelButton = levelButton;
     Units = units;
 	}
 }

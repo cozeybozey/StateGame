@@ -191,6 +191,6 @@ public partial class DecksHandler : Control
     }
 
     _selectedDeck = newSelectedDeck;
-    ResetUnitsSelection();
+    _gridOverlay.ClearUnits();
   }
 }

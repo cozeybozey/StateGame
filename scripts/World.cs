@@ -61,6 +61,7 @@ public partial class World : Node2D
 
   // World generation
   public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
+  private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
   private int _numLayers = 30;
@@ -498,13 +499,13 @@ public partial class World : Node2D
     if (_activeLevel != null)
     {
       _activeLevel.Completed = true;
-      _activeLevel.LevelButton.Disabled = true;
+      _levelButtons[_activeLevel.Id].Disabled = true;
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
         if (Levels.ContainsKey(nextNodeId) && !Levels[nextNodeId].Unlocked)
         {
           Levels[nextNodeId].Unlocked = true;
-          Levels[nextNodeId].LevelButton.Disabled = false;
+          _levelButtons[nextNodeId].Disabled = false;
         }
       }
     }
@@ -748,33 +749,25 @@ public partial class World : Node2D
     return 4;
   }
 
-  void GenerateWorld()
+  void PopulateLevels()
   {
-    _worldUi.CustomMinimumSize = new Vector2(
-      _maxNodesPerLayer * _worldUiSpacing + 300,
-      _numLayers * 0.5f * _worldUiSpacing + 200
-    );
-    _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
-
     List<List<LevelInfo>> layers = new();
+    int currentNodesInLayer = 1;
 
-    int currentNodesInLayer = 1; // Start with 1 node in the first layer
     for (int layer = 0; layer < _numLayers; layer++)
     {
       List<LevelInfo> layerNodes = new();
       string nodeId;
       string nodeName;
-
       bool isBoss = (layer + 1) % 10 == 0;
+
       if (isBoss)
       {
         string levelId;
-
         if (layer + 1 == 20)
         {
           nodeName = "Golden Turret";
           levelId = "golden_turret";
-
         }
         else
         {
@@ -782,19 +775,16 @@ public partial class World : Node2D
           levelId = "blob";
         }
         nodeId = layer.ToString() + '_' + nodeName;
-
-
         Levels[nodeId] = new LevelInfo(
-          id: nodeId,
-          name: nodeName,
-          completed: false,
-          unlocked: layer == 0, // Only unlock first layer initially
-          layer: layer,
-          layerIndex: 0,
-          isBoss: true,
-          nextNodes: new List<string>(),
-          levelButton: new Button(),
-          units: LoadLevel(levelId)
+            id: nodeId,
+            name: nodeName,
+            completed: false,
+            unlocked: layer == 0,
+            layer: layer,
+            layerIndex: 0,
+            isBoss: true,
+            nextNodes: new List<string>(),
+            units: LoadLevel(levelId)
         );
         layerNodes.Add(Levels[nodeId]);
       }
@@ -804,34 +794,50 @@ public partial class World : Node2D
         {
           nodeName = $"L{layer}_N{node}";
           nodeId = $"L{layer}_N{node}";
-
           Levels[nodeId] = new LevelInfo(
-            id: nodeId,
-            name: nodeId,
-            completed: false,
-            unlocked: layer == 0, // Only unlock first layer initially
-            layer: layer,
-            layerIndex: node,
-            isBoss: false,
-            nextNodes: new List<string>(),
-            levelButton: new Button(),
-            units: LoadRandomLevel(layer + 1)
+              id: nodeId,
+              name: nodeId,
+              completed: false,
+              unlocked: layer == 0,
+              layer: layer,
+              layerIndex: node,
+              isBoss: false,
+              nextNodes: new List<string>(),
+              units: LoadRandomLevel(layer + 1)
           );
           layerNodes.Add(Levels[nodeId]);
-
         }
       }
 
       layers.Add(layerNodes);
+
       if (layer > 0)
-      {
         ConnectLayers(layers[layer - 1], layers[layer], isBoss);
-        foreach (LevelInfo levelNode in layers[layer - 1])
-        {
-          AddLevelUi(levelNode, layers[layer - 1].Count, layers[layer]);
-        }
-      }
+
       currentNodesInLayer = _rng.Next(1, _maxNodesPerLayer + 1);
+    }
+  }
+
+  public void GenerateWorldUi()
+  {
+    _worldUi.CustomMinimumSize = new Vector2(
+        _maxNodesPerLayer * _worldUiSpacing + 300,
+        _numLayers * 0.5f * _worldUiSpacing + 200
+    );
+    _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
+
+    // Group levels by layer
+    var layers = Levels.Values
+        .GroupBy(l => l.Layer)
+        .OrderBy(g => g.Key)
+        .Select(g => g.OrderBy(l => l.LayerIndex).ToList())
+        .ToList();
+
+    // Add UI for all layers except the last
+    for (int i = 0; i < layers.Count - 1; i++)
+    {
+      foreach (LevelInfo levelNode in layers[i])
+        AddLevelUi(levelNode, layers[i].Count, layers[i + 1]);
     }
   }
 
@@ -896,12 +902,14 @@ public partial class World : Node2D
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
     Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
 
-    levelNode.LevelButton.Text = levelNode.Name;
-    levelNode.LevelButton.Disabled = !levelNode.Unlocked;
-    levelNode.LevelButton.CustomMinimumSize = buttonSize;
-    levelNode.LevelButton.Position = buttonPos;
-    levelNode.LevelButton.Pressed += () => OnLevelSelected(levelNode);
-    _worldUi.AddChild(levelNode.LevelButton);
+    Button button = new();
+    button.Text = levelNode.Name;
+    button.Disabled = !levelNode.Unlocked;
+    button.CustomMinimumSize = buttonSize;
+    button.Position = buttonPos;
+    button.Pressed += () => OnLevelSelected(levelNode);
+    _levelButtons[levelNode.Id] = button;
+    _worldUi.AddChild(button);
 
     //Vector2 fromCenter = btn.Position + btn.Size / 2.0f;
     // Convert to global coordinates relative to the CanvasLayer so Line2D (a Node2D) can be added there
@@ -948,6 +956,27 @@ public partial class World : Node2D
   {
     _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
   }
+
+  private void GenerateWorld()
+  {
+    PopulateLevels();
+    GenerateWorldUi();
+  }
+
+  public void LoadLevels()
+  {
+    // This function assumes the Levels variable has already been correctly loaded with new levels
+
+    // Clear existing levels
+    foreach (var child in _worldUi.GetChildren())
+    {
+      child.QueueFree();
+    }
+
+    // Add newly loaded levels
+    GenerateWorldUi();
+  }
+
 
   public override void _Input(InputEvent @event)
   {

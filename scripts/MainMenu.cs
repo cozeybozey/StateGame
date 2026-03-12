@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 public partial class MainMenu : Panel
 {
@@ -176,31 +177,46 @@ public partial class MainMenu : Panel
     _decksHandler.LoadDecks();
 
     // Load levels
-    //var levelsData = saveData["levels"].AsGodotDictionary();
-    //foreach (var levelKey in levelsData.Keys)
-    //{
-    //  string levelId = levelKey.AsString();
-    //  if (!_world.Levels.ContainsKey(levelId)) continue;
+    var levelsData = saveData["levels"].AsGodotDictionary();
+    _world.Levels.Clear();
 
-    //  var levelData = levelsData[levelKey].AsGodotDictionary();
-    //  LevelInfo level = _world.Levels[levelId];
+    foreach (var levelKey in levelsData.Keys)
+    {
+      string levelId = levelKey.AsString();
+      var levelData = levelsData[levelKey].AsGodotDictionary();
 
-    //  level.Completed = levelData["completed"].AsBool();
-    //  level.Unlocked = levelData["unlocked"].AsBool();
+      var nextNodes = new List<string>();
+      foreach (var nextNode in levelData["nextNodes"].AsGodotArray())
+        nextNodes.Add(nextNode.AsString());
 
-    //  var unitGrid = levelData["units"].AsGodotArray();
-    //  level.Units = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    //  foreach (var unitEntry in unitGrid)
-    //  {
-    //    var unitData = unitEntry.AsGodotDictionary();
-    //    int x = unitData["x"].AsInt32();
-    //    int y = unitData["y"].AsInt32();
-    //    string id = unitData["id"].AsString();
-    //    level.Units[x, y] = _world.UnitsData[id];
-    //  }
-    //}
+      var unitGrid = levelData["units"].AsGodotArray();
+      UnitInfo[,] units = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+      foreach (var unitEntry in unitGrid)
+      {
+        var unitData = unitEntry.AsGodotDictionary();
+        int x = unitData["x"].AsInt32();
+        int y = unitData["y"].AsInt32();
+        string id = unitData["id"].AsString();
+        units[x, y] = _world.UnitsData[id];
+      }
+
+      _world.Levels[levelId] = new LevelInfo(
+          id: levelId,
+          name: levelData["name"].AsString(),
+          completed: levelData["completed"].AsBool(),
+          unlocked: levelData["unlocked"].AsBool(),
+          layer: levelData["layer"].AsInt32(),
+          layerIndex: levelData["layerIndex"].AsInt32(),
+          isBoss: levelData["isBoss"].AsBool(),
+          nextNodes: nextNodes,
+          units: units
+      );
+    }
+
+    _world.LoadLevels();
 
     GD.Print("Game loaded.");
+    Visible = false;
   }
 
   private void OnQuitGameButtonPressed()
