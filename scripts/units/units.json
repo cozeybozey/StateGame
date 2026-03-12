@@ -340,13 +340,13 @@
 		"texture": "res://sprites/units/consumer.png",
 		"scene": "res://scenes/units/consumer.tscn",
 		"cells": [[0, 0]],
-		"stage": 5, 
-		"cost": 1,
-		"description": "Deal damage to frontmost unit. Consume closest unit and gain its stats.",
-		"health": 10,
+		"stage": 2, 
+		"cost": 2,
+		"description": "Every turn switch between moving to and consuming an allied unit and dealing damage to the enemy units. Gain +4 max health, +4 damage and 1 extra target for each unit consumed.",
+		"health": 4,
 		"damage": 2,
 		"armor": 0,
-		"speed": 3,
+		"speed": 6,
 		"cooldown": 1
 	},
 	"sergeant": {
