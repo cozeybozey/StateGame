@@ -37,7 +37,7 @@ public partial class Blob : Unit
     _sprite.Scale = GlobalFunctions.CellsToDimensions(occupiedCells);
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I currentDimensions = GlobalFunctions.CellsToDimensions(occupiedCells);
     int currentSize = currentDimensions.X; // Can also use Y here cause unit should be square

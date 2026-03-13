@@ -7,7 +7,7 @@ public partial class Cluster : Unit
 {
   private int _nrOfTargets = 16;
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Random random = new();
 

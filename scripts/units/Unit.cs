@@ -19,6 +19,7 @@ public partial class Unit : Node2D
 	public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
 	public string description { get; set; }
   public bool side = true; // true for player, false for enemy
+  public bool SwitchedSides = false;
   public Vector2I occupiedMainCell;
 	public Vector2I startCell;
 	public Texture2D texture;
@@ -36,10 +37,12 @@ public partial class Unit : Node2D
 	private Queue<Tuple<string, Color>> _floatingTextQueue = new Queue<Tuple<string, Color>>();
 	private bool _dead = false;
   private bool _placed = false;
+  protected RandomNumberGenerator _rng = new RandomNumberGenerator();
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
 	{
+    _rng.Randomize();
     _sprite = GetNode<Sprite2D>("Sprite");
 		_healthBar = GetNode<TextureProgressBar>("Health");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
@@ -144,7 +147,7 @@ public partial class Unit : Node2D
     }
   }
 
-	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
     if (side)
     {
@@ -172,7 +175,19 @@ public partial class Unit : Node2D
 		return [];
   }
 
-	public void Die()
+  public virtual void TurnEnd(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    // Reset units side to original side upon turn end
+    if (SwitchedSides)
+    {
+      side = !side;
+      SwitchedSides = false;
+      SpawnFloatingText("Switched sides", Colors.Red);
+    }
+  }
+
+
+  public void Die()
 	{
     _dead = true;
     DeathRattle();

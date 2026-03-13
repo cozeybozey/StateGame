@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Sergeant : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 

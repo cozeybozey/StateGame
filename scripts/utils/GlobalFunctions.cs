@@ -110,8 +110,8 @@ public partial class GlobalFunctions : Node
       return null!;
 
 
-    RandomNumberGenerator _rng = new RandomNumberGenerator();
-    _rng.Randomize();
-    return possibleLocations[_rng.RandiRange(0, possibleLocations.Count - 1)];
+    RandomNumberGenerator rng = new RandomNumberGenerator();
+    rng.Randomize();
+    return possibleLocations[rng.RandiRange(0, possibleLocations.Count - 1)];
   }
 }

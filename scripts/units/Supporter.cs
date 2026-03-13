@@ -16,28 +16,30 @@ public partial class Supporter : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I? closest = null;
     float closestDist = float.MaxValue;
 
-    for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+    if (units == null || units.Count == 0)
+      return new List<Vector2I>();
+
+    foreach (Unit unit in units)
     {
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      if (unit == null || unit == this)
+        continue;
+
+      float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
+      if (dist < closestDist)
       {
-        Unit unit = unitsGrid[x, y];
-        if (unit != null && unit != this)
-        {
-          float dist = occupiedMainCell.DistanceTo(new Vector2I(x, y));
-          if (dist < closestDist)
-          {
-            closestDist = dist;
-            closest = new Vector2I(x, y);
-          }
-        }
+        closestDist = dist;
+        closest = unit.occupiedMainCell;
       }
     }
 
-    return closest.HasValue ? [closest.Value] : [];
+    if (closest.HasValue)
+      return new List<Vector2I> { closest.Value };
+
+    return new List<Vector2I>();
   }
 }

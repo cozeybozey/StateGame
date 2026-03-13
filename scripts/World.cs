@@ -2,6 +2,7 @@ using Godot;
 using Godot.Collections;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
@@ -159,7 +160,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid, _removedUnits);
+        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid, _units, _removedUnits);
         _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
@@ -179,6 +180,7 @@ public partial class World : Node2D
         {
           _unitIndex = 0;
           _turn += 1;
+          SortUnits();
           _turnCounter.Text = _turn.ToString();
           if (_turn > 10)
           {
@@ -200,6 +202,10 @@ public partial class World : Node2D
 
           // Possibly respawn zombies
           RespawnZombies();
+
+          // Call turn end function of every unit
+          foreach (Unit unit in _units)
+            unit.TurnEnd(_unitsGrid, _units, _removedUnits);
         }
 
         _activeUnitLayer.Clear();
@@ -1065,9 +1071,14 @@ public partial class World : Node2D
   }
 
   private void SortUnits()
-  {     
+  {
+    int currentIndex = _unitIndex;
+    if (_targeting || _acting)
+      currentIndex++;  // Increase current index by one to ensure the unit that is acting now is not resorted
+
     // Sort units by speed, then by position for consistent turn order
-    _units = _units
+    List<Unit> sorted = _units
+    .Skip(currentIndex)  // Skip units that have already played their turn
     .OrderByDescending(u => u.speed)  // Speed first
     .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
     .ThenBy(u =>
@@ -1075,5 +1086,7 @@ public partial class World : Node2D
             ? u.occupiedMainCell.Y  // Player: lower Y first
             : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
     .ToList();
+
+    _units = _units.Take(currentIndex).Concat(sorted).ToList();
   }
 }

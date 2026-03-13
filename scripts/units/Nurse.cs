@@ -16,7 +16,7 @@ public partial class Nurse : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I targetVector = new Vector2I(occupiedMainCell.X, occupiedMainCell.Y - 1);
 

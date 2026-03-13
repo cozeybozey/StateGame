@@ -27,7 +27,7 @@ public partial class Priest : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Pick random unit from dead units
     if (deadUnits.Count == 0)

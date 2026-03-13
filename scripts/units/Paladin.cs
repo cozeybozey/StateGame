@@ -13,9 +13,9 @@ public partial class Paladin : Unit
     _globalSignals.HealthChanged += OnHealthChanged;
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> result = base.GetTargets(unitsGrid, deadUnits);
+    List<Vector2I> result = base.GetTargets(unitsGrid, units, deadUnits);
     if (result.Count == 0)
       return result;
     Vector2I primary = result[0];

@@ -67,45 +67,28 @@ public partial class Consumer : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
     if (_shouldConsume)
     {
-      // Find closest allied unit (excluding self) that the consumer can be placed on
-      Unit closestAlly = null!;
-      int bestDist = int.MaxValue;
-      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      Unit? closestAlly = null;
+      float closestDist = float.MaxValue;
+
+      if (units == null || units.Count == 0)
+        return new List<Vector2I>();
+
+      foreach (Unit unit in units)
       {
-        for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        if (unit == null || unit == this)
+          continue;
+
+        float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
+        if (dist < closestDist)
         {
-          Unit unit = unitsGrid[x, y];
-          if (unit != null && unit.side == side && unit != this)
-          {
-            // Ensure the consumer can be placed at the ally's main cell without going out of bounds
-            bool canPlace = true;
-            foreach (Vector2I rel in this.occupiedCells)
-            {
-              int checkX = unit.occupiedMainCell.X + rel.X;
-              int checkY = unit.occupiedMainCell.Y + rel.Y;
-              if (!GlobalFunctions.IsCellInsideGrid(new Vector2I(checkX, checkY)))
-              {
-                canPlace = false;
-                break;
-              }
-            }
-
-            if (!canPlace)
-              continue;
-
-            int dist = Math.Abs(x - occupiedMainCell.X) + Math.Abs(y - occupiedMainCell.Y);
-            if (dist < bestDist)
-            {
-              bestDist = dist;
-              closestAlly = unit;
-            }
-          }
+          closestDist = dist;
+          closestAlly = unit;
         }
       }
 
