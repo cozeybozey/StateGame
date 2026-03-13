@@ -61,6 +61,7 @@ public partial class World : Node2D
 
   // World generation
   public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
+  public int[] AmountOfNodesPerLayer;
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
@@ -114,6 +115,7 @@ public partial class World : Node2D
     _activeUnitLayer.OutlineColor = Colors.Yellow;
     _activeUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _targetedCellsLayer.OutlineColor = Colors.Red;
+    AmountOfNodesPerLayer = new int[_numLayers];
 
     _levelUnits = new List<UnitInfo>();
     _unitsPerStage = new List<List<UnitInfo>>(10);
@@ -304,29 +306,7 @@ public partial class World : Node2D
         continue;
 
       // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
-      List<Vector2I> possiblePositions = new();
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-      {
-        for (int y = 0; y < Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5); y++)
-        {
-          bool canPlace = true;
-          foreach (Vector2I cell in unitInfo.OccupiedCells)
-          {
-            int checkX = x + cell.X;
-            int checkY = y + cell.Y;
-            if (checkX >= GlobalConstants.GridSize.X || checkY >= Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) ||
-              checkX < 0 || checkY < 0 || unitGrid[checkX, checkY] != null)
-            {
-              canPlace = false;
-              break;
-            }
-          }
-          if (canPlace)
-          {
-            possiblePositions.Add(new Vector2I(x, y));
-          }
-        }
-      }
+      List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, unitInfo.OccupiedCells, false);
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
       if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist")
@@ -781,6 +761,7 @@ public partial class World : Node2D
             units: LoadLevel(levelId)
         );
         layerNodes.Add(Levels[nodeId]);
+        AmountOfNodesPerLayer[layer] = 1;
       }
       else
       {
@@ -801,6 +782,7 @@ public partial class World : Node2D
           );
           layerNodes.Add(Levels[nodeId]);
         }
+        AmountOfNodesPerLayer[layer] = currentNodesInLayer;
       }
 
       layers.Add(layerNodes);
@@ -831,7 +813,7 @@ public partial class World : Node2D
     for (int i = 0; i < layers.Count; i++)
     {
       foreach (LevelInfo levelNode in layers[i])
-        AddLevelUi(levelNode, layers[i].Count, layers[i + 1]);
+        AddLevelUi(levelNode, layers[i].Count);
     }
   }
 
@@ -891,7 +873,7 @@ public partial class World : Node2D
     }
   }
 
-  void AddLevelUi(LevelInfo levelNode, int nodesInLayer, List<LevelInfo> nextLevelNodes)
+  void AddLevelUi(LevelInfo levelNode, int nodesInLayer)
   {
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
     Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
@@ -913,7 +895,7 @@ public partial class World : Node2D
     foreach (string id in levelNode.NextNodes)
     {
 
-      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, nextLevelNodes.IndexOf(Levels[id]), nextLevelNodes.Count);
+      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, Levels[id].LayerIndex, AmountOfNodesPerLayer[Levels[id].Layer]);
 
       //Vector2 toCenter = toBtn.Position + toBtn.RectSize / 2.0f;
       Vector2 toGlobal = nextButtonPos + buttonSize / 2.0f;
@@ -1047,20 +1029,12 @@ public partial class World : Node2D
       {
         removedZombies.Add(unit);
 
-        bool spawnPossible = true;
-        foreach (Vector2I cell in unit.GetOccupiedCells())
-        {
-          if (_unitsGrid[cell.X, cell.Y] != null)
-          {
-            spawnPossible = false;
-            break;
-          }
-        }
-        if (!spawnPossible)
+        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, unit.occupiedCells, unit.side);
+        if (spawnCell == null)
           continue;
 
         Unit unitInstance = GD.Load<PackedScene>(unit.scenePath).Instantiate() as Unit;
-        unitInstance!.Initialize(unit.GetStartInfo(), unit.side, unit.startCell);
+        unitInstance!.Initialize(unit.GetStartInfo(), unit.side, spawnCell.Value);
         _unitsNode.AddChild(unitInstance);
         unitInstance.SpawnFloatingText("Revived", Colors.Green);
       }

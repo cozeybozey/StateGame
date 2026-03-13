@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Drawing;
 
 public partial class GlobalFunctions : Node
 {
@@ -60,5 +61,57 @@ public partial class GlobalFunctions : Node
     }
 
     return new Vector2I(targetCell.X - minX, targetCell.Y - minY);
+  }
+
+  // Type T unitsGrid because it can be of type Unit[,] or UnitInfo[,] all we do is check for null
+  public static List<Vector2I> GetPossibleUnitLocations<T>(T[,] unitsGrid, List<Vector2I> occupiedCells, bool side)
+  {
+    int startY, endY;
+    if (side)
+    {
+      startY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+      endY = GlobalConstants.GridSize.Y - 1;
+    }
+    else
+    {
+      startY = 0;
+      endY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+    }
+
+    List<Vector2I> possiblePositions = new();
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = startY; y < endY; y++)
+      {
+        bool canPlace = true;
+        foreach (Vector2I rel in occupiedCells)
+        {
+          int checkX = x + rel.X;
+          int checkY = y + rel.Y;
+          if (checkX < 0 || checkY < startY || checkX >= GlobalConstants.GridSize.X || checkY >= endY || unitsGrid[checkX, checkY] != null)
+          {
+            canPlace = false;
+            break;
+          }
+        }
+        if (canPlace)
+          possiblePositions.Add(new Vector2I(x, y));
+      }
+    }
+
+    return possiblePositions;
+  }
+
+  public static Vector2I? GetRandomUnitSpawnLocation<T>(T[,] unitsGrid, List<Vector2I> occupiedCells, bool side)
+  {
+    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, occupiedCells, side);
+
+    if (possibleLocations.Count == 0)
+      return null!;
+
+
+    RandomNumberGenerator _rng = new RandomNumberGenerator();
+    _rng.Randomize();
+    return possibleLocations[_rng.RandiRange(0, possibleLocations.Count - 1)];
   }
 }

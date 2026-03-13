@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class MainMenu : Panel
 {
@@ -122,6 +123,7 @@ public partial class MainMenu : Panel
       levelsData[level.Key] = levelData;
     }
     saveData["levels"] = levelsData;
+    saveData["levelNodesPerLayer"] = _world.AmountOfNodesPerLayer;
 
     // Write to file
     string json = Json.Stringify(saveData, "\t");
@@ -212,6 +214,7 @@ public partial class MainMenu : Panel
           units: units
       );
     }
+    _world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray();
 
     _world.LoadLevels();
 

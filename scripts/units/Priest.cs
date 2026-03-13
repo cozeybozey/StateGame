@@ -45,31 +45,7 @@ public partial class Priest : Unit
     UnitInfo unitInfo = _unitToBeRevived.GetStartInfo();
 
     // Spawn unit at random location
-    List<Vector2I> possiblePositions = new();
-    int yStart = (side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : 0;
-    int yEnd = (side) ? GlobalConstants.GridSize.Y : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
-    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-    {
-      for (int y = yStart; y < yEnd; y++)
-      {
-        bool canPlace = true;
-        foreach (Vector2I cell in unitInfo.OccupiedCells)
-        {
-          int checkX = x + cell.X;
-          int checkY = y + cell.Y;
-          if (checkX >= GlobalConstants.GridSize.X || checkY >= yEnd ||
-              checkX < 0 || checkY < yStart || unitsGrid[checkX, checkY] != null)
-          {
-            canPlace = false;
-            break;
-          }
-        }
-        if (canPlace)
-        {
-          possiblePositions.Add(new Vector2I(x, y));
-        }
-      }
-    }
+    List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, unitInfo.OccupiedCells, false);
 
     // Now that the unit has been revided it can be removed from the dead units list
     if (IsInstanceValid(_unitToBeRevived))

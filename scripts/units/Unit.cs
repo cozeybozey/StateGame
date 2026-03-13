@@ -40,7 +40,7 @@ public partial class Unit : Node2D
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
 	{
-		_sprite = GetNode<Sprite2D>("Sprite");
+    _sprite = GetNode<Sprite2D>("Sprite");
 		_healthBar = GetNode<TextureProgressBar>("Health");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
