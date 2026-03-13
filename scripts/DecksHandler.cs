@@ -82,6 +82,7 @@ public partial class DecksHandler : Control
   {
     _nameInput.Clear();
     _popup.PopupCentered();
+    _nameInput.GrabFocus();
   }
 
   private void OnPopupConfirmed()

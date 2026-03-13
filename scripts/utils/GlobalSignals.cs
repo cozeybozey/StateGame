@@ -19,6 +19,9 @@ public partial class GlobalSignals : Node
   public delegate void SizeChangedEventHandler(Unit unit, Godot.Collections.Array<Vector2I> oldOccupiedCells);
 
   [Signal]
+  public delegate void HealthChangedEventHandler(Unit unit, int amount);
+
+  [Signal]
   public delegate void UnitRemovedEventHandler(Unit unit);
 
   [Signal]

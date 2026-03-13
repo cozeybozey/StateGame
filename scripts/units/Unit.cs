@@ -223,6 +223,8 @@ public partial class Unit : Node2D
 			_sprite.Modulate = new Color(1, 1, 1, 0.5f);
       SpawnFloatingText(displayedText, displayedColor);
     }
+
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.HealthChanged, this, amount);
   }
 
   public virtual void ChangeDamage(int amount)
@@ -236,7 +238,7 @@ public partial class Unit : Node2D
 		Color color = Colors.Yellow;
 		if (amount < 0)
 		{
-			text = $"-{amount} Damage";
+			text = $"{amount} Damage";
 			color = Colors.Red;
     }
 
@@ -264,7 +266,7 @@ public partial class Unit : Node2D
     Color color = Colors.Yellow;
     if (amount < 0)
     {
-      text = $"-{amount} Health";
+      text = $"{amount} Health";
       color = Colors.Red;
     }
 
@@ -289,7 +291,7 @@ public partial class Unit : Node2D
     Color color = Colors.Yellow;
     if (amount < 0)
     {
-      text = $"-{amount} Armor";
+      text = $"{amount} Armor";
       color = Colors.Red;
     }
 
@@ -314,7 +316,7 @@ public partial class Unit : Node2D
     Color color = Colors.Yellow;
     if (amount < 0)
     {
-      text = $"-{amount} Speed";
+      text = $"{amount} Speed";
       color = Colors.Red;
     }
 
@@ -337,11 +339,11 @@ public partial class Unit : Node2D
     cooldown += amount;
 
     string text = $"+{amount} Cooldown";
-    Color color = Colors.Yellow;
+    Color color = Colors.Red;
     if (amount < 0)
     {
-      text = $"-{amount} Cooldown";
-      color = Colors.Red;
+      text = $"{amount} Cooldown";
+      color = Colors.Yellow;
     }
 
     if (_affected)

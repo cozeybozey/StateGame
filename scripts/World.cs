@@ -460,19 +460,6 @@ public partial class World : Node2D
     _turnEndDamage = 1;
     _levelUnits.Clear();
 
-    // TODO check if necessary
-    //if (_activeLevel != null)
-    //{
-    //  for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-    //  {
-    //    for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-    //    {
-    //      if (_activeLevel.Units![x, y] != null)
-    //        _activeLevel.Units![x, y] = null;
-    //    }
-    //  }
-    //}
-
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
     {
@@ -746,7 +733,8 @@ public partial class World : Node2D
     if (difficulty < 6) return 1;
     if (difficulty < 10) return 2;
     if (difficulty < 16) return 3;
-    return 4;
+    if (difficulty < 22) return 4;
+    return 5;
   }
 
   void PopulateLevels()
@@ -764,16 +752,22 @@ public partial class World : Node2D
       if (isBoss)
       {
         string levelId;
-        if (layer + 1 == 20)
+        if (layer + 1 == 10)
         {
           nodeName = "Golden Turret";
           levelId = "golden_turret";
         }
-        else
+        else if (layer + 1 == 20)
         {
           nodeName = "Blob";
           levelId = "blob";
         }
+        else
+        {
+          nodeName = "Nuke";
+          levelId = "nuke";
+        }
+
         nodeId = layer.ToString() + '_' + nodeName;
         Levels[nodeId] = new LevelInfo(
             id: nodeId,
@@ -792,8 +786,8 @@ public partial class World : Node2D
       {
         for (int node = 0; node < currentNodesInLayer; node++)
         {
-          nodeName = $"L{layer}_N{node}";
-          nodeId = $"L{layer}_N{node}";
+          nodeName = $"L{layer + 1}_N{node + 1}";
+          nodeId = $"L{layer + 1}_N{node + 1}";
           Levels[nodeId] = new LevelInfo(
               id: nodeId,
               name: nodeId,
@@ -834,7 +828,7 @@ public partial class World : Node2D
         .ToList();
 
     // Add UI for all layers except the last
-    for (int i = 0; i < layers.Count - 1; i++)
+    for (int i = 0; i < layers.Count; i++)
     {
       foreach (LevelInfo levelNode in layers[i])
         AddLevelUi(levelNode, layers[i].Count, layers[i + 1]);
