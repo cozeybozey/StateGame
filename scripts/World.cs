@@ -33,6 +33,7 @@ public partial class World : Node2D
   private DecksHandler _decksHandler;
 
   private List<Unit> _units;
+  private List<Unit> _unitsToAct;
   private List<Unit> _removedUnits;
   private Unit[,] _unitsGrid;
   private int _unitIndex = 0;
@@ -102,6 +103,7 @@ public partial class World : Node2D
     _playPauseButton.Pressed += OnPlayPauseButtonPressed;
     _surrenderButton.Pressed += OnSurrenderButtonPressed;
     _units = new List<Unit>();
+    _unitsToAct = new List<Unit>();
     _removedUnits = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.UnitDied += OnUnitDied;
@@ -148,7 +150,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _units[_unitIndex].Act(_selectedTargets, _unitsGrid);
+        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid);
         _unitIndex += 1;
         _turnCooldown = _turnStartCooldown;
         _acting = false;
@@ -160,7 +162,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _units[_unitIndex].GetTargets(_unitsGrid, _units, _removedUnits);
+        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _unitsToAct, _removedUnits);
         _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
@@ -176,46 +178,19 @@ public partial class World : Node2D
       _turnCooldown -= delta;
       if (_turnCooldown <= 0)
       {
-        if (_unitIndex >= _units.Count)
+        if (_unitIndex >= _unitsToAct.Count)
         {
-          _unitIndex = 0;
-          _turn += 1;
-          SortUnits();
-          _turnCounter.Text = _turn.ToString();
-          if (_turn > 10)
-          {
-            // Apply end of turn damage to all units
-            int index = 0;
-            while (index < _units.Count)
-            {
-              Unit unit = _units[index];
-              unit.ChangeHealth(-_turnEndDamage);
-              // If the unit died from end of turn damage, it will be removed from the list, so we don't increment the index
-              if (_units.Contains(unit))
-                index += 1;
-            }
-            _turnEndDamage += 1;  // Increase end of turn damage for next turn
-            _turnCooldown = _turnStartCooldown;
-            _unitIndex = 0;  // Set to 0 again incase a unit died and change the _unitIndex value
-            return;
-          }
-
-          // Possibly respawn zombies
-          RespawnZombies();
-
-          // Call turn end function of every unit
-          foreach (Unit unit in _units)
-            unit.TurnEnd(_unitsGrid, _units, _removedUnits);
+          TurnEnd();
         }
 
         _activeUnitLayer.Clear();
         _activeUnit = null!;
         _targetedCellsLayer.Clear();
-        if (_units[_unitIndex].CanAct())
+        if (_unitsToAct[_unitIndex].CanAct())
         {
           // Show overlay on selected cells
-          _activeUnitLayer.ShowCells(_units[_unitIndex].GetOccupiedCells());
-          _activeUnit = _units[_unitIndex];
+          _activeUnitLayer.ShowCells(_unitsToAct[_unitIndex].GetOccupiedCells());
+          _activeUnit = _unitsToAct[_unitIndex];
           _targeting = true;
         }
         else
@@ -233,7 +208,6 @@ public partial class World : Node2D
     _playPauseButton.Visible = true;
     _surrenderButton.Visible = true;
     _gridOverlay.SetInteractionLocked(true);
-    Unit[,] playerUnits = _gridOverlay.GetUnits();
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
@@ -254,6 +228,8 @@ public partial class World : Node2D
       }
     }
 
+    // Copy units to create a list of units that are going to act this turn
+    _unitsToAct = [.._units];
     _playing = true;
   }
 
@@ -315,7 +291,7 @@ public partial class World : Node2D
       List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, unitInfo.OccupiedCells, false);
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist")
+      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || unitInfo.Id == "bulwark")
       {
         // Position these units in the front portion of the grid
         List<Vector2I> frontPositions = new List<Vector2I>();
@@ -421,6 +397,7 @@ public partial class World : Node2D
     foreach (Unit unit in _units)
       unit.QueueFree();
     _units.Clear();
+    _unitsToAct.Clear();
 
     // Removed units can still be active so make sure to remove those as well
     foreach (Unit unit in _removedUnits)
@@ -534,7 +511,7 @@ public partial class World : Node2D
 
   private void OnUnitDied(Unit unit)
   {
-    int index = _units.IndexOf(unit);
+    int index = _unitsToAct.IndexOf(unit);
     if (index <= _unitIndex)
       _unitIndex -= 1;
 
@@ -561,6 +538,7 @@ public partial class World : Node2D
       _selectedUnitLayer.Clear();
     }
     _units.Remove(unit);
+    _unitsToAct.Remove(unit);
 
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
@@ -595,7 +573,31 @@ public partial class World : Node2D
       _unitsGrid[cell.X, cell.Y] = unit;
     }
 
-    SortUnits();
+    if (_playing)
+      SortUnits(_unitsToAct);
+    else
+      SortUnits(_units);
+  }
+
+  private void OnUnitSpawned(Unit unit, bool playing)
+  {
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      _unitsGrid[cell.X, cell.Y] = unit;
+    }
+    _units.Add(unit);
+    if (_playing)
+      _unitsToAct.Add(unit);
+
+    if (unit.side)
+      _playerUnitsCount++;
+    else
+      _enemyUnitsCount++;
+
+    if (_playing)
+      SortUnits(_unitsToAct);
+    else
+      SortUnits(_units);
   }
 
   private void OnUnitSizeChanged(Unit unit, Godot.Collections.Array<Vector2I> oldOccupiedCells)
@@ -621,12 +623,18 @@ public partial class World : Node2D
       _unitsGrid[cell.X, cell.Y] = unit;
     }
 
-    SortUnits();
+    if (_playing)
+      SortUnits(_unitsToAct);
+    else
+      SortUnits(_units);
   }
 
   private void OnSpeedChanged(Unit unit)
   {
-    SortUnits();
+    if (_playing)
+      SortUnits(_unitsToAct);
+    else
+      SortUnits(_units);
   }
 
   private void OnRewardButtonPressed(UnitInfo unitInfo)
@@ -1054,30 +1062,14 @@ public partial class World : Node2D
     }
   }
 
-  private void OnUnitSpawned(Unit unit, bool playing)
-  {
-    foreach (Vector2I cell in unit.GetOccupiedCells())
-    {
-      _unitsGrid[cell.X, cell.Y] = unit;
-    }
-    _units.Add(unit);
-
-    if (unit.side)
-      _playerUnitsCount++;
-    else
-      _enemyUnitsCount++;
-
-    SortUnits();
-  }
-
-  private void SortUnits()
+  private void SortUnits(List<Unit> units)
   {
     int currentIndex = _unitIndex;
     if (_targeting || _acting)
       currentIndex++;  // Increase current index by one to ensure the unit that is acting now is not resorted
 
     // Sort units by speed, then by position for consistent turn order
-    List<Unit> sorted = _units
+    List<Unit> sorted = units
     .Skip(currentIndex)  // Skip units that have already played their turn
     .OrderByDescending(u => u.speed)  // Speed first
     .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
@@ -1087,6 +1079,40 @@ public partial class World : Node2D
             : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
     .ToList();
 
-    _units = _units.Take(currentIndex).Concat(sorted).ToList();
+    units.RemoveRange(currentIndex, units.Count - currentIndex);
+    units.AddRange(sorted);
+  }
+
+  private void TurnEnd()
+  {
+    _unitIndex = 0;
+    _turn += 1;
+    SortUnits(_units);
+    _unitsToAct = [.._units];  // Reset units to act to level units list
+    _turnCounter.Text = _turn.ToString();
+    if (_turn > 10)
+    {
+      // Apply end of turn damage to all units
+      int index = 0;
+      while (index < _units.Count)
+      {
+        Unit unit = _units[index];
+        unit.ChangeHealth(-_turnEndDamage);
+        // If the unit died from end of turn damage, it will be removed from the list, so we don't increment the index
+        if (_units.Contains(unit))
+          index += 1;
+      }
+      _turnEndDamage += 1;  // Increase end of turn damage for next turn
+      _turnCooldown = _turnStartCooldown;
+      _unitIndex = 0;  // Set to 0 again incase a unit died and change the _unitIndex value
+      return;
+    }
+
+    // Possibly respawn zombies
+    RespawnZombies();
+
+    // Call turn end function of every unit
+    foreach (Unit unit in _units)
+      unit.TurnEnd(_unitsGrid, _units, _removedUnits);
   }
 }

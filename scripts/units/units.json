@@ -423,14 +423,14 @@
 		"display_name": "Enabler",
 		"texture": "res://sprites/units/enabler.png",
 		"scene": "res://scenes/units/enabler.tscn",
-		"cells": [[0, 0]],
-		"stage": 6, 
-		"cost": 1,
-		"description": "Target closest friendly unit and activate its turn.",
+		"cells": [[0, 0], [1, 0], [1, 1]],
+		"stage": 5, 
+		"cost": 2,
+		"description": "Target closest friendly unit and activate its turn. Cannot activate other Enablers",
 		"health": 10,
-		"damage": 4,
+		"damage": 0,
 		"armor": 0,
-		"speed": 5,
+		"speed": 1,
 		"cooldown": 1
 	},
 	"chaos": {
@@ -438,13 +438,13 @@
 		"texture": "res://sprites/units/chaos.png",
 		"scene": "res://scenes/units/chaos.tscn",
 		"cells": [[0, 0]],
-		"stage": 6, 
-		"cost": 1,
-		"description": "Move whenever this unit's stats or health was changed.",
-		"health": 10,
-		"damage": 4,
+		"stage": 5, 
+		"cost": 2,
+		"description": "Move all units to the opposite side of the board.",
+		"health": 8,
+		"damage": 0,
 		"armor": 0,
-		"speed": 5,
-		"cooldown": 1
+		"speed": 7,
+		"cooldown": 2
 	}
 }
