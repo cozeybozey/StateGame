@@ -6,9 +6,8 @@ using System.Runtime;
 
 public partial class Priest : Unit
 {
-  private GlobalSignals? _globalSignals;
-  private Node _unitsNode;
-  private Unit _unitToBeRevived;
+  private Node _unitsNode = null!;
+  private Unit _unitToBeRevived = null!;
 
   protected override void Start()
   {

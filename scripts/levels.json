@@ -53,6 +53,7 @@
     "golden_turret": {
 		"id": 7,
 		"units": [
+            { "x": 7, "y": 0, "name": "turret_factory"},
             { "x": 7, "y": 2, "name": "turret"},
             { "x": 8, "y": 2, "name": "turret"},
             { "x": 9, "y": 2, "name": "turret"},
@@ -60,12 +61,10 @@
             { "x": 7, "y": 3, "name": "turret"},
             { "x": 8, "y": 3, "name": "golden_turret"},
             { "x": 9, "y": 3, "name": "turret"},
-            { "x": 10, "y": 3, "name": "turret"},
             { "x": 7, "y": 4, "name": "turret"},
             { "x": 8, "y": 4, "name": "turret"},
             { "x": 6, "y": 4, "name": "turret"},
-            { "x": 9, "y": 4, "name": "turret"},
-            { "x": 10, "y": 4, "name": "turret"}
+            { "x": 9, "y": 4, "name": "turret"}
         ]
 	},
     "blob": {

@@ -159,7 +159,7 @@ public partial class MainMenu : Panel
         int x = unitData["x"].AsInt32();
         int y = unitData["y"].AsInt32();
         string id = unitData["id"].AsString();
-        _decksHandler.Decks[deckName][x, y] = _world.UnitsData[id];
+        _decksHandler.Decks[deckName][x, y] = GlobalConstants.UnitsData[id];
       }
     }
 
@@ -172,7 +172,7 @@ public partial class MainMenu : Panel
       var unitData = unitEntry.AsGodotDictionary();
       string id = unitData["id"].AsString();
       int amount = unitData["amount"].AsInt32();
-      UnitInfo unitInfo = _world.UnitsData[id];
+      UnitInfo unitInfo = GlobalConstants.UnitsData[id];
       _decksHandler.AvailableUnits.Add(unitInfo);
       _decksHandler.AmountPerUnit[id] = amount;
     }
@@ -199,7 +199,7 @@ public partial class MainMenu : Panel
         int x = unitData["x"].AsInt32();
         int y = unitData["y"].AsInt32();
         string id = unitData["id"].AsString();
-        units[x, y] = _world.UnitsData[id];
+        units[x, y] = GlobalConstants.UnitsData[id];
       }
 
       _world.Levels[levelId] = new LevelInfo(

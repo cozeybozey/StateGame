@@ -55,7 +55,6 @@ public partial class World : Node2D
   private Unit _activeUnit = null!;
   private bool _paused = false;
 
-  public Godot.Collections.Dictionary<string, UnitInfo> UnitsData;
   private List<List<UnitInfo>> _unitsPerStage;
   private List<UnitInfo> _levelUnits; // List of units in the current level, used for rewards
   private Dictionary _levelsData;
@@ -133,8 +132,8 @@ public partial class World : Node2D
     _levelsData = (Dictionary)parsed;
 
     // Start with 2 turrets
-    _decksHandler.AddUnit(UnitsData["turret"]);
-    _decksHandler.AddUnit(UnitsData["turret"]);
+    _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
+    _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
 
     GenerateWorld();
   }
@@ -251,7 +250,7 @@ public partial class World : Node2D
       int y = (int)unitData["y"];
       string name = (string)unitData["name"];
 
-      UnitInfo unitInfo = UnitsData[name];
+      UnitInfo unitInfo = GlobalConstants.UnitsData[name];
 
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
@@ -682,7 +681,6 @@ public partial class World : Node2D
 
   private void ParseUnitsJson()
   {
-    UnitsData = new Godot.Collections.Dictionary<string, UnitInfo>();
     string unitsJson = FileAccess.Open("res://scripts/units/units.json", FileAccess.ModeFlags.Read).GetAsText();
     Variant parsed = Json.ParseString(unitsJson);
     Dictionary unitsData = (Dictionary)parsed;
@@ -713,11 +711,11 @@ public partial class World : Node2D
         occupiedCells.Add(new Vector2I(x, y));
       }
 
-      UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
+      GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
         cost, health, health, damage, armor, speed, cooldown, cooldown, description);
 
       int stage = (int)unitData["stage"];
-      _unitsPerStage[stage].Add(UnitsData[unitId]);
+      _unitsPerStage[stage].Add(GlobalConstants.UnitsData[unitId]);
     }
   }
 
