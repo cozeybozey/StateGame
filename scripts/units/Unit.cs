@@ -207,7 +207,7 @@ public partial class Unit : Node2D
 		if (_dead)
 			return;
 
-		string displayedText = amount.ToString();
+		string displayedText = "";
 		Color displayedColor = Colors.White;
 
 		if (amount <= 0)
@@ -223,9 +223,9 @@ public partial class Unit : Node2D
     }
 		else
 		{
-			health += amount;
-			if (health > maxHealth)
-			health = maxHealth;
+      int effectiveHealing = Mathf.Min(maxHealth - health, amount);
+      health += effectiveHealing;
+      displayedText = effectiveHealing.ToString();
 			displayedColor = Colors.Green;
     }
     _healthBar.Value = health;

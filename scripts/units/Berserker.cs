@@ -6,8 +6,9 @@ public partial class Berserker : Unit
 {
   public override void ChangeHealth(int amount)
   {
+    int extraDamage = maxHealth - health;
     base.ChangeHealth(amount);
     if (amount > 0)
-      ChangeDamage(Mathf.Min(amount, maxHealth - health));
+      ChangeDamage(Mathf.Min(amount, extraDamage));
   }
 }

@@ -892,7 +892,7 @@ public partial class World : Node2D
 
     Button button = new();
     button.Text = levelNode.Name;
-    button.Disabled = !levelNode.Unlocked;
+    button.Disabled = !levelNode.Unlocked || levelNode.Completed;
     button.CustomMinimumSize = buttonSize;
     button.Position = buttonPos;
     button.Pressed += () => OnLevelSelected(levelNode);

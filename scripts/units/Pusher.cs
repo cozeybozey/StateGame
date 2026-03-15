@@ -40,7 +40,7 @@ public partial class Pusher : Unit
 
         if (canMove)
         {
-          targetUnit.MoveToCell(new Vector2I(target.X - 1, target.Y), playing: true);
+          targetUnit.MoveToCell(targetUnit.occupiedMainCell + new Vector2I(-1, 0), playing: true);
           movedUnits.Add(targetUnit);
         }
       }

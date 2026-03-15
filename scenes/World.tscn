@@ -263,7 +263,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="DecksHandler" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=435248968]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 script = ExtResource("4_hlk0d")
 
@@ -311,7 +311,7 @@ layout_mode = 2
 text = "Units:"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=1413774073]
-custom_minimum_size = Vector2(200, 400)
+custom_minimum_size = Vector2(300, 400)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer/ScrollContainer" unique_id=1107325926]
