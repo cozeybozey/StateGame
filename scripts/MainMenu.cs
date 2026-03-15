@@ -3,24 +3,46 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public partial class MainMenu : Panel
+public partial class MainMenu : Control
 {
+  private Panel _mainMenuPanel;
   private Button _optionsButton;
   private Button _saveGameButton;
   private Button _loadGameButton;
   private Button _quitGameButton;
   private Button _closeButton;
+
+  private Panel _saveGamePanel;
+  private LineEdit _saveName;
+  private Button _confirmSaveButton;
+  private Button _cancelSaveButton;
+
+  private Panel _loadGamePanel;
+  private VBoxContainer _saveGames;
+  private Button _cancelLoadButton;
+
   private DecksHandler _decksHandler;
   private World _world;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    _optionsButton = GetNode<Button>("Buttons/OptionsButton");
-    _saveGameButton = GetNode<Button>("Buttons/SaveGameButton");
-    _loadGameButton = GetNode<Button>("Buttons/LoadGameButton");
-    _quitGameButton = GetNode<Button>("Buttons/QuitGameButton");
-    _closeButton = GetNode<Button>("Buttons/CloseButton");
+    _mainMenuPanel = GetNode<Panel>("MainMenu");
+    _optionsButton = GetNode<Button>("MainMenu/Buttons/OptionsButton");
+    _saveGameButton = GetNode<Button>("MainMenu/Buttons/SaveGameButton");
+    _loadGameButton = GetNode<Button>("MainMenu/Buttons/LoadGameButton");
+    _quitGameButton = GetNode<Button>("MainMenu/Buttons/QuitGameButton");
+    _closeButton = GetNode<Button>("MainMenu/Buttons/CloseButton");
+
+    _saveGamePanel = GetNode<Panel>("SaveGamePanel");
+    _saveName = GetNode<LineEdit>("SaveGamePanel/VBoxContainer/SaveName");
+    _confirmSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Confirm");
+    _cancelSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Cancel");
+
+    _loadGamePanel = GetNode<Panel>("LoadGamePanel");
+    _saveGames = GetNode<VBoxContainer>("LoadGamePanel/VBoxContainer/SaveGames");
+    _cancelLoadButton = GetNode<Button>("LoadGamePanel/VBoxContainer/Cancel");
+
     _decksHandler = GetTree().CurrentScene.GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _world = GetNode<World>("/root/World");
 
@@ -29,6 +51,10 @@ public partial class MainMenu : Panel
     _loadGameButton.Pressed += OnLoadGameButtonPressed;
     _quitGameButton.Pressed += OnQuitGameButtonPressed;
     _closeButton.Pressed += OnCloseButtonPressed;
+    _confirmSaveButton.Pressed += OnConfirmSaveButtonPressed;
+    _cancelSaveButton.Pressed += OnCancelSaveButtonPressed;
+    _cancelLoadButton.Pressed += OnCancelLoadButtonPressed;
+    MouseFilter = MouseFilterEnum.Ignore;
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -42,6 +68,13 @@ public partial class MainMenu : Panel
   }
 
   private void OnSaveGameButtonPressed()
+  {
+    _mainMenuPanel.Hide();
+    _saveGamePanel.Show();
+    _saveName.GrabFocus();
+  }
+
+  private void OnConfirmSaveButtonPressed()
   {
     var saveData = new Godot.Collections.Dictionary();
 
@@ -127,21 +160,68 @@ public partial class MainMenu : Panel
 
     // Write to file
     string json = Json.Stringify(saveData, "\t");
-    using var file = FileAccess.Open("user://savegame.json", FileAccess.ModeFlags.Write);
+    using var file = FileAccess.Open($"user://{_saveName.Text}.json", FileAccess.ModeFlags.Write);
     file.StoreString(json);
 
     GD.Print("Game saved.");
+    _saveName.Text = "";
+    _saveGamePanel.Hide();
+  }
+
+  private void OnCancelSaveButtonPressed()
+  {
+    _saveName.Text = "";
+    _saveGamePanel.Hide();
+  }
+
+  private void PopulateSaveFiles()
+  {
+    // Clear existing buttons
+    foreach (Node child in _saveGames.GetChildren())
+      child.QueueFree();
+
+    using var dir = DirAccess.Open("user://");
+    if (dir == null) return;
+
+    dir.ListDirBegin();
+    string fileName = dir.GetNext();
+    while (fileName != "")
+    {
+      if (!dir.CurrentIsDir() && fileName.EndsWith(".json"))
+      {
+        string captured = fileName;
+        Button button = new();
+        button.Text = fileName.Replace(".json", "");
+        button.Pressed += () => OnSaveFileSelected(captured);
+        _saveGames.AddChild(button);
+      }
+      fileName = dir.GetNext();
+    }
+    dir.ListDirEnd();
+  }
+
+  private void OnSaveFileSelected(string fileName)
+  {
+    LoadGame("user://" + fileName);
+    _loadGamePanel.Hide();
   }
 
   private void OnLoadGameButtonPressed()
   {
-    if (!FileAccess.FileExists("user://savegame.json"))
+    _mainMenuPanel.Hide();
+    PopulateSaveFiles();
+    _loadGamePanel.Show();
+  }
+
+  private void LoadGame(string fileName)
+  {
+    if (!FileAccess.FileExists(fileName))
     {
       GD.Print("No save file found.");
       return;
     }
 
-    using var file = FileAccess.Open("user://savegame.json", FileAccess.ModeFlags.Read);
+    using var file = FileAccess.Open(fileName, FileAccess.ModeFlags.Read);
     string json = file.GetAsText();
     var saveData = Json.ParseString(json).AsGodotDictionary();
 
@@ -219,7 +299,12 @@ public partial class MainMenu : Panel
     _world.LoadLevels();
 
     GD.Print("Game loaded.");
-    Visible = false;
+    _mainMenuPanel.Visible = false;
+  }
+
+  private void OnCancelLoadButtonPressed()
+  {
+    _loadGamePanel.Hide();
   }
 
   private void OnQuitGameButtonPressed()
@@ -229,6 +314,6 @@ public partial class MainMenu : Panel
 
   private void OnCloseButtonPressed()
   {
-    Visible = false;
+    _mainMenuPanel.Visible = false;
   }
 }

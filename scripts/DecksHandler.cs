@@ -193,5 +193,6 @@ public partial class DecksHandler : Control
 
     _selectedDeck = newSelectedDeck;
     _gridOverlay.ClearUnits();
+    ClearUnitsSelection();
   }
 }

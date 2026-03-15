@@ -99,18 +99,112 @@ script = ExtResource("2_d1c63")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=477101008]
 
-[node name="MainMenu" type="Panel" parent="CanvasLayer" unique_id=928757555]
-visible = false
-anchors_preset = -1
+[node name="Menus" type="Control" parent="CanvasLayer" unique_id=1895102198]
+layout_mode = 3
 anchor_right = 0.5
-anchor_bottom = 0.89000005
-offset_left = 162.0
-offset_top = 129.0
-offset_right = -225.0
-offset_bottom = -194.72003
+anchor_bottom = 0.89400005
+offset_right = 3.0
+offset_bottom = -5.3120117
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("4_b3faq")
 
-[node name="Buttons" type="VBoxContainer" parent="CanvasLayer/MainMenu" unique_id=259222532]
+[node name="LoadGamePanel" type="Panel" parent="CanvasLayer/Menus" unique_id=1704379954]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 160.0
+offset_top = 128.0
+offset_right = -225.0
+offset_bottom = -190.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/LoadGamePanel" unique_id=285234230]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1649244420]
+layout_mode = 2
+text = "Load Game"
+horizontal_alignment = 1
+
+[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1727642449]
+layout_mode = 2
+
+[node name="Cancel" type="Button" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1321786220]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Cancel"
+
+[node name="SaveGamePanel" type="Panel" parent="CanvasLayer/Menus" unique_id=321173701]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 126.0
+offset_top = 194.0
+offset_right = -193.5
+offset_bottom = -254.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel" unique_id=881100282]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1400933037]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Save Game"
+horizontal_alignment = 1
+
+[node name="SaveName" type="LineEdit" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1023165353]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+placeholder_text = "Enter save name..."
+alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1706500386]
+layout_mode = 2
+alignment = 1
+
+[node name="Confirm" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons" unique_id=790886902]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Confirm"
+
+[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons" unique_id=697839289]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Cancel"
+
+[node name="MainMenu" type="Panel" parent="CanvasLayer/Menus" unique_id=928757555]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 160.0
+offset_top = 129.0
+offset_right = -226.0
+offset_bottom = -190.0
+
+[node name="Buttons" type="VBoxContainer" parent="CanvasLayer/Menus/MainMenu" unique_id=259222532]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 1
 anchors_preset = 13
@@ -122,28 +216,28 @@ offset_right = 48.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/MainMenu/Buttons" unique_id=1707061794]
+[node name="Label" type="Label" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=1707061794]
 layout_mode = 2
 text = "Main Menu"
 horizontal_alignment = 1
 
-[node name="OptionsButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=1780698448]
+[node name="OptionsButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=1780698448]
 layout_mode = 2
 text = "Options"
 
-[node name="SaveGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=259414056]
+[node name="SaveGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=259414056]
 layout_mode = 2
 text = "Save Game"
 
-[node name="LoadGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=2110177063]
+[node name="LoadGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=2110177063]
 layout_mode = 2
 text = "Load Game"
 
-[node name="QuitGameButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=579963492]
+[node name="QuitGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=579963492]
 layout_mode = 2
 text = "Quit Game"
 
-[node name="CloseButton" type="Button" parent="CanvasLayer/MainMenu/Buttons" unique_id=502908350]
+[node name="CloseButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=502908350]
 layout_mode = 2
 text = "Close"
 
