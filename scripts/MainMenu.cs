@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 public partial class MainMenu : Control
 {
@@ -17,9 +18,10 @@ public partial class MainMenu : Control
   private Button _confirmSaveButton;
   private Button _cancelSaveButton;
 
-  private Panel _loadGamePanel;
+  private Panel _saveGamesPanel;
   private VBoxContainer _saveGames;
-  private Button _cancelLoadButton;
+  private Label _saveGamesLabel;
+  private Button _cancelSaveGamesButton;
 
   private DecksHandler _decksHandler;
   private World _world;
@@ -39,9 +41,10 @@ public partial class MainMenu : Control
     _confirmSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Confirm");
     _cancelSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Cancel");
 
-    _loadGamePanel = GetNode<Panel>("LoadGamePanel");
-    _saveGames = GetNode<VBoxContainer>("LoadGamePanel/VBoxContainer/SaveGames");
-    _cancelLoadButton = GetNode<Button>("LoadGamePanel/VBoxContainer/Cancel");
+    _saveGamesPanel = GetNode<Panel>("SaveGamesPanel");
+    _saveGames = GetNode<VBoxContainer>("SaveGamesPanel/VBoxContainer/SaveGames");
+    _saveGamesLabel = GetNode<Label>("SaveGamesPanel/VBoxContainer/Label");
+    _cancelSaveGamesButton = GetNode<Button>("SaveGamesPanel/VBoxContainer/Cancel");
 
     _decksHandler = GetTree().CurrentScene.GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _world = GetNode<World>("/root/World");
@@ -53,7 +56,7 @@ public partial class MainMenu : Control
     _closeButton.Pressed += OnCloseButtonPressed;
     _confirmSaveButton.Pressed += OnConfirmSaveButtonPressed;
     _cancelSaveButton.Pressed += OnCancelSaveButtonPressed;
-    _cancelLoadButton.Pressed += OnCancelLoadButtonPressed;
+    _cancelSaveGamesButton.Pressed += OnCancelSaveGamesButtonPressed;
     MouseFilter = MouseFilterEnum.Ignore;
   }
 
@@ -70,11 +73,79 @@ public partial class MainMenu : Control
   private void OnSaveGameButtonPressed()
   {
     _mainMenuPanel.Hide();
+    PopulateSaveFiles(forSaving:true);
+    _saveGamesLabel.Text = "Save Game";
+    _saveGamesPanel.Show();
+    Button button = new();
+    button.Text = "New save...";
+    button.Pressed += () => OnNewSaveGameButtonPressed();
+    _saveGames.AddChild(button);
+  }
+
+  private void OnNewSaveGameButtonPressed()
+  {
     _saveGamePanel.Show();
     _saveName.GrabFocus();
   }
 
   private void OnConfirmSaveButtonPressed()
+  {
+    SaveGame("user://" + _saveName.Text + ".json");
+    _saveName.Text = "";
+    _saveGamePanel.Hide();
+    _saveGamesPanel.Hide();
+  }
+
+  private void OnCancelSaveButtonPressed()
+  {
+    _saveName.Text = "";
+    _saveGamePanel.Hide();
+  }
+
+  private void PopulateSaveFiles(bool forSaving = false)
+  {
+    // Clear existing buttons
+    foreach (Node child in _saveGames.GetChildren())
+      child.QueueFree();
+
+    using var dir = DirAccess.Open("user://");
+    if (dir == null) return;
+
+    dir.ListDirBegin();
+    string fileName = dir.GetNext();
+    while (fileName != "")
+    {
+      if (!dir.CurrentIsDir() && fileName.EndsWith(".json"))
+      {
+        string captured = fileName;
+        Button button = new();
+        button.Text = fileName.Replace(".json", "");
+        button.Pressed += () => OnSaveFileSelected(captured, forSaving);
+        _saveGames.AddChild(button);
+      }
+      fileName = dir.GetNext();
+    }
+    dir.ListDirEnd();
+  }
+
+  private void OnSaveFileSelected(string fileName, bool forSaving)
+  {
+    if (forSaving)
+      SaveGame("user://" + fileName);
+    else
+      LoadGame("user://" + fileName);
+    _saveGamesPanel.Hide();
+  }
+
+  private void OnLoadGameButtonPressed()
+  {
+    _mainMenuPanel.Hide();
+    PopulateSaveFiles();
+    _saveGamesLabel.Text = "Load Game";
+    _saveGamesPanel.Show();
+  }
+
+  private void SaveGame(string filePath)
   {
     var saveData = new Godot.Collections.Dictionary();
 
@@ -160,68 +231,21 @@ public partial class MainMenu : Control
 
     // Write to file
     string json = Json.Stringify(saveData, "\t");
-    using var file = FileAccess.Open($"user://{_saveName.Text}.json", FileAccess.ModeFlags.Write);
+    using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Write);
     file.StoreString(json);
 
     GD.Print("Game saved.");
-    _saveName.Text = "";
-    _saveGamePanel.Hide();
   }
 
-  private void OnCancelSaveButtonPressed()
+  private void LoadGame(string filePath)
   {
-    _saveName.Text = "";
-    _saveGamePanel.Hide();
-  }
-
-  private void PopulateSaveFiles()
-  {
-    // Clear existing buttons
-    foreach (Node child in _saveGames.GetChildren())
-      child.QueueFree();
-
-    using var dir = DirAccess.Open("user://");
-    if (dir == null) return;
-
-    dir.ListDirBegin();
-    string fileName = dir.GetNext();
-    while (fileName != "")
-    {
-      if (!dir.CurrentIsDir() && fileName.EndsWith(".json"))
-      {
-        string captured = fileName;
-        Button button = new();
-        button.Text = fileName.Replace(".json", "");
-        button.Pressed += () => OnSaveFileSelected(captured);
-        _saveGames.AddChild(button);
-      }
-      fileName = dir.GetNext();
-    }
-    dir.ListDirEnd();
-  }
-
-  private void OnSaveFileSelected(string fileName)
-  {
-    LoadGame("user://" + fileName);
-    _loadGamePanel.Hide();
-  }
-
-  private void OnLoadGameButtonPressed()
-  {
-    _mainMenuPanel.Hide();
-    PopulateSaveFiles();
-    _loadGamePanel.Show();
-  }
-
-  private void LoadGame(string fileName)
-  {
-    if (!FileAccess.FileExists(fileName))
+    if (!FileAccess.FileExists(filePath))
     {
       GD.Print("No save file found.");
       return;
     }
 
-    using var file = FileAccess.Open(fileName, FileAccess.ModeFlags.Read);
+    using var file = FileAccess.Open(filePath, FileAccess.ModeFlags.Read);
     string json = file.GetAsText();
     var saveData = Json.ParseString(json).AsGodotDictionary();
 
@@ -302,9 +326,9 @@ public partial class MainMenu : Control
     _mainMenuPanel.Visible = false;
   }
 
-  private void OnCancelLoadButtonPressed()
+  private void OnCancelSaveGamesButtonPressed()
   {
-    _loadGamePanel.Hide();
+    _saveGamesPanel.Hide();
   }
 
   private void OnQuitGameButtonPressed()

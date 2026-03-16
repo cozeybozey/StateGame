@@ -8,6 +8,6 @@ public partial class Masochist : Unit
   {
     base.ChangeHealth(amount);
     if (amount < 0)
-      ChangeDamage(Mathf.FloorToInt(-0.5 * amount));
+      ChangeDamage(Mathf.FloorToInt(-amount));
   }
 }

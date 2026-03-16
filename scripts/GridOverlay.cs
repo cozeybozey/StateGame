@@ -214,7 +214,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     }
   }
 
-	public void ClearUnits()
+	public void  ClearUnits()
 	{
 		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 		{

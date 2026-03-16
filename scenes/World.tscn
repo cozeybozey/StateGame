@@ -109,7 +109,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_b3faq")
 
-[node name="LoadGamePanel" type="Panel" parent="CanvasLayer/Menus" unique_id=1704379954]
+[node name="SaveGamesPanel" type="Panel" parent="CanvasLayer/Menus" unique_id=1704379954]
 visible = false
 layout_mode = 1
 anchors_preset = -1
@@ -122,7 +122,7 @@ offset_bottom = -190.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/LoadGamePanel" unique_id=285234230]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel" unique_id=285234230]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -130,15 +130,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1649244420]
+[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1649244420]
 layout_mode = 2
 text = "Load Game"
 horizontal_alignment = 1
 
-[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1727642449]
+[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1727642449]
 layout_mode = 2
 
-[node name="Cancel" type="Button" parent="CanvasLayer/Menus/LoadGamePanel/VBoxContainer" unique_id=1321786220]
+[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1321786220]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -170,6 +170,9 @@ layout_mode = 2
 size_flags_vertical = 1
 text = "Save Game"
 horizontal_alignment = 1
+
+[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=723335598]
+layout_mode = 2
 
 [node name="SaveName" type="LineEdit" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1023165353]
 custom_minimum_size = Vector2(200, 0)
@@ -263,7 +266,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="DecksHandler" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=435248968]
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 script = ExtResource("4_hlk0d")
 
@@ -277,7 +280,7 @@ layout_mode = 2
 text = "Decks:"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer" unique_id=1198254704]
-custom_minimum_size = Vector2(200, 400)
+custom_minimum_size = Vector2(250, 400)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer/ScrollContainer" unique_id=151286284]
@@ -311,7 +314,7 @@ layout_mode = 2
 text = "Units:"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=1413774073]
-custom_minimum_size = Vector2(300, 400)
+custom_minimum_size = Vector2(250, 400)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer/ScrollContainer" unique_id=1107325926]
@@ -394,7 +397,7 @@ text = "Cooldown: "
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=828379318]
 layout_mode = 2
 
-[node name="Description" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1654737533]
+[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=236564824]
 layout_mode = 2
 
 [node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Description" unique_id=1979432891]

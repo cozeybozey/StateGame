@@ -24,7 +24,7 @@ public partial class Cleric : Unit
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && targetUnit.side == side && targetUnit.health < targetUnit.maxHealth)
+      if (targetUnit != null && targetUnit.health < targetUnit.maxHealth)
       {
         targetUnit.ChangeHealth(damage);
       }
@@ -33,6 +33,6 @@ public partial class Cleric : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    return _targets;
+    return [.._targets];
   }
 }

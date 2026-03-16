@@ -11,6 +11,7 @@ public partial class DecksHandler : Control
 
   private string _selectedDeck;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
+  private bool _switchingDeck = false;
 
   private GlobalSignals _globalSignals;
   private GridOverlay _gridOverlay;
@@ -64,7 +65,10 @@ public partial class DecksHandler : Control
 
   private void OnUnitRemoved(Unit unit)
   {
-    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
+    // If units were removed due to a switch deck call,
+    // then the deck itself should not be changed
+    if (!_switchingDeck)
+      Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
   }
 
   private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
@@ -99,11 +103,13 @@ public partial class DecksHandler : Control
 
   private void OnDeckSelected(Button button)
   {
+    _switchingDeck = true;
     _selectedDeck = button.Text;
     _gridOverlay.LoadDeck(Decks[_selectedDeck]);
     _decksContainer.Hide();
     _unitsSelectionContainer.Show();
     AddUnitsSelection(Decks[_selectedDeck]);
+    _switchingDeck = false;
   }
 
   private void OnChangeDeckPressed()

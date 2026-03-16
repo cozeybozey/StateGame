@@ -40,6 +40,7 @@ public partial class Consumer : Unit
           MoveToCell(ally.occupiedMainCell, true);
 
           consumed = true;
+          _consumedCount++;
         }
       }
 

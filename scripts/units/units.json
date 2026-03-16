@@ -160,7 +160,7 @@
 		"cells": [[0, 0], [0, 1]],
 		"stage": 2, 
 		"cost": 2,
-		"description": "Deal damage to frontmost unit. Gains damage equal to half the damage taken.",
+		"description": "Deal damage to frontmost unit. Gains damage equal damage taken.",
 		"health": 20,
 		"damage": 1,
 		"armor": 0,
@@ -262,7 +262,7 @@
 		"health": 8,
 		"damage": 1,
 		"armor": 0,
-		"speed": 5,
+		"speed": 2,
 		"cooldown": 1
 	},
 	"berserker": {
