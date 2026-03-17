@@ -544,7 +544,8 @@ public partial class World : Node2D
       _unitsGrid[cell.X, cell.Y] = null!;
     }
 
-    if (unit.side)
+    // ^ = xor, which switches the condition if switched sides is true
+    if (unit.side ^ unit.SwitchedSides)
       _playerUnitsCount--;
     else
       _enemyUnitsCount--;

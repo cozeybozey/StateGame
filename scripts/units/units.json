@@ -80,7 +80,7 @@
 		"health": 4,
 		"damage": 0,
 		"armor": 0,
-		"speed": 1,
+		"speed": 7,
 		"cooldown": 2
 	},
 	"saboteur": {
@@ -360,7 +360,7 @@
 		"health": 20,
 		"damage": 0,
 		"armor": 0,
-		"speed": 8,
+		"speed": 9,
 		"cooldown": 1
 	},
 	"bulwark": {

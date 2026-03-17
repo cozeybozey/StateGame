@@ -214,16 +214,21 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     }
   }
 
-	public void  ClearUnits()
+	public void ClearUnits()
 	{
 		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 		{
 			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
 				Unit unit = _unitGrid[x, y];
-				if (unit != null && IsInstanceValid(unit))
-					unit.Remove();
-				_unitGrid[x, y] = null!;
+				if (unit != null)
+				{ 
+					foreach (Vector2I occupiedCell in unit!.GetOccupiedCells())
+            _unitGrid[occupiedCell.X, occupiedCell.Y] = null!;
+
+          if (IsInstanceValid(unit))
+						unit.Remove();
+				}
 			}
 		}
     _currentUnitSlotsCount = 0;
