@@ -44,7 +44,7 @@ public partial class Priest : Unit
     UnitInfo unitInfo = _unitToBeRevived.GetStartInfo();
 
     // Spawn unit at random location
-    List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, unitInfo.OccupiedCells, false);
+    List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, unitInfo.OccupiedCells, side);
 
     // Now that the unit has been revided it can be removed from the dead units list
     if (IsInstanceValid(_unitToBeRevived))

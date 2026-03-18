@@ -82,7 +82,7 @@ public partial class Consumer : Unit
 
       foreach (Unit unit in units)
       {
-        if (unit == null || unit == this)
+        if (unit == null || unit == this || unit.side != side)
           continue;
 
         float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
@@ -119,9 +119,10 @@ public partial class Consumer : Unit
 
   private List<Vector2I> FindFrontmostEnemies(Unit[,] unitsGrid, int maxTargets)
   {
-    List<Vector2I> found = new List<Vector2I>();
+    List<Vector2I> foundPositions = new List<Vector2I>();
+    List<Unit> foundUnits = new List<Unit>();
     if (maxTargets <= 0)
-      return found;
+      return foundPositions;
 
     if (side)
     {
@@ -129,13 +130,17 @@ public partial class Consumer : Unit
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {
+          Unit unit = unitsGrid[x, y];
           if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
           {
             Vector2I pos = new Vector2I(x, y);
-            if (!found.Contains(pos))
-              found.Add(pos);
-            if (found.Count >= maxTargets)
-              return found;
+            if (!foundUnits.Contains(unit))
+            {
+              foundPositions.Add(pos);
+              foundUnits.Add(unit);
+            }
+            if (foundUnits.Count >= maxTargets)
+              return foundPositions;
           }
         }
       }
@@ -148,16 +153,20 @@ public partial class Consumer : Unit
         {
           if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
           {
+            Unit unit = unitsGrid[x, y];
             Vector2I pos = new Vector2I(x, y);
-            if (!found.Contains(pos))
-              found.Add(pos);
-            if (found.Count >= maxTargets)
-              return found;
+            if (!foundUnits.Contains(unit))
+            {
+              foundPositions.Add(pos);
+              foundUnits.Add(unit);
+            }
+            if (foundUnits.Count >= maxTargets)
+              return foundPositions;
           }
         }
       }
     }
 
-    return found;
+    return foundPositions;
   }
 }

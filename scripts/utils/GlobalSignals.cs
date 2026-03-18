@@ -22,6 +22,9 @@ public partial class GlobalSignals : Node
   public delegate void HealthChangedEventHandler(Unit unit, int amount);
 
   [Signal]
+  public delegate void SideChangedEventHandler(Unit unit);
+
+  [Signal]
   public delegate void UnitRemovedEventHandler(Unit unit);
 
   [Signal]

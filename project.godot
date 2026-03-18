@@ -24,6 +24,11 @@ GlobalFunctions="*uid://bkdmsptqrmp7a"
 
 project/assembly_name="StateGame"
 
+[global]
+
+Theme=false
+Themea=false
+
 [physics]
 
 3d/physics_engine="Jolt Physics"

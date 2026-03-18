@@ -7,7 +7,7 @@ using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
-	public int maxUnitSlots = 20;
+	public int MaxUnitSlots = 5;
 
 	private TileMapLayer _backgroundLayer = null!;
 	private Label _unitsCounter = null!;
@@ -23,7 +23,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	{
 		_backgroundLayer = GetTree().CurrentScene.GetNode<TileMapLayer>("BackgroundLayer");
     _unitsCounter = GetTree().CurrentScene.GetNode<Label>("CanvasLayer/BottomUi/UnitCounter/Counter");
-		_unitsCounter.Text = $"{_currentUnitSlotsCount }/{maxUnitSlots}";
+		_unitsCounter.Text = $"{_currentUnitSlotsCount }/{MaxUnitSlots}";
     MouseFilter = MouseFilterEnum.Stop;
 		_unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
@@ -61,7 +61,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     if (data.Obj is not DragPayload dragPayload)
 			return false;
 
-		if (dragPayload.Source != this && _currentUnitSlotsCount + dragPayload.Unit.OccupiedCells.Count > maxUnitSlots)
+		if (dragPayload.Source != this && _currentUnitSlotsCount + dragPayload.Unit.OccupiedCells.Count > MaxUnitSlots)
 			return false;
 		
 		Vector2I cell = GetCellUnderMouse(atPosition);
@@ -117,7 +117,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       }
 
       _currentUnitSlotsCount += dragPayload.Unit.OccupiedCells.Count;
-      _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
+      _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
     }
 
 		// Notify original source if it exists and isn’t this overlay
@@ -208,7 +208,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
           foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
             _unitGrid[occupiedCell.X, occupiedCell.Y] = newUnit;
           _currentUnitSlotsCount += newUnit.GetOccupiedCells().Count;
-          _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
+          _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
         }
       }
     }
@@ -232,7 +232,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			}
 		}
     _currentUnitSlotsCount = 0;
-    _unitsCounter.Text = $"0/{maxUnitSlots}";
+    _unitsCounter.Text = $"0/{MaxUnitSlots}";
   }
 
   public void SetInteractionLocked(bool locked)
@@ -249,6 +249,12 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		}    
     unit.Remove();
     _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
-    _unitsCounter.Text = $"{_currentUnitSlotsCount}/{maxUnitSlots}";
+    _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
+  }
+
+	public void IncreaseUnitCount(int amount)
+	{
+		MaxUnitSlots += amount;
+    _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
   }
 }

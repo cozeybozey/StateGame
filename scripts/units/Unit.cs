@@ -18,6 +18,7 @@ public partial class Unit : Node2D
 	public string name { get; set; }
 	public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
 	public string description { get; set; }
+	public string rarity { get; set; }
   public bool side = true; // true for player, false for enemy
   public bool SwitchedSides = false;
   public Vector2I occupiedMainCell;
@@ -103,6 +104,7 @@ public partial class Unit : Node2D
 		texture = unitInfo.Texture;
 		cost = unitInfo.Cost;
 		description = unitInfo.Description;
+		rarity = unitInfo.Rarity;
 		side = _side;
 		startCell = _startCell;
 		startUnitInfo = unitInfo;
@@ -117,7 +119,7 @@ public partial class Unit : Node2D
 	public UnitInfo GetInfo()
 	{
 		return new UnitInfo(id, name, texture, scenePath, occupiedCells, cost, maxHealth, 
-			health, damage, armor, speed, startingCooldown, cooldown, description);
+			health, damage, armor, speed, startingCooldown, cooldown, description, rarity);
 	}
 
   public UnitInfo GetStartInfo()
@@ -180,12 +182,17 @@ public partial class Unit : Node2D
     // Reset units side to original side upon turn end
     if (SwitchedSides)
     {
-      side = !side;
-      SwitchedSides = false;
-      SpawnFloatingText("Switched sides", Colors.Red);
+      SwitchSides();
     }
   }
 
+  public void SwitchSides()
+  {
+    SwitchedSides = !SwitchedSides;
+    side = !side;
+    SpawnFloatingText("Switched sides", Colors.Red);
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.SideChanged, this);
+  }
 
   public void Die()
 	{

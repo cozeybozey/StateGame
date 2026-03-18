@@ -10,18 +10,24 @@ public partial class Betrayer : Unit
   {
     if (_targetUnit != null)
     {
-      _targetUnit.side = !_targetUnit.side;
-      _targetUnit.SwitchedSides = !SwitchedSides;
-      _targetUnit.SpawnFloatingText("Switched sides", Colors.Red);
+      _targetUnit.SwitchSides();
     }
   }
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    if (units == null || units.Count == 0)
+    // Make sure unit cannot target itself
+    List<Unit> availableUnits = new List<Unit>();
+    foreach (Unit unit in units)
+    {
+      if (unit != this)
+        availableUnits.Add(unit);
+    }
+
+    if (availableUnits.Count == 0)
       return new List<Vector2I>();
 
-    _targetUnit = units[_rng.RandiRange(0, units.Count - 1)];
+    _targetUnit = availableUnits[_rng.RandiRange(0, availableUnits.Count - 1)];
 
     return [_targetUnit.occupiedMainCell];
   }

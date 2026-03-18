@@ -1,12 +1,14 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 public partial class OverlayLayer : TileMapLayer
 {
   [Export] public Color OutlineColor = Colors.Gold;
   [Export] public Color HighlightColor = new Color(0, 0, 0, 0.15f);
   [Export] public float LineWidth = 2f;
+  [Export] public bool OutlineCells = true;
   [Export] public bool HighlightCells = true;
 
   private List<Vector2I> _cells = new();
@@ -17,9 +19,22 @@ public partial class OverlayLayer : TileMapLayer
     QueueRedraw();
   }
 
-  public void Clear()
+  public new void Clear()
   {
     _cells.Clear();
+    QueueRedraw();
+  }
+
+  public void AddCells(List<Vector2I> cells)
+  {
+    _cells.AddRange(cells);
+    QueueRedraw();
+  }
+
+  public void RemoveCells(List<Vector2I> cells)
+  {
+    foreach (Vector2I cell in cells)
+      _cells.Remove(cell);
     QueueRedraw();
   }
 
@@ -37,15 +52,18 @@ public partial class OverlayLayer : TileMapLayer
       Vector2 center = MapToLocal(cell);
       Vector2 half = tileSize / 2;
 
-      Vector2 tl = center + new Vector2(-half.X, -half.Y);
-      Vector2 tr = center + new Vector2(half.X, -half.Y);
-      Vector2 bl = center + new Vector2(-half.X, half.Y);
-      Vector2 br = center + new Vector2(half.X, half.Y);
+      if (OutlineCells)
+      {
+        Vector2 tl = center + new Vector2(-half.X, -half.Y);
+        Vector2 tr = center + new Vector2(half.X, -half.Y);
+        Vector2 bl = center + new Vector2(-half.X, half.Y);
+        Vector2 br = center + new Vector2(half.X, half.Y);
 
-      AddEdge(edges, tl, tr);
-      AddEdge(edges, tr, br);
-      AddEdge(edges, br, bl);
-      AddEdge(edges, bl, tl);
+        AddEdge(edges, tl, tr);
+        AddEdge(edges, tr, br);
+        AddEdge(edges, br, bl);
+        AddEdge(edges, bl, tl);
+      }
 
       if (HighlightCells)
       {
@@ -54,9 +72,12 @@ public partial class OverlayLayer : TileMapLayer
       }
     }
 
-    foreach (var edge in edges)
+    if (OutlineCells)
     {
-      DrawLine(edge.Item1, edge.Item2, OutlineColor, LineWidth);
+      foreach (var edge in edges)
+      {
+        DrawLine(edge.Item1, edge.Item2, OutlineColor, LineWidth);
+      }
     }
   }
 

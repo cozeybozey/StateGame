@@ -17,6 +17,7 @@ public partial class UnitInfo : RefCounted
 	public int StartCooldown { get; set; }
 	public int Cooldown { get; set; }
 	public string Description { get; set; }
+	public string Rarity { get; set; }
 
 	public UnitInfo(
 		string id,
@@ -32,7 +33,8 @@ public partial class UnitInfo : RefCounted
 		int speed,
 		int startCooldown,
 		int cooldown,
-		string description)
+		string description,
+		string rarity)
 	{
 		Id = id;
 		Name = name;
@@ -48,5 +50,6 @@ public partial class UnitInfo : RefCounted
 		StartCooldown = startCooldown;
 		Cooldown = cooldown;
 		Description = description;
+    Rarity = rarity;
 	}
 }

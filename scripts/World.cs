@@ -22,6 +22,8 @@ public partial class World : Node2D
   private GridOverlay _gridOverlay;
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
+  private OverlayLayer _playerSideUnitsLayer;
+  private OverlayLayer _enemySideUnitsLayer;
   private OverlayLayer _selectedUnitLayer;
   private OverlayLayer _activeUnitLayer;
   private OverlayLayer _targetedCellsLayer;
@@ -43,6 +45,7 @@ public partial class World : Node2D
 
   private bool _playing = false;
   private int _level = 1;
+  private int _completedLayers = 0;
   private int _turn = 0;
   private double _turnStartCooldown = 1.0f;
   private double _turnCooldown = 1.0f;
@@ -85,6 +88,8 @@ public partial class World : Node2D
     _gridOverlay = GetNode<GridOverlay>("GridOverlay");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
+    _playerSideUnitsLayer = GetNode<OverlayLayer>("PlayerSideUnitsLayer");
+    _enemySideUnitsLayer = GetNode<OverlayLayer>("EnemySideUnitsLayer");
     _selectedUnitLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
     _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
     _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
@@ -109,9 +114,22 @@ public partial class World : Node2D
     _globalSignals.UnitMoved += OnUnitMoved;
     _globalSignals.UnitSpawned += OnUnitSpawned;
     _globalSignals.UnitRemoved += OnUnitRemoved;
-    _globalSignals.SpeedChanged += OnSpeedChanged;
+    _globalSignals.SpeedChanged += OnUnitSpeedChanged;
     _globalSignals.SizeChanged += OnUnitSizeChanged;
+    _globalSignals.SideChanged += OnUnitSideChanged;
     _worldMapButton.Pressed += OnWorldMapPressed;
+    _playerSideUnitsLayer.OutlineColor = Colors.Green;
+    _playerSideUnitsLayer.OutlineCells = false;
+    _playerSideUnitsLayer.HighlightCells = true;
+    _playerSideUnitsLayer.HighlightColor = new Color(0, 1, 0, 0.15f);
+    _playerSideUnitsLayer.LineWidth = 2f;
+    _enemySideUnitsLayer.OutlineColor = Colors.Red;
+    _enemySideUnitsLayer.OutlineCells = false;
+    _enemySideUnitsLayer.HighlightCells = true;
+    _enemySideUnitsLayer.HighlightColor = new Color(1, 0, 0, 0.15f);
+    _enemySideUnitsLayer.LineWidth = 2f;
+    _selectedUnitLayer.OutlineColor = Colors.Blue;
+    _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _selectedUnitLayer.OutlineColor = Colors.Blue;
     _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _activeUnitLayer.OutlineColor = Colors.Yellow;
@@ -227,6 +245,15 @@ public partial class World : Node2D
       }
     }
 
+    // Show units side
+    foreach (Unit unit in _units)
+    {
+      if (unit.side)
+        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      else
+        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
+
     // Copy units to create a list of units that are going to act this turn
     _unitsToAct = [.._units];
     _playing = true;
@@ -282,8 +309,8 @@ public partial class World : Node2D
         continue;
 
       UnitInfo unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
-
-      if (unitInfo.Cost > budget)
+      int cost = unitInfo.OccupiedCells.Count;
+      if (cost > budget) // TODO AKN (unitInfo.Cost > budget)
         continue;
 
       // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
@@ -385,7 +412,7 @@ public partial class World : Node2D
       }
       mainCellsUnitGrid[cellPos.X, cellPos.Y] = unitInfo;
 
-      budget -= unitInfo.Cost;
+      budget -= cost; // TODO AKN unitInfo.Cost;
     }
 
     return mainCellsUnitGrid;
@@ -421,6 +448,8 @@ public partial class World : Node2D
     _targetedCellsLayer.Clear();
     _turnEndDamage = 1;
     _levelUnits.Clear();
+    _playerSideUnitsLayer.Clear();
+    _enemySideUnitsLayer.Clear();
 
     // Clear message responses
     foreach (Node child in _messageResponses.GetChildren())
@@ -449,6 +478,17 @@ public partial class World : Node2D
     {
       _activeLevel.Completed = true;
       _levelButtons[_activeLevel.Id].Disabled = true;
+
+      if (_activeLevel.NextNodes.Count > 0)
+      {
+        // Up number of units slot if the player unlocked a new layer
+        if (Levels[_activeLevel.NextNodes[0]].Layer >= _completedLayers)
+        {
+          _completedLayers++;
+          _gridOverlay.IncreaseUnitCount(1);
+        }
+      }
+
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
         if (Levels.ContainsKey(nextNodeId) && !Levels[nextNodeId].Unlocked)
@@ -503,9 +543,60 @@ public partial class World : Node2D
       btn.SizeFlagsVertical = SizeFlags.ExpandFill;
       btn.Pressed += () => OnRewardButtonPressed(unitInfo);
 
+
+      // Set rarity color on button
+      Color rarityColor = GetRarityColor(unitInfo.Rarity);
+      StyleBoxFlat style = GetRewardButtonStyle(rarityColor);
+      StyleBoxFlat stylePressed = GetRewardButtonStyle(rarityColor.Darkened(0.2f));
+      StyleBoxFlat styleHover = GetRewardButtonStyle(rarityColor.Lightened(0.2f));
+      btn.AddThemeStyleboxOverride("normal", style);
+      btn.AddThemeStyleboxOverride("pressed", stylePressed);
+      btn.AddThemeStyleboxOverride("hover", styleHover);
+
       // Add button to message responses
       _messageResponses.AddChild(btn);
     }
+  }
+
+  private StyleBoxFlat GetRewardButtonStyle(Color rarityColor)
+  {
+    StyleBoxFlat style = new();
+    style.BgColor = rarityColor;
+    style.CornerRadiusTopLeft = 6;
+    style.CornerRadiusTopRight = 6;
+    style.CornerRadiusBottomLeft = 6;
+    style.CornerRadiusBottomRight = 6;
+    style.ContentMarginLeft = 8;
+    style.ContentMarginRight = 8;
+    style.ContentMarginTop = 4;
+    style.ContentMarginBottom = 4;
+
+    return style;
+  }
+
+  private Color GetRarityColor(string rarity)
+  {
+    Color rarityColor;
+    switch (rarity)
+    {
+      case "common":
+        rarityColor = new Color("424040");
+        break;
+      case "rare":
+        rarityColor = new Color("1f08c9");
+        break;
+      case "epic":
+        rarityColor = new Color("8207ab");
+        break;
+      case "legendary":
+        rarityColor = new Color("cf8621");
+        break;
+      default:
+        rarityColor = new Color("424040");
+        break;
+    }
+
+    return rarityColor;
   }
 
   private void OnUnitDied(Unit unit)
@@ -530,12 +621,21 @@ public partial class World : Node2D
 
   private void RemoveUnit(Unit unit)
   {
-    // Remove from list
     if (_unitsGuiInfo.selectedUnit == unit)
     {
       _unitsGuiInfo.ResetSelectedUnit();
       _selectedUnitLayer.Clear();
     }
+
+    // Update unit side layers
+    if (_playing)
+    {
+      if (unit.side)
+        _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
+      else
+        _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
+    }
+
     _units.Remove(unit);
     _unitsToAct.Remove(unit);
 
@@ -564,13 +664,32 @@ public partial class World : Node2D
       _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
     }
 
+    List<Vector2I> removedCells = new List<Vector2I>();
     foreach (Vector2I cell in unit.occupiedCells)
     {
-      _unitsGrid[oldCell.X + cell.X, oldCell.Y + cell.Y] = null!;
+      Vector2I removedCell = new Vector2I(oldCell.X + cell.X, oldCell.Y + cell.Y);
+      if (_unitsGrid[removedCell.X, removedCell.Y] == unit)  // Swapping can make it so a new unit is on this unit's old position
+        _unitsGrid[removedCell.X, removedCell.Y] = null!;
+      removedCells.Add(removedCell);
     }
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
       _unitsGrid[cell.X, cell.Y] = unit;
+    }
+
+    // Update unit side layers
+    if (_playing)
+    {
+      if (unit.side)
+      {
+        _playerSideUnitsLayer.RemoveCells(removedCells);
+        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      }
+      else
+      {
+        _enemySideUnitsLayer.RemoveCells(removedCells);
+        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      }
     }
 
     if (_playing)
@@ -587,7 +706,15 @@ public partial class World : Node2D
     }
     _units.Add(unit);
     if (_playing)
+    {
       _unitsToAct.Add(unit);
+
+      // Update unit side layers
+      if (unit.side)
+        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      else
+        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
 
     if (unit.side)
       _playerUnitsCount++;
@@ -613,6 +740,18 @@ public partial class World : Node2D
       _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
     }
 
+    // Update unit side layers
+    if (unit.side)
+    {
+      _playerSideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
+      _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
+    else
+    {
+      _enemySideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
+      _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
+
     foreach (Vector2I cell in oldOccupiedCells)
     {
       _unitsGrid[cell.X, cell.Y] = null!;
@@ -629,12 +768,27 @@ public partial class World : Node2D
       SortUnits(_units);
   }
 
-  private void OnSpeedChanged(Unit unit)
+  private void OnUnitSpeedChanged(Unit unit)
   {
     if (_playing)
       SortUnits(_unitsToAct);
     else
       SortUnits(_units);
+  }
+
+  private void OnUnitSideChanged(Unit unit)
+  {
+    // Update unit side layers
+    if (unit.side)
+    {
+      _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
+      _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
+    else
+    {
+      _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
+      _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+    }
   }
 
   private void OnRewardButtonPressed(UnitInfo unitInfo)
@@ -701,6 +855,7 @@ public partial class World : Node2D
       int speed = (int)unitData["speed"];
       int cooldown = (int)unitData["cooldown"];
       string description = (string)unitData["description"];
+      string rarity = (string)unitData["rarity"];
 
       Godot.Collections.Array cells = (Godot.Collections.Array)unitData["cells"];
       List<Vector2I> occupiedCells = new();
@@ -713,7 +868,7 @@ public partial class World : Node2D
       }
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
-        cost, health, health, damage, armor, speed, cooldown, cooldown, description);
+        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity);
 
       int stage = (int)unitData["stage"];
       _unitsPerStage[stage].Add(GlobalConstants.UnitsData[unitId]);
@@ -823,11 +978,20 @@ public partial class World : Node2D
         .ToList();
 
     // Add UI for all layers except the last
+    int layerIndex = 0;
     for (int i = 0; i < layers.Count; i++)
     {
       foreach (LevelInfo levelNode in layers[i])
+      {
         AddLevelUi(levelNode, layers[i].Count);
+        if (levelNode.Completed && levelNode.Layer >= layerIndex)
+        {
+          layerIndex++;
+          _completedLayers++;
+        }
+      }
     }
+    _gridOverlay.IncreaseUnitCount(_completedLayers);
   }
 
   void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next, bool isBoss)

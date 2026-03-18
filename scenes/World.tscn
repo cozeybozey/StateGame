@@ -566,6 +566,14 @@ script = ExtResource("7_ygioq")
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 
+[node name="PlayerSideUnitsLayer" type="TileMapLayer" parent="." unique_id=211327906]
+tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("5_1lgw5")
+
+[node name="EnemySideUnitsLayer" type="TileMapLayer" parent="." unique_id=997152698]
+tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("5_1lgw5")
+
 [node name="SelectedUnitLayer" type="TileMapLayer" parent="." unique_id=421687747]
 tile_set = SubResource("TileSet_d1c63")
 script = ExtResource("5_1lgw5")

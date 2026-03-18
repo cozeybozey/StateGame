@@ -53,16 +53,13 @@
     "golden_turret": {
 		"id": 7,
 		"units": [
-            { "x": 0, "y": 0, "name": "turret_factory"},
-            { "x": 14, "y": 0, "name": "turret_factory"},
+            { "x": 7, "y": 0, "name": "turret_factory"},
             { "x": 7, "y": 4, "name": "turret"},
             { "x": 8, "y": 4, "name": "turret"},
             { "x": 9, "y": 4, "name": "turret"},
-            { "x": 6, "y": 5, "name": "turret"},
             { "x": 7, "y": 5, "name": "turret"},
             { "x": 8, "y": 5, "name": "golden_turret"},
             { "x": 9, "y": 5, "name": "turret"},
-            { "x": 10, "y": 5, "name": "turret"},
             { "x": 7, "y": 6, "name": "turret"},
             { "x": 8, "y": 6, "name": "turret"},
             { "x": 9, "y": 6, "name": "turret"}
@@ -75,13 +72,13 @@
             { "x": 3, "y": 0, "name": "priest"},
             { "x": 12, "y": 0, "name": "priest"},
             { "x": 14, "y": 0, "name": "tank"},
-            { "x": 4, "y": 3, "name": "healer"},
+            { "x": 4, "y": 3, "name": "zombie"},
             { "x": 5, "y": 3, "name": "healer"},
-            { "x": 6, "y": 3, "name": "healer"},
-            { "x": 7, "y": 3, "name": "nurse"},
-            { "x": 8, "y": 3, "name": "healer"},
+            { "x": 6, "y": 3, "name": "zombie"},
+            { "x": 7, "y": 3, "name": "healer"},
+            { "x": 8, "y": 3, "name": "zombie"},
             { "x": 9, "y": 3, "name": "healer"},
-            { "x": 10, "y": 3, "name": "healer"},
+            { "x": 10, "y": 3, "name": "zombie"},
             { "x": 7, "y": 4, "name": "tank"},
             { "x": 5, "y": 5, "name": "zombie"},
             { "x": 6, "y": 5, "name": "zombie"},
@@ -93,9 +90,7 @@
             { "x": 7, "y": 6, "name": "tank"},
             { "x": 10, "y": 6, "name": "tank"},
             { "x": 13, "y": 6, "name": "tank"},
-            { "x": 4, "y": 7, "name": "tank"},
-            { "x": 7, "y": 7, "name": "tank"},
-            { "x": 10, "y": 7, "name": "tank"}
+            { "x": 7, "y": 7, "name": "tank"}
         ]
     },
     "nuke":
