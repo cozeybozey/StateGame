@@ -228,6 +228,7 @@ public partial class MainMenu : Control
     }
     saveData["levels"] = levelsData;
     saveData["levelNodesPerLayer"] = _world.AmountOfNodesPerLayer;
+    saveData["coins"] = _world.Coins;
 
     // Write to file
     string json = Json.Stringify(saveData, "\t");
@@ -319,7 +320,7 @@ public partial class MainMenu : Control
       );
     }
     _world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray();
-
+    _world.UpdateCoins(saveData["coins"].AsInt32());
     _world.LoadLevels();
 
     GD.Print("Game loaded.");

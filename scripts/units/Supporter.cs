@@ -18,28 +18,12 @@ public partial class Supporter : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? closest = null;
-    float closestDist = float.MaxValue;
+    // Predicate makes sure closest unit has to be friendly
+    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.side == side);
 
-    if (units == null || units.Count == 0)
+    if (closest == null)
       return new List<Vector2I>();
-
-    foreach (Unit unit in units)
-    {
-      if (unit == null || unit == this)
-        continue;
-
-      float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
-      if (dist < closestDist)
-      {
-        closestDist = dist;
-        closest = unit.occupiedMainCell;
-      }
-    }
-
-    if (closest.HasValue)
-      return new List<Vector2I> { closest.Value };
-
-    return new List<Vector2I>();
+    else
+      return [closest.Item2];
   }
 }

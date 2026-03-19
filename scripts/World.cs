@@ -16,6 +16,7 @@ public partial class World : Node2D
   private TextureButton _playButton;
   private Label _levelCounter;
   private Label _turnCounter;
+  private Label _coinsCounter;
   private Panel _messagePanel;
   private RichTextLabel _message;
   private HBoxContainer _messageResponses;
@@ -46,6 +47,7 @@ public partial class World : Node2D
   private bool _playing = false;
   private int _level = 1;
   private int _completedLayers = 0;
+  private int _slowDownLayer = 15;
   private int _turn = 0;
   private double _turnStartCooldown = 1.0f;
   private double _turnCooldown = 1.0f;
@@ -57,6 +59,10 @@ public partial class World : Node2D
   private int _turnEndDamage = 1;
   private Unit _activeUnit = null!;
   private bool _paused = false;
+
+  public int Coins = 0;
+  private int _coinsPerWin = 20;
+  private int _levelRedoCost = 100;
 
   private List<List<UnitInfo>> _unitsPerStage;
   private List<UnitInfo> _levelUnits; // List of units in the current level, used for rewards
@@ -82,6 +88,7 @@ public partial class World : Node2D
     _playButton = GetNode<TextureButton>("CanvasLayer/BottomUi/PlayButton");
     _levelCounter = GetNode<Label>("CanvasLayer/BottomUi/LevelCounter/Counter");
     _turnCounter = GetNode<Label>("CanvasLayer/BottomUi/TurnCounter/Counter");
+    _coinsCounter = GetNode<Label>("CanvasLayer/BottomUi/CoinsCounter/Counter");
     _messagePanel = GetNode<Panel>("CanvasLayer/MessagePanel");
     _message = _messagePanel.GetNode<RichTextLabel>("MessageContainer/Message");
     _messageResponses = _messagePanel.GetNode<HBoxContainer>("MessageContainer/Responses");
@@ -440,7 +447,7 @@ public partial class World : Node2D
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
     _turnCooldown = _turnStartCooldown;
-    _message.Text = "";
+    ClearMessagePanel();
     _messagePanel.Hide();
     _gridOverlay.LoadUnits();
     _levelCounter.Text = _level.ToString();
@@ -450,12 +457,6 @@ public partial class World : Node2D
     _levelUnits.Clear();
     _playerSideUnitsLayer.Clear();
     _enemySideUnitsLayer.Clear();
-
-    // Clear message responses
-    foreach (Node child in _messageResponses.GetChildren())
-    {
-      child.QueueFree();
-    }
 
     _gridOverlay.SetInteractionLocked(false);
     _playButton.Disabled = false;
@@ -473,19 +474,31 @@ public partial class World : Node2D
     _level += 1;
     ShowRewards();
     _messagePanel.Show();
+    UpdateCoins(_coinsPerWin);
 
     if (_activeLevel != null)
     {
       _activeLevel.Completed = true;
-      _levelButtons[_activeLevel.Id].Disabled = true;
+
+      // Set button to green to indicate it has been completed
+      Color color = Colors.LightGreen;
+      StyleBoxFlat style = GetRewardButtonStyle(color);
+      StyleBoxFlat stylePressed = GetRewardButtonStyle(color.Darkened(0.2f));
+      StyleBoxFlat styleHover = GetRewardButtonStyle(color.Lightened(0.2f));
+      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("normal", style);
+      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("pressed", stylePressed);
+      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("hover", styleHover);
 
       if (_activeLevel.NextNodes.Count > 0)
       {
         // Up number of units slot if the player unlocked a new layer
-        if (Levels[_activeLevel.NextNodes[0]].Layer >= _completedLayers)
+        if (_activeLevel.Layer >= _completedLayers)
         {
           _completedLayers++;
-          _gridOverlay.IncreaseUnitCount(1);
+          if (_completedLayers < _slowDownLayer)
+            _gridOverlay.IncreaseUnitCount(1);
+          else if (_completedLayers % 2 == 0)  // Only increase max unit slots by 1 every 2 layers after layer 20
+            _gridOverlay.IncreaseUnitCount(1);
         }
       }
 
@@ -978,20 +991,25 @@ public partial class World : Node2D
         .ToList();
 
     // Add UI for all layers except the last
-    int layerIndex = 0;
-    for (int i = 0; i < layers.Count; i++)
+    for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
     {
-      foreach (LevelInfo levelNode in layers[i])
+      bool unlockedLayer = false;
+      foreach (LevelInfo levelNode in layers[layerIndex])
       {
-        AddLevelUi(levelNode, layers[i].Count);
-        if (levelNode.Completed && levelNode.Layer >= layerIndex)
-        {
-          layerIndex++;
-          _completedLayers++;
-        }
+        AddLevelUi(levelNode, layers[layerIndex].Count);
+        if (levelNode.Unlocked)
+          unlockedLayer = true;
+      }
+
+      if (unlockedLayer && layerIndex > 0)
+      {
+        _completedLayers++;
+        if (_completedLayers < _slowDownLayer)
+          _gridOverlay.IncreaseUnitCount(1);
+        else if (_completedLayers % 2 == 0)  // Only increase max unit slots by 1 every 2 layers after layer 20
+          _gridOverlay.IncreaseUnitCount(1);
       }
     }
-    _gridOverlay.IncreaseUnitCount(_completedLayers);
   }
 
   void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next, bool isBoss)
@@ -1057,10 +1075,23 @@ public partial class World : Node2D
 
     Button button = new();
     button.Text = levelNode.Name;
-    button.Disabled = !levelNode.Unlocked || levelNode.Completed;
+    button.Disabled = !levelNode.Unlocked;
     button.CustomMinimumSize = buttonSize;
     button.Position = buttonPos;
     button.Pressed += () => OnLevelSelected(levelNode);
+
+    if (levelNode.Completed)
+    {
+      // Set button to green to indicate it has been completed
+      Color color = Colors.LightGreen;
+      StyleBoxFlat style = GetRewardButtonStyle(color);
+      StyleBoxFlat stylePressed = GetRewardButtonStyle(color.Darkened(0.2f));
+      StyleBoxFlat styleHover = GetRewardButtonStyle(color.Lightened(0.2f));
+      button.AddThemeStyleboxOverride("normal", style);
+      button.AddThemeStyleboxOverride("pressed", stylePressed);
+      button.AddThemeStyleboxOverride("hover", styleHover);
+    }
+
     _levelButtons[levelNode.Id] = button;
     _worldUi.AddChild(button);
 
@@ -1098,14 +1129,83 @@ public partial class World : Node2D
     return new Vector2((float)xPos, (float)(_worldUi.CustomMinimumSize.Y - 100 - layer * _worldUiSpacing * 0.5f));
   }
 
-  void OnLevelSelected(LevelInfo levelNode)
+  private void OnLevelSelected(LevelInfo levelInfo)
   {
-    _worldUi.GetParent<ScrollContainer>().Hide();
-    _activeLevel = levelNode;
-    StartLevel(levelNode.Units!);
+    // Ask player if he wants to redo the level
+    if (levelInfo.Completed)
+    {
+      ClearMessagePanel();
+
+      if (Coins >= _levelRedoCost)
+      {
+        _message.Text = $"You have already completed this level. Do you want to repeat the level for {_levelRedoCost} coins?";
+        Button yesBtn = new Button();
+        yesBtn.Text = "Yes";
+        yesBtn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        yesBtn.Pressed += () => OnRedoConfirmed(levelInfo);
+        yesBtn.CustomMinimumSize = new Vector2I(80, 0);
+        _messageResponses.AddChild(yesBtn);
+
+        Button noBtn = new Button();
+        noBtn.Text = "No";
+        noBtn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        noBtn.Pressed += OnRedoCanceled;
+        noBtn.CustomMinimumSize = new Vector2I(80, 0);
+        _messageResponses.AddChild(noBtn);
+      }
+      else
+      {
+        _message.Text = $"You have already completed this level. You do not have the required {_levelRedoCost} coins to repeat this level.";
+        Button btn = new Button();
+        btn.Text = "Okay... :(";
+        btn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        btn.Pressed += () => OnRedoCanceled();
+        btn.CustomMinimumSize = new Vector2I(80, 0);
+        _messageResponses.AddChild(btn);
+      }
+
+      _worldUi.GetParent<ScrollContainer>().Visible = false;
+      _messagePanel.Show();
+
+    }
+    else
+    {
+      _worldUi.GetParent<ScrollContainer>().Hide();
+      _activeLevel = levelInfo;
+      StartLevel(levelInfo.Units!);
+    }
   }
 
-  void OnWorldMapPressed()
+  private void OnRedoConfirmed(LevelInfo levelInfo)
+  {
+    ClearMessagePanel();
+    _messagePanel.Hide();
+
+    UpdateCoins(-_levelRedoCost);
+    _worldUi.GetParent<ScrollContainer>().Hide();
+    _activeLevel = levelInfo;
+    StartLevel(levelInfo.Units!);
+  }
+
+  private void OnRedoCanceled()
+  {
+    ClearMessagePanel();
+    _messagePanel.Hide();
+    _worldUi.GetParent<ScrollContainer>().Visible = true;
+  }
+
+  private void ClearMessagePanel()
+  {
+    _message.Text = "";
+
+    // Clear message responses
+    foreach (Node child in _messageResponses.GetChildren())
+    {
+      child.QueueFree();
+    }
+  }
+
+  private void OnWorldMapPressed()
   {
     _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
   }
@@ -1277,5 +1377,11 @@ public partial class World : Node2D
     // Call turn end function of every unit
     foreach (Unit unit in _units)
       unit.TurnEnd(_unitsGrid, _units, _removedUnits);
+  }
+
+  public void UpdateCoins(int amount)
+  {
+    Coins += amount;
+    _coinsCounter.Text = Coins.ToString();
   }
 }

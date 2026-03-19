@@ -442,6 +442,17 @@ text = "Units:"
 layout_mode = 2
 text = "0/20"
 
+[node name="CoinsCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=386345272]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter" unique_id=1116477226]
+layout_mode = 2
+text = "Coins:"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter" unique_id=470700629]
+layout_mode = 2
+text = "0"
+
 [node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
 layout_mode = 2
 

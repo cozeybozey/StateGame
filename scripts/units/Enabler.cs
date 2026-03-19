@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public partial class Enabler : Unit
 {
   private int _currentIndex = 0;
-  private List<Unit> _units;
+  private List<Unit> _units = new List<Unit>();
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
   {
@@ -24,32 +24,16 @@ public partial class Enabler : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? closest = null;
-    float closestDist = float.MaxValue;
+    // Predicate makes sure closest unit has to be friendly and not another enabler
+    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.side == side && u is not Enabler);
 
-    if (units == null || units.Count == 0)
+    if (closest == null)
       return new List<Vector2I>();
-
-    foreach (Unit unit in units)
-    {
-      if (unit == null || unit == this || unit is Enabler || unit.side != side)
-        continue;
-
-      float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
-      if (dist < closestDist)
-      {
-        closestDist = dist;
-        closest = unit.occupiedMainCell;
-      }
-    }
-
-    if (closest.HasValue)
+    else
     {
       _currentIndex = units.IndexOf(this);
       _units = units;
-      return new List<Vector2I> { closest.Value };
+      return [closest.Item2];
     }
-
-    return new List<Vector2I>();
   }
 }

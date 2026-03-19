@@ -27,14 +27,21 @@ public partial class OverlayLayer : TileMapLayer
 
   public void AddCells(List<Vector2I> cells)
   {
-    _cells.AddRange(cells);
+    foreach (Vector2I cell in cells)
+    { 
+      if (!_cells.Contains(cell))
+        _cells.Add(cell);
+    }
     QueueRedraw();
   }
 
   public void RemoveCells(List<Vector2I> cells)
   {
     foreach (Vector2I cell in cells)
-      _cells.Remove(cell);
+    {
+      if (_cells.Contains(cell))
+        _cells.Remove(cell);
+    }
     QueueRedraw();
   }
 

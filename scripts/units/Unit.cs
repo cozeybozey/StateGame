@@ -116,6 +116,48 @@ public partial class Unit : Node2D
 
   }
 
+  // Find closest unit that obeys certain clauses. These clauses are defined by the optional predicate.
+  // Think of only finding friendly units, or only finding other units of the same type.
+  protected Tuple<Unit, Vector2I>? GetClosestUnit(List<Unit> units, Func<Unit, bool>? predicate = null)
+  {
+    Vector2I? closestCell = null;
+    float closestDist = float.MaxValue;
+    Unit? closestUnit = null;
+
+    if (units == null || units.Count == 0)
+      return null;
+
+    foreach (Unit unit in units)
+    {
+      if (unit == null || unit == this)
+        continue;
+
+      // Check predicate and continue if it does not hold
+      if (predicate != null && !predicate(unit))
+        continue;
+
+      // Find the minimum distance between any pair of occupied cells
+      foreach (Vector2I myCell in GetOccupiedCells())
+      {
+        foreach (Vector2I theirCell in unit.GetOccupiedCells())
+        {
+          float dist = myCell.DistanceTo(theirCell);
+          if (dist < closestDist)
+          {
+            closestDist = dist;
+            closestCell = theirCell;
+            closestUnit = unit;
+          }
+        }
+      }
+    }
+
+    if (closestCell.HasValue && closestUnit != null)
+      return new Tuple<Unit, Vector2I>(closestUnit, closestCell.Value);
+    else
+      return null;
+  }
+
 	public UnitInfo GetInfo()
 	{
 		return new UnitInfo(id, name, texture, scenePath, occupiedCells, cost, maxHealth, 
