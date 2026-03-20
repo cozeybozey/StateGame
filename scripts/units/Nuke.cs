@@ -26,7 +26,7 @@ public partial class Nuke : Unit
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null && targetUnit.side != side)
       {
-        targetUnit.ChangeHealth(-damage);
+        targetUnit.ChangeHealth(-damage, this);
       }
     }
   }

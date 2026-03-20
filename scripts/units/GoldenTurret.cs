@@ -34,7 +34,7 @@ public partial class GoldenTurret : Unit
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null)
       {
-        targetUnit.ChangeHealth(-damage);
+        targetUnit.ChangeHealth(-damage, this);
       }
     }
   }

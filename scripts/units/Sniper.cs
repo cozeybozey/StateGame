@@ -50,7 +50,7 @@ public partial class Sniper : Unit
       if (targetUnit != null)
       {
         // Scale damage with distance
-        targetUnit.ChangeHealth(-damage * Mathf.FloorToInt(Mathf.Abs(target.Y - occupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - occupiedMainCell.X) * 0.25f));
+        targetUnit.ChangeHealth(-damage * Mathf.FloorToInt(Mathf.Abs(target.Y - occupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - occupiedMainCell.X) * 0.25f), this);
       }
     }
   }

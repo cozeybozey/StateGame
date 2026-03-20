@@ -82,6 +82,16 @@ public partial class World : Node2D
   private LevelInfo _activeLevel = null!;
   private int _worldUiSpacing = 100;
 
+  // Damage and healing tracking
+  // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
+  private System.Collections.Generic.Dictionary<Unit, UnitActivity> _unitsActivity = new System.Collections.Generic.Dictionary<Unit, UnitActivity>(); 
+  private Panel _gameStats;
+  private MenuButton _statisticsButton;
+  private PopupMenu _statisticsPopup;
+  private VBoxContainer _damageDealtStats;
+  private VBoxContainer _damageTakenStats;
+  private VBoxContainer _healingDoneStats;
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
@@ -108,6 +118,13 @@ public partial class World : Node2D
     _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
 
+    // Activity UI
+    _gameStats = GetNode<Panel>("CanvasLayer/GameStats");
+    _statisticsButton = GetNode<MenuButton>("CanvasLayer/GameStats/VBoxContainer/StatisticsButton");
+    _damageDealtStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/DamageDealt/VBoxContainer");
+    _damageTakenStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/DamageTaken/VBoxContainer");
+    _healingDoneStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/HealingDone/VBoxContainer");
+
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
     _speedPopup.IdPressed += OnSpeedSelected;
@@ -124,7 +141,13 @@ public partial class World : Node2D
     _globalSignals.SpeedChanged += OnUnitSpeedChanged;
     _globalSignals.SizeChanged += OnUnitSizeChanged;
     _globalSignals.SideChanged += OnUnitSideChanged;
+    _globalSignals.DamageDealt += OnUnitDamageDealt;
+    _globalSignals.DamageTaken += OnUnitDamageTaken;
+    _globalSignals.HealingDone += OnUnitHealingDone;
+    _globalSignals.HealingReceived += OnUnitHealingReceived;
     _worldMapButton.Pressed += OnWorldMapPressed;
+    _statisticsPopup = _statisticsButton.GetPopup();
+    _statisticsPopup.IdPressed += OnStatisticSelected;
     _playerSideUnitsLayer.OutlineColor = Colors.Green;
     _playerSideUnitsLayer.OutlineCells = false;
     _playerSideUnitsLayer.HighlightCells = true;
@@ -455,6 +478,7 @@ public partial class World : Node2D
     _turnCooldown = _turnStartCooldown;
     ClearMessagePanel();
     _messagePanel.Hide();
+    ResetGameStats();
     _gridOverlay.LoadUnits();
     _levelCounter.Text = _level.ToString();
     _activeUnitLayer.Clear();
@@ -489,6 +513,7 @@ public partial class World : Node2D
     ShowRewards();
     _messagePanel.Show();
     UpdateCoins(_coinsPerWin);
+    ShowGameStats();
 
     if (_activeLevel != null)
     {
@@ -540,6 +565,7 @@ public partial class World : Node2D
     btn.Pressed += () => OnReturnButtonPressed();
     _messageResponses.AddChild(btn);
     _messagePanel.Show();
+    ShowGameStats();
   }
 
   private void ShowRewards()
@@ -654,13 +680,18 @@ public partial class World : Node2D
       _selectedUnitLayer.Clear();
     }
 
-    // Update unit side layers
     if (_playing)
     {
+      // Update unit side layers
       if (unit.side)
         _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
       else
         _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
+    }
+    else
+    {
+      // Remove units from unit activity that were removed outside of playing
+      _unitsActivity.Remove(unit);
     }
 
     _units.Remove(unit);
@@ -732,6 +763,7 @@ public partial class World : Node2D
       _unitsGrid[cell.X, cell.Y] = unit;
     }
     _units.Add(unit);
+    _unitsActivity[unit] = new UnitActivity(0, 0, 0, 0);
     if (_playing)
     {
       _unitsToAct.Add(unit);
@@ -816,6 +848,26 @@ public partial class World : Node2D
       _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
       _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
     }
+  }
+
+  private void OnUnitDamageDealt(Unit unit, int amount)
+  {
+    _unitsActivity[unit].DamageDealth += amount;
+  }
+
+  private void OnUnitDamageTaken(Unit unit, int amount)
+  {
+    _unitsActivity[unit].DamageTaken += amount;
+  }
+
+  private void OnUnitHealingDone(Unit unit, int amount)
+  {
+    _unitsActivity[unit].HealingDone += amount;
+  }
+
+  private void OnUnitHealingReceived(Unit unit, int amount)
+  {
+    _unitsActivity[unit].HealingReceived += amount;
   }
 
   private void OnRewardButtonPressed(UnitInfo unitInfo)
@@ -1371,7 +1423,7 @@ public partial class World : Node2D
       while (index < _units.Count)
       {
         Unit unit = _units[index];
-        unit.ChangeHealth(-_turnEndDamage);
+        unit.ChangeHealth(-_turnEndDamage, null);
         // If the unit died from end of turn damage, it will be removed from the list, so we don't increment the index
         if (_units.Contains(unit))
           index += 1;
@@ -1394,5 +1446,104 @@ public partial class World : Node2D
   {
     Coins += amount;
     _coinsCounter.Text = Coins.ToString();
+  }
+
+  private void AddStatRow(Control container, string unitName, int value, int maxValue, bool side)
+  {
+    HBoxContainer row = new();
+
+    Label nameLabel = new();
+    nameLabel.Text = "  " + unitName;
+    nameLabel.CustomMinimumSize = new Vector2(150, 0);
+    row.AddChild(nameLabel);
+
+    Panel barBackground = new();
+    barBackground.CustomMinimumSize = new Vector2(200, 20);
+    StyleBoxFlat bgStyle = new();
+    bgStyle.BgColor = new Color(0.2f, 0.2f, 0.2f);
+    bgStyle.CornerRadiusTopLeft = bgStyle.CornerRadiusTopRight =
+    bgStyle.CornerRadiusBottomLeft = bgStyle.CornerRadiusBottomRight = 4;
+    barBackground.AddThemeStyleboxOverride("panel", bgStyle);
+
+    Panel barFill = new();
+    float fillRatio = maxValue > 0 ? (float)value / maxValue : 0;
+    barFill.CustomMinimumSize = new Vector2(200 * fillRatio, 20);
+    StyleBoxFlat fillStyle = new();
+    fillStyle.BgColor = side ? Colors.LightGreen : Colors.LightSalmon;
+    fillStyle.CornerRadiusTopLeft = fillStyle.CornerRadiusTopRight =
+    fillStyle.CornerRadiusBottomLeft = fillStyle.CornerRadiusBottomRight = 4;
+    barFill.AddThemeStyleboxOverride("panel", fillStyle);
+
+    barBackground.AddChild(barFill);
+    row.AddChild(barBackground);
+
+    Label valueLabel = new();
+    valueLabel.Text = value.ToString();
+    valueLabel.CustomMinimumSize = new Vector2(50, 0);
+    row.AddChild(valueLabel);
+
+    container.AddChild(row);
+  }
+
+  private void ShowGameStats()
+  {
+    var sortedByDamageDealt = _unitsActivity
+        .OrderByDescending(x => x.Value.DamageDealth)
+        .ToList();
+    int maxDamageDealt = sortedByDamageDealt.FirstOrDefault().Value?.DamageDealth ?? 1;
+
+    foreach (var entry in sortedByDamageDealt)
+      AddStatRow(_damageDealtStats, entry.Key.name, entry.Value.DamageDealth, maxDamageDealt, entry.Key.side);
+
+    var sortedByDamageTaken = _unitsActivity
+        .OrderByDescending(x => x.Value.DamageTaken)
+        .ToList();
+    int maxDamageTaken = sortedByDamageTaken.FirstOrDefault().Value?.DamageTaken ?? 1;
+
+    foreach (var entry in sortedByDamageTaken)
+      AddStatRow(_damageTakenStats, entry.Key.name, entry.Value.DamageTaken, maxDamageTaken, entry.Key.side);
+
+    var sortedByHealingDone = _unitsActivity
+        .OrderByDescending(x => x.Value.HealingDone)
+        .ToList();
+    int maxHealingDone = sortedByHealingDone.FirstOrDefault().Value?.HealingDone ?? 1;
+
+    foreach (var entry in sortedByHealingDone)
+      AddStatRow(_healingDoneStats, entry.Key.name, entry.Value.HealingDone, maxHealingDone, entry.Key.side);
+
+    _gameStats.Show();
+  }
+
+  private void ResetGameStats()
+  {
+    _unitsActivity.Clear();
+    _gameStats.Hide();
+    foreach (Node child in _damageDealtStats.GetChildren())
+      child.QueueFree();
+    foreach (Node child in _damageTakenStats.GetChildren())
+      child.QueueFree();
+    foreach (Node child in _healingDoneStats.GetChildren())
+      child.QueueFree();
+  }
+
+  private void OnStatisticSelected(long id)
+  {
+    _damageDealtStats.GetParent<ScrollContainer>().Hide();
+    _damageTakenStats.GetParent<ScrollContainer>().Hide();
+    _healingDoneStats.GetParent<ScrollContainer>().Hide();
+
+    switch (id)
+    {
+      case 0:
+        _damageDealtStats.GetParent<ScrollContainer>().Show();
+        break;
+      case 1:
+        _damageTakenStats.GetParent<ScrollContainer>().Show();
+        break;
+      case 2:
+        _healingDoneStats.GetParent<ScrollContainer>().Show();
+        break;
+    }
+    _statisticsButton.Text = _statisticsPopup.GetItemText((int)id);
   }
 }

@@ -58,7 +58,7 @@ public partial class Consumer : Unit
           Unit targetUnit = unitsGrid[t.X, t.Y];
           if (targetUnit != null && targetUnit.side != side)
           {
-            targetUnit.ChangeHealth(-damage);
+            targetUnit.ChangeHealth(-damage, this);
           }
         }
       }

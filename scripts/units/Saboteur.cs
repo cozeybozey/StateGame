@@ -63,10 +63,10 @@ public partial class Saboteur : Unit
         Unit targetUnit = unitsGrid[target.X, target.Y];
         if (targetUnit != null)
         {
-          targetUnit.ChangeHealth(-damage);
+          targetUnit.ChangeHealth(-damage, this);
         }
       }
-      ChangeHealth(-health); // Sacrifice self
+      ChangeHealth(-health, this); // Sacrifice self
     }
   }
 }

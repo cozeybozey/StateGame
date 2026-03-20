@@ -11,8 +11,8 @@ public partial class Vampire : Unit
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null)
       {
-        targetUnit.ChangeHealth(-damage);
-        ChangeHealth(damage);
+        targetUnit.ChangeHealth(-damage, this);
+        ChangeHealth(damage, this);
       }
     }
   }

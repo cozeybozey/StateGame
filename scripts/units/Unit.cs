@@ -186,7 +186,7 @@ public partial class Unit : Node2D
 			Unit targetUnit = unitsGrid[target.X, target.Y];
 			if (targetUnit != null)
 			{
-				targetUnit.ChangeHealth(-damage);
+				targetUnit.ChangeHealth(-damage, this);
       }
     }
   }
@@ -251,7 +251,7 @@ public partial class Unit : Node2D
     QueueFree();
   }
 
-  public virtual void ChangeHealth(int amount)
+  public virtual void ChangeHealth(int amount, Unit? unit)
   {
 		if (_dead)
 			return;
@@ -263,8 +263,12 @@ public partial class Unit : Node2D
 		{
 			int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - armor);
+      int damageTaken = Mathf.Min(effectiveDamage, health);
 			health -= effectiveDamage;
 			displayedText = effectiveDamage.ToString();
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageTaken, this, damageTaken);
+      if (unit != null)
+        _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageDealt, unit, damageTaken);
       if (health <= 0)
       {
         Die();
@@ -276,19 +280,20 @@ public partial class Unit : Node2D
       health += effectiveHealing;
       displayedText = effectiveHealing.ToString();
 			displayedColor = Colors.Green;
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingReceived, this, effectiveHealing);
+      if (unit != null)
+        _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveHealing);
     }
     _healthBar.Value = health;
 
     if (_affected)
-			_floatingTextQueue.Enqueue(new Tuple<string, Color>(displayedText, displayedColor));
-		else
-		{
-			_affected = true;
-			_sprite.Modulate = new Color(1, 1, 1, 0.5f);
+      _floatingTextQueue.Enqueue(new Tuple<string, Color>(displayedText, displayedColor));
+    else
+    {
+      _affected = true;
+      _sprite.Modulate = new Color(1, 1, 1, 0.5f);
       SpawnFloatingText(displayedText, displayedColor);
     }
-
-    _globalSignals.EmitSignal(GlobalSignals.SignalName.HealthChanged, this, amount);
   }
 
   public virtual void ChangeDamage(int amount)

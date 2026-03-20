@@ -397,6 +397,16 @@ text = "Cooldown: "
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=828379318]
 layout_mode = 2
 
+[node name="UnitSlots" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=103124016]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/UnitSlots" unique_id=470073801]
+layout_mode = 2
+text = "Unit slots:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/UnitSlots" unique_id=1282180164]
+layout_mode = 2
+
 [node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=236564824]
 layout_mode = 2
 
@@ -436,7 +446,7 @@ layout_mode = 2
 
 [node name="Text" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=1966678577]
 layout_mode = 2
-text = "Units:"
+text = "Unit slots:"
 
 [node name="Counter" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=2050610620]
 layout_mode = 2
@@ -523,9 +533,9 @@ anchor_top = -0.048
 anchor_right = 0.47200003
 anchor_bottom = 0.836
 offset_left = 127.104004
-offset_top = 221.104
+offset_top = 94.869
 offset_right = -125.74402
-offset_bottom = -221.72803
+offset_bottom = -347.96252
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -574,6 +584,76 @@ grow_horizontal = 0
 grow_vertical = 0
 text = "Main Menu"
 script = ExtResource("7_ygioq")
+
+[node name="GameStats" type="Panel" parent="CanvasLayer" unique_id=583095066]
+visible = false
+anchors_preset = -1
+anchor_right = 0.5
+anchor_bottom = 0.883
+offset_left = 33.0
+offset_top = 224.43
+offset_right = -95.0
+offset_bottom = -91.18402
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats" unique_id=1427428903]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1490531004]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Game Stats"
+horizontal_alignment = 1
+
+[node name="StatisticsButton" type="MenuButton" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1198709160]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Damage Dealt"
+flat = false
+item_count = 3
+popup/item_0/text = "Damage Dealt"
+popup/item_0/id = 0
+popup/item_1/text = "Damage Taken"
+popup/item_1/id = 1
+popup/item_2/text = "Healing Done"
+popup/item_2/id = 2
+
+[node name="DamageDealt" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1733045209]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/DamageDealt" unique_id=1308268964]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="DamageTaken" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=2073597527]
+visible = false
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/DamageTaken" unique_id=1746131956]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HealingDone" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=14978700]
+visible = false
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/HealingDone" unique_id=1658294077]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 

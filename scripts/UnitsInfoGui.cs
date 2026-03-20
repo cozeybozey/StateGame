@@ -11,6 +11,7 @@ public partial class UnitsInfoGui : VBoxContainer
   private Label _armor = null!;
   private Label _speed = null!;
   private Label _cooldown = null!;
+  private Label _unitSlots = null!;
   private Label _description = null!;
   private GlobalSignals _globalSignals = null!;
   public Unit selectedUnit = null!;
@@ -24,6 +25,7 @@ public partial class UnitsInfoGui : VBoxContainer
     _armor = GetNode<Label>("Armor/Value");
     _speed = GetNode<Label>("Speed/Value");
     _cooldown = GetNode<Label>("Cooldown/Value");
+    _unitSlots = GetNode<Label>("UnitSlots/Value");
     _description = GetNode<Label>("Description/Value");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
   
@@ -53,6 +55,7 @@ public partial class UnitsInfoGui : VBoxContainer
     _armor.Text = unitInfo.Armor.ToString();
     _speed.Text = unitInfo.Speed.ToString();
     _cooldown.Text = unitInfo.Cooldown.ToString() + '/' + unitInfo.StartCooldown.ToString();
+    _unitSlots.Text = unitInfo.OccupiedCells.Count.ToString();
     _description.Text = unitInfo.Description.ToString();
   }
 

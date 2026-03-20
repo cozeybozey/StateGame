@@ -10,7 +10,7 @@ public partial class Paladin : Unit
   protected override void Start()
   {
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
-    _globalSignals.HealthChanged += OnHealthChanged;
+    _globalSignals.HealingReceived += OnUnitReceivedHealing;
   }
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
@@ -78,7 +78,7 @@ public partial class Paladin : Unit
     base.Act(targets, unitsGrid);
   }
 
-  private void OnHealthChanged(Unit unit, int amount)
+  private void OnUnitReceivedHealing(Unit unit, int amount)
   {
     if (!IsInsideTree())
       return;
@@ -91,6 +91,6 @@ public partial class Paladin : Unit
   public override void _ExitTree()
   {
     if (_globalSignals != null)
-      _globalSignals.HealthChanged -= OnHealthChanged;
+      _globalSignals.HealingReceived -= OnUnitReceivedHealing;
   }
 }

@@ -26,7 +26,7 @@ public partial class Cleric : Unit
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null && targetUnit.health < targetUnit.maxHealth)
       {
-        targetUnit.ChangeHealth(damage);
+        targetUnit.ChangeHealth(damage, this);
       }
     }
   }
