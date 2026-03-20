@@ -188,7 +188,7 @@
 		"cost": 2,
 		"description": "Heals unit in front.",
 		"health": 8,
-		"damage": 8,
+		"damage": 12,
 		"armor": 0,
 		"speed": 5,
 		"cooldown": 1,

@@ -264,6 +264,12 @@ public partial class World : Node2D
     // Copy units to create a list of units that are going to act this turn
     _unitsToAct = [.._units];
     _playing = true;
+
+    // Immediately win or lose when you or the enemy has no units
+    if (_playerUnitsCount == 0)
+      Lose();
+    else if (_enemyUnitsCount == 0)
+      Win();
   }
 
   private void OnPlayButtonPressed()
@@ -470,6 +476,14 @@ public partial class World : Node2D
     if (!_playing)
       return;
     _playing = false;
+
+    if (_activeLevel.Layer == _numLayers - 1)
+    {
+      _message.Text = "You win the demo!\nThanks for playing!";
+      _messagePanel.Show();
+      return;
+    }
+
     _message.Text = "You Win!\nChoose your reward:";
     _level += 1;
     ShowRewards();
@@ -1030,10 +1044,7 @@ public partial class World : Node2D
     // Guarantee every next node has at least one incoming
     for (int j = 0; j < nextCount; j++)
     {
-      int closestPrev = Mathf.RoundToInt(
-          (float)j / (nextCount - 1) * (prevCount - 1)
-      );
-
+      int closestPrev = nextCount == 1 ? 0 : Mathf.RoundToInt((float)j / (nextCount - 1) * (prevCount - 1));
       prev[closestPrev].NextNodes.Add(next[j].Id);
     }
 
