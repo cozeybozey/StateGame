@@ -6,6 +6,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 {
 	[Export] public UnitInfo Info = null!;
 	[Export] public int Amount;
+	[Export] public bool Draggable = true;
 
 	private TextureRect _sprite = null!;
 	private Label _nameText = null!;
@@ -29,7 +30,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		if (Amount <= 0)
+		if (!Draggable || Amount <= 0)
 			return default;
 
 		if (_sprite != null)

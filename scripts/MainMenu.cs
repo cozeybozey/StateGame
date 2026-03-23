@@ -188,25 +188,31 @@ public partial class MainMenu : Control
     var levelsData = new Godot.Collections.Dictionary();
     foreach (var level in _world.Levels)
     {
-      var unitGrid = new Godot.Collections.Array();
-      if (level.Value.Units != null)
+      var unitGrids = new Godot.Collections.Array();
+      foreach (UnitInfo[,] units in level.Value.Units)
       {
+        var unitGrid = new Godot.Collections.Array();
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
         {
           for (int x = 0; x < GlobalConstants.GridSize.X; x++)
           {
-            UnitInfo unit = level.Value.Units[x, y];
+            UnitInfo unit = units[x, y];
             if (unit == null) continue;
             var unitData = new Godot.Collections.Dictionary()
-                    {
-                        { "x", x },
-                        { "y", y },
-                        { "id", unit.Id },
-                    };
+            {
+                { "x", x },
+                { "y", y },
+                { "id", unit.Id },
+            };
             unitGrid.Add(unitData);
           }
         }
+        unitGrids.Add(unitGrid);
       }
+
+      var rewardsList = new Godot.Collections.Array();
+      foreach (UnitInfo reward in level.Value.Rewards)
+        rewardsList.Add(reward.Id);
 
       var nextNodesList = new Godot.Collections.Array();
       foreach (string nextNode in level.Value.NextNodes)
@@ -220,9 +226,12 @@ public partial class MainMenu : Control
             { "unlocked", level.Value.Unlocked },
             { "layer", level.Value.Layer },
             { "layerIndex", level.Value.LayerIndex },
-            { "isBoss", level.Value.IsBoss },
+            { "boss", level.Value.Boss },
+            { "gauntlet", level.Value.Gauntlet },
+            { "rewards", rewardsList },
+            { "coinsRewards", level.Value.CoinsReward},
             { "nextNodes", nextNodesList },
-            { "units", unitGrid },
+            { "units", unitGrids },
         };
       levelsData[level.Key] = levelData;
     }
@@ -292,19 +301,28 @@ public partial class MainMenu : Control
       string levelId = levelKey.AsString();
       var levelData = levelsData[levelKey].AsGodotDictionary();
 
+      List<UnitInfo> rewards = new();
+      foreach (var rewardEntry in levelData["rewards"].AsGodotArray())
+        rewards.Add(GlobalConstants.UnitsData[rewardEntry.AsString()]);
+
       var nextNodes = new List<string>();
       foreach (var nextNode in levelData["nextNodes"].AsGodotArray())
         nextNodes.Add(nextNode.AsString());
 
-      var unitGrid = levelData["units"].AsGodotArray();
-      UnitInfo[,] units = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-      foreach (var unitEntry in unitGrid)
+      var unitGrids = levelData["units"].AsGodotArray();
+      List<UnitInfo[,]> units = new();
+      foreach (var gridEntry in unitGrids)
       {
-        var unitData = unitEntry.AsGodotDictionary();
-        int x = unitData["x"].AsInt32();
-        int y = unitData["y"].AsInt32();
-        string id = unitData["id"].AsString();
-        units[x, y] = GlobalConstants.UnitsData[id];
+        UnitInfo[,] grid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+        foreach (var unitEntry in gridEntry.AsGodotArray())
+        {
+          var unitData = unitEntry.AsGodotDictionary();
+          int x = unitData["x"].AsInt32();
+          int y = unitData["y"].AsInt32();
+          string id = unitData["id"].AsString();
+          grid[x, y] = GlobalConstants.UnitsData[id];
+        }
+        units.Add(grid);
       }
 
       _world.Levels[levelId] = new LevelInfo(
@@ -314,7 +332,10 @@ public partial class MainMenu : Control
           unlocked: levelData["unlocked"].AsBool(),
           layer: levelData["layer"].AsInt32(),
           layerIndex: levelData["layerIndex"].AsInt32(),
-          isBoss: levelData["isBoss"].AsBool(),
+          boss: levelData["isBoss"].AsBool(),
+          gauntlet: levelData["isGauntlet"].AsBool(),
+          rewards: rewards,
+          coinsReward: levelData["coinsReward"].AsInt32(),
           nextNodes: nextNodes,
           units: units
       );

@@ -1,0 +1,5 @@
+TODOS State Game:
+Add unit types, allows for more deckbuilding
+Slow down unit count
+Add tournaments
+Add more units that allow for better deckbuilding

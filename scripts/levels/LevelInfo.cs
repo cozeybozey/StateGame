@@ -9,9 +9,12 @@ public partial class LevelInfo : RefCounted
 	public bool Unlocked { get; set; }
   public int Layer { get; set; }
 	public int LayerIndex { get; set; }
-  public bool IsBoss { get; set; }
+  public bool Boss { get; set; }
+  public bool Gauntlet { get; set; }
+	public List<UnitInfo> Rewards { get; set; }
+	public int CoinsReward { get; set; }
   public List<string> NextNodes { get; set; }
-	public UnitInfo[,]? Units { get; set; }
+	public List<UnitInfo[,]> Units { get; set; }
 
 	public LevelInfo(
 		string id,
@@ -20,9 +23,12 @@ public partial class LevelInfo : RefCounted
 		bool unlocked,
 		int layer,
 		int layerIndex,
-		bool isBoss,
+		bool boss,
+		bool gauntlet,
+		List<UnitInfo> rewards,
+		int coinsReward,
 		List<string> nextNodes,
-		UnitInfo[,]? units)
+    List<UnitInfo[,]> units)
 	{
 		Id = id;
 		Name = name;
@@ -30,7 +36,10 @@ public partial class LevelInfo : RefCounted
 		Unlocked = unlocked;
 		Layer = layer;
 		LayerIndex = layerIndex;
-		IsBoss = isBoss;
+		Boss = boss;
+		Gauntlet = gauntlet;
+		Rewards = rewards;
+		CoinsReward = coinsReward;
 		NextNodes = nextNodes;
     Units = units;
 	}

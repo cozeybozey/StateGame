@@ -12,7 +12,10 @@
 		"armor": 0,
 		"speed": 5,
 		"cooldown": 1,
-		"rarity": "common"
+		"rarity": "common",
+		"types": [
+			"machinery"
+		]
 	},
 	"healer": {
 		"display_name": "Healer",
@@ -21,7 +24,7 @@
 		"cells": [[0, 0]],
 		"stage": 1,
 		"cost": 2,
-		"description": "Heal frontmost unit.",
+		"description": "Heal frontmost friendly unit.",
 		"health": 5,
 		"damage": 6,
 		"armor": 0,
@@ -171,7 +174,7 @@
 		"cells": [[0, 0], [0, 1]],
 		"stage": 2, 
 		"cost": 2,
-		"description": "Deal damage to frontmost unit. Gains damage equal damage taken.",
+		"description": "Deal damage to frontmost unit. Gains damage equal to damage taken.",
 		"health": 20,
 		"damage": 1,
 		"armor": 0,
@@ -201,7 +204,7 @@
 		"cells": [[0, 0]],
 		"stage": 3, 
 		"cost": 2,
-		"description": "Revives on the same location at the start of the next turn if the location is empty.",
+		"description": "Revives at a random location at the start of the next turn.",
 		"health": 4,
 		"damage": 2,
 		"armor": 0,

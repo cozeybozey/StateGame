@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://cex0prnqmtw17" path="res://scripts/OverlayLayer.cs" id="5_1lgw5"]
 [ext_resource type="Script" uid="uid://b1y5qdn52lyrt" path="res://scripts/UnitsSelectionContainer.cs" id="6_ygioq"]
 [ext_resource type="Script" uid="uid://d2aedhulpavp2" path="res://scripts/MainMenuButton.cs" id="7_ygioq"]
+[ext_resource type="Script" uid="uid://bx3s4pdwfwle" path="res://scripts/LevelInfoContainer.cs" id="8_pdh0q"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -252,9 +253,9 @@ anchor_top = -0.049000002
 anchor_right = 0.97200006
 anchor_bottom = 0.84300005
 offset_left = 3.104004
-offset_top = 31.752
+offset_top = 1.7520008
 offset_right = -29.744019
-offset_bottom = -2.264038
+offset_bottom = -1.2640381
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -265,6 +266,90 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="Spacer" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=74957501]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+
+[node name="LevelInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=165170159]
+visible = false
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+script = ExtResource("8_pdh0q")
+
+[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=793779740]
+layout_mode = 2
+text = "Level Info:"
+
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1172143513]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Id" unique_id=230509645]
+layout_mode = 2
+text = "Name:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Id" unique_id=329379976]
+layout_mode = 2
+
+[node name="Type" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1109278425]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Type" unique_id=1067759787]
+layout_mode = 2
+text = "Type:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Type" unique_id=525357755]
+layout_mode = 2
+
+[node name="Unlocked" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=251978665]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Unlocked" unique_id=559295647]
+layout_mode = 2
+text = "Unlocked:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Unlocked" unique_id=814821212]
+layout_mode = 2
+
+[node name="Completed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1106294101]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Completed" unique_id=246678121]
+layout_mode = 2
+text = "Completed:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Completed" unique_id=1863730498]
+layout_mode = 2
+
+[node name="UnitsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1896711146]
+layout_mode = 2
+text = "Units:"
+
+[node name="Units" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=723567899]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Units" unique_id=2080123507]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RewardsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=412917475]
+layout_mode = 2
+text = "Rewards:"
+
+[node name="Rewards" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=812289769]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Rewards" unique_id=1862153375]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="StartLevelButton" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1788032247]
+layout_mode = 2
+text = "Start Level"
 
 [node name="DecksHandler" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=435248968]
 custom_minimum_size = Vector2(250, 0)
@@ -326,7 +411,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Change Deck"
 
-[node name="Spacer" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=421560759]
+[node name="Spacer2" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=421560759]
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
@@ -564,8 +649,8 @@ visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_right = -575.0
-offset_bottom = -71.0
+offset_right = -607.0
+offset_bottom = -103.0
 grow_horizontal = 2
 grow_vertical = 2
 

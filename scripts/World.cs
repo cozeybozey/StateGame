@@ -35,6 +35,7 @@ public partial class World : Node2D
   private Button _playPauseButton;
   private Button _surrenderButton;
   private DecksHandler _decksHandler;
+  private LevelInfoContainer _levelInfoContainer;
 
   private List<Unit> _units;
   private List<Unit> _unitsToAct;
@@ -82,7 +83,9 @@ public partial class World : Node2D
   private int _buttonWidth = 75;
   private int _buttonHeight = 35;
   private LevelInfo _activeLevel = null!;
+  private int _activeGauntletLevelIndex = 0;
   private int _worldUiSpacing = 100;
+  private bool _openedWorldOnce = false;
 
   // Damage and healing tracking
   // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
@@ -120,6 +123,7 @@ public partial class World : Node2D
     _playPauseButton = GetNode<Button>("CanvasLayer/BottomUi/PlayPauseButton");
     _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
+    _levelInfoContainer = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
 
     // Activity UI
     _gameStats = GetNode<Panel>("CanvasLayer/GameStats");
@@ -152,6 +156,7 @@ public partial class World : Node2D
     _worldMapButton.Pressed += OnWorldMapPressed;
     _statisticsPopup = _statisticsButton.GetPopup();
     _statisticsPopup.IdPressed += OnStatisticSelected;
+    _levelInfoContainer.StartLevelPressed += OnStartLevelPressed;
     _playerSideUnitsLayer.OutlineColor = Colors.Green;
     _playerSideUnitsLayer.OutlineCells = false;
     _playerSideUnitsLayer.HighlightCells = true;
@@ -334,7 +339,7 @@ public partial class World : Node2D
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
-    int budget = difficulty + (difficulty / 2);
+    int budget = difficulty; //+ (difficulty / 2);
     int maxStage = GetMaxStageForDifficulty(difficulty);
 
     RandomNumberGenerator rng = new();
@@ -504,6 +509,25 @@ public partial class World : Node2D
     if (!_playing)
       return;
     _playing = false;
+    
+    ShowGameStats();
+
+    if (_activeLevel.Gauntlet && _activeGauntletLevelIndex + 1 < _activeLevel.Units.Count)
+    {
+      int levelsLeft = _activeLevel.Units.Count - (_activeGauntletLevelIndex + 1);
+      string levelText = levelsLeft > 1 ? "levels" : "level";
+      _message.Text = $"You won level {_activeGauntletLevelIndex + 1} of the gauntlet.\n{levelsLeft} more {levelText} to go.";
+      _activeGauntletLevelIndex++;
+      Button btn = new Button();
+      btn.Text = "Next level";
+      btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+      btn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+      btn.CustomMinimumSize = new Vector2I(150, 50);
+      btn.Pressed += OnNextGauntletLevelButtonPressed;
+      _messageResponses.AddChild(btn);
+      _messagePanel.Show();
+      return;
+    }
 
     if (_activeLevel.Layer == _numLayers - 1)
     {
@@ -512,12 +536,12 @@ public partial class World : Node2D
       return;
     }
 
+    _activeGauntletLevelIndex = 0;
     _message.Text = "You Win!\nChoose your reward:";
     _level += 1;
-    ShowRewards();
+    ShowRewards(_activeLevel.Rewards);
     _messagePanel.Show();
-    UpdateCoins(_coinsPerWin);
-    ShowGameStats();
+    UpdateCoins(_activeLevel.CoinsReward);
 
     if (_activeLevel != null)
     {
@@ -538,9 +562,9 @@ public partial class World : Node2D
         if (_activeLevel.Layer >= _completedLayers)
         {
           _completedLayers++;
-          if (_completedLayers < _slowDownLayer)
+          if (_completedLayers < _slowDownLayer && _completedLayers % 2 == 0)
             _gridOverlay.IncreaseUnitCount(1);
-          else if (_completedLayers % 2 == 0)  // Only increase max unit slots by 1 every 2 layers after layer 20
+          else if (_completedLayers % 4 == 0)  // Only increase max unit slots by 1 every 4 layers after layer 20
             _gridOverlay.IncreaseUnitCount(1);
         }
       }
@@ -570,18 +594,30 @@ public partial class World : Node2D
     _messageResponses.AddChild(btn);
     _messagePanel.Show();
     ShowGameStats();
+    _activeGauntletLevelIndex = 0;
   }
 
-  private void ShowRewards()
+  private void ShowRewards(List<UnitInfo> rewardUnits)
   {
-    int maxButtons = Mathf.Min(3, _levelUnits.Count);
-    var chosenIndices = new HashSet<int>();
+    List<UnitInfo> localRewardUnits = [.. rewardUnits];
 
-    while (chosenIndices.Count < maxButtons)
+    // No specific rewards given means show 3 random units from this level
+    if (localRewardUnits.Count == 0)
     {
-      int index = _rng.Next(0, _levelUnits.Count);
-      chosenIndices.Add(index);
+      int maxButtons = Mathf.Min(3, _levelUnits.Count);
+      var chosenIndices = new List<int>();
+
+      while (chosenIndices.Count < maxButtons)
+      {
+        int index = _rng.Next(0, _levelUnits.Count);
+        if (!chosenIndices.Contains(index))
+        {
+          chosenIndices.Add(index);
+          localRewardUnits.Add(_levelUnits[index]);
+        }
+      }
     }
+
 
     VBoxContainer vbox = new();
     vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
@@ -596,10 +632,8 @@ public partial class World : Node2D
 
     List<Button> rewardButtons = new();
 
-    foreach (int i in chosenIndices)
+    foreach (UnitInfo unitInfo in localRewardUnits)
     {
-      UnitInfo unitInfo = _levelUnits[i];
-
       Button btn = new Button();
       btn.Text = unitInfo.Name;
       btn.Icon = unitInfo.Texture;
@@ -1005,7 +1039,7 @@ public partial class World : Node2D
       List<LevelInfo> layerNodes = new();
       string nodeId;
       string nodeName;
-      bool isBoss = (layer + 1) % 10 == 0;
+      bool isBoss = (layer + 1) % 100 == 0;
 
       if (isBoss)
       {
@@ -1034,9 +1068,12 @@ public partial class World : Node2D
             unlocked: layer == 0,
             layer: layer,
             layerIndex: 0,
-            isBoss: true,
+            boss: true,
+            gauntlet: false,
+            rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
+            coinsReward: _coinsPerWin,
             nextNodes: new List<string>(),
-            units: LoadLevel(levelId)
+            units: [LoadLevel(levelId)]
         );
         layerNodes.Add(Levels[nodeId]);
         AmountOfNodesPerLayer[layer] = 1;
@@ -1045,19 +1082,57 @@ public partial class World : Node2D
       {
         for (int node = 0; node < currentNodesInLayer; node++)
         {
-          nodeName = $"L{layer + 1}_N{node + 1}";
+          // One in ten levels will be a gauntlet, but only after layer 5
           nodeId = $"L{layer + 1}_N{node + 1}";
-          Levels[nodeId] = new LevelInfo(
-              id: nodeId,
-              name: nodeId,
-              completed: false,
-              unlocked: layer == 0,
-              layer: layer,
-              layerIndex: node,
-              isBoss: false,
-              nextNodes: new List<string>(),
-              units: LoadRandomLevel(layer + 1)
-          );
+          if (layer > 4 && _rng.NextDouble() < 0.2)
+          {
+            int numGauntletLevels = 4;
+            List<UnitInfo[,]> gauntletUnits = new List<UnitInfo[,]>();
+            for (int i = 0; i < numGauntletLevels; i++)
+              gauntletUnits.Add(LoadRandomLevel(layer));
+
+            List<UnitInfo> rewardUnits = gauntletUnits
+              .SelectMany(grid => grid.Cast<UnitInfo>())
+              .Where(u => u != null)
+              .DistinctBy(u => u.Id)
+              .OrderBy(_ => _rng.Next())
+              .Take(3)
+              .ToList();
+
+            nodeName = $"Gauntlet";
+            Levels[nodeId] = new LevelInfo(
+                id: nodeId,
+                name: nodeName,
+                completed: false,
+                unlocked: layer == 0,
+                layer: layer,
+                layerIndex: node,
+                boss: false,
+                gauntlet: true,
+                rewards: rewardUnits,
+                coinsReward: _coinsPerWin * 5,
+                nextNodes: new List<string>(),
+                units: gauntletUnits
+            );
+          }
+          else
+          {
+            nodeName = $"L{layer + 1}_N{node + 1}";
+            Levels[nodeId] = new LevelInfo(
+                id: nodeId,
+                name: nodeName,
+                completed: false,
+                unlocked: layer == 0,
+                layer: layer,
+                layerIndex: node,
+                boss: false,
+                gauntlet: false,
+                rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
+                coinsReward: _coinsPerWin,
+                nextNodes: new List<string>(),
+                units: [LoadRandomLevel(layer + 1)]
+            );
+          }
           layerNodes.Add(Levels[nodeId]);
         }
         AmountOfNodesPerLayer[layer] = currentNodesInLayer;
@@ -1078,7 +1153,6 @@ public partial class World : Node2D
         _maxNodesPerLayer * _worldUiSpacing + 300,
         _numLayers * 0.5f * _worldUiSpacing + 200
     );
-    _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
 
     // Group levels by layer
     var layers = Levels.Values
@@ -1225,14 +1299,25 @@ public partial class World : Node2D
 
   private void OnLevelSelected(LevelInfo levelInfo)
   {
+    _decksHandler.Hide();
+    _levelInfoContainer.Show();
+    _levelInfoContainer.DisplayInfo(levelInfo);
+  }
+
+  private void OnStartLevelPressed(LevelInfo levelInfo)
+  {
+    _levelInfoContainer.Hide();
+    _decksHandler.Show();
+
     // Ask player if he wants to redo the level
     if (levelInfo.Completed)
     {
       ClearMessagePanel();
 
-      if (Coins >= _levelRedoCost)
+      int levelRedoCost = levelInfo.Gauntlet ? Mathf.FloorToInt(_levelRedoCost * 2.5f) : _levelRedoCost;
+      if (Coins >= levelRedoCost)
       {
-        _message.Text = $"You have already completed this level. Do you want to repeat the level for {_levelRedoCost} coins?";
+        _message.Text = $"You have already completed this level. Do you want to repeat the level for {levelRedoCost} coins?";
         Button yesBtn = new Button();
         yesBtn.Text = "Yes";
         yesBtn.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -1249,7 +1334,7 @@ public partial class World : Node2D
       }
       else
       {
-        _message.Text = $"You have already completed this level. You do not have the required {_levelRedoCost} coins to repeat this level.";
+        _message.Text = $"You have already completed this level. You do not have the required {levelRedoCost} coins to repeat this level.";
         Button btn = new Button();
         btn.Text = "Okay... :(";
         btn.SizeFlagsVertical = SizeFlags.ExpandFill;
@@ -1266,7 +1351,7 @@ public partial class World : Node2D
     {
       _worldUi.GetParent<ScrollContainer>().Hide();
       _activeLevel = levelInfo;
-      StartLevel(levelInfo.Units!);
+      StartLevel(levelInfo.Units[0]);
     }
   }
 
@@ -1275,10 +1360,11 @@ public partial class World : Node2D
     ClearMessagePanel();
     _messagePanel.Hide();
 
-    UpdateCoins(-_levelRedoCost);
+    int levelRedoCost = levelInfo.Gauntlet ? Mathf.FloorToInt(_levelRedoCost * 2.5f) : _levelRedoCost;
+    UpdateCoins(-levelRedoCost);
     _worldUi.GetParent<ScrollContainer>().Hide();
     _activeLevel = levelInfo;
-    StartLevel(levelInfo.Units!);
+    StartLevel(levelInfo.Units[0]);
   }
 
   private void OnRedoCanceled()
@@ -1302,6 +1388,11 @@ public partial class World : Node2D
   private void OnWorldMapPressed()
   {
     _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
+    if (!_openedWorldOnce)
+    {
+      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
+      _openedWorldOnce = true;
+    }
   }
 
   private void GenerateWorld()
@@ -1576,5 +1667,12 @@ public partial class World : Node2D
         break;
     }
     _statisticsButton.Text = _statisticsPopup.GetItemText((int)id);
+  }
+
+  private void OnNextGauntletLevelButtonPressed()
+  {
+    Reset();
+    _messagePanel.Hide();
+    StartLevel(_activeLevel.Units[_activeGauntletLevelIndex]);
   }
 }
