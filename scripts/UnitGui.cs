@@ -46,39 +46,6 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 		return new DragPayload(Info, this, null);
 	}
 
-  public override bool _CanDropData(Vector2 atPosition, Variant data)
-  {
-    if (data.Obj is not DragPayload dragPayload)
-      return false;
-
-		if (dragPayload.Unit.Id != Info.Id)
-	    return false;
-
-		return true;
-  }
-
-  public override void _DropData(Vector2 atPosition, Variant data)
-	{ 
-    if (data.Obj is not DragPayload dragPayload)
-      return;
-
-    // Return if it came from this UI to prevent self-drops
-    if (dragPayload.Source == this)
-    {
-			return;
-    }
-    else
-    {
-			UpdateAmount(Amount + 1);
-    }
-
-    // Notify original source if it exists and isn’t this UI
-    if (dragPayload.Source is IUnitDragSource source && dragPayload.Source != this)
-    {
-      source.OnUnitPlacedSuccessfully(dragPayload);
-    }
-  }
-
   public override void _GuiInput(InputEvent @event)
   {
     if (@event is InputEventMouseButton mouseEvent &&

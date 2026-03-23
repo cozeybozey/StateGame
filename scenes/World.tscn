@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://dagxq2ao2w6gl" path="res://scripts/UnitsInfoGui.cs" id="4_d1c63"]
 [ext_resource type="Script" uid="uid://c75kv2ravi8k6" path="res://scripts/DecksHandler.cs" id="4_hlk0d"]
 [ext_resource type="Script" uid="uid://cex0prnqmtw17" path="res://scripts/OverlayLayer.cs" id="5_1lgw5"]
+[ext_resource type="Script" uid="uid://b1y5qdn52lyrt" path="res://scripts/UnitsSelectionContainer.cs" id="6_ygioq"]
 [ext_resource type="Script" uid="uid://d2aedhulpavp2" path="res://scripts/MainMenuButton.cs" id="7_ygioq"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
@@ -250,10 +251,10 @@ anchor_left = 0.47300002
 anchor_top = -0.049000002
 anchor_right = 0.97200006
 anchor_bottom = 0.84300005
-offset_left = 33.104004
-offset_top = 33.752
-offset_right = 0.25598145
-offset_bottom = -0.2640381
+offset_left = 3.104004
+offset_top = 31.752
+offset_right = -29.744019
+offset_bottom = -2.264038
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -308,6 +309,7 @@ visible = false
 layout_mode = 0
 offset_right = 46.0
 offset_bottom = 544.0
+script = ExtResource("6_ygioq")
 
 [node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=331378763]
 layout_mode = 2
@@ -424,9 +426,10 @@ anchors_preset = -1
 anchor_top = 0.84400004
 anchor_right = 0.5
 anchor_bottom = 0.9480001
-offset_left = 1.0
-offset_top = 33.08795
-offset_bottom = 34.695923
+offset_left = -30.0
+offset_top = 1.0879517
+offset_right = -31.0
+offset_bottom = 2.6959229
 grow_vertical = 2
 
 [node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=342629804]
@@ -528,14 +531,12 @@ text = "Surrender"
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
 anchors_preset = -1
-anchor_left = -0.027
-anchor_top = -0.048
-anchor_right = 0.47200003
-anchor_bottom = 0.836
-offset_left = 127.104004
-offset_top = 94.869
-offset_right = -125.74402
-offset_bottom = -347.96252
+anchor_right = 0.5
+anchor_bottom = 0.88400006
+offset_left = 63.999992
+offset_top = 31.999998
+offset_right = -127.0
+offset_bottom = -379.06653
 grow_horizontal = 2
 grow_vertical = 2
 

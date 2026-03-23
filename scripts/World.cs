@@ -13,6 +13,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 public partial class World : Node2D
 {
+  private CanvasLayer _canvasLayer;
   private TextureButton _playButton;
   private Label _levelCounter;
   private Label _turnCounter;
@@ -68,6 +69,7 @@ public partial class World : Node2D
   private List<UnitInfo> _levelUnits; // List of units in the current level, used for rewards
   private Dictionary _levelsData;
   private Random _rng = new Random();
+  private UnitInfo? _selectedReward = null;
 
   // World generation
   public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
@@ -95,6 +97,7 @@ public partial class World : Node2D
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
+    _canvasLayer = GetNode<CanvasLayer>("CanvasLayer");
     _playButton = GetNode<TextureButton>("CanvasLayer/BottomUi/PlayButton");
     _levelCounter = GetNode<Label>("CanvasLayer/BottomUi/LevelCounter/Counter");
     _turnCounter = GetNode<Label>("CanvasLayer/BottomUi/TurnCounter/Counter");
@@ -125,6 +128,7 @@ public partial class World : Node2D
     _damageTakenStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/DamageTaken/VBoxContainer");
     _healingDoneStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/HealingDone/VBoxContainer");
 
+    _canvasLayer.Offset = new Vector2I(GlobalConstants.TileSize, GlobalConstants.TileSize);
     _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
     _speedPopup.IdPressed += OnSpeedSelected;
@@ -570,7 +574,6 @@ public partial class World : Node2D
 
   private void ShowRewards()
   {
-    // Pick up to 3 random units from the level
     int maxButtons = Mathf.Min(3, _levelUnits.Count);
     var chosenIndices = new HashSet<int>();
 
@@ -580,35 +583,49 @@ public partial class World : Node2D
       chosenIndices.Add(index);
     }
 
+    VBoxContainer vbox = new();
+    vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+    vbox.SizeFlagsVertical = SizeFlags.ExpandFill;
+    _messageResponses.AddChild(vbox);
+
+    HBoxContainer hbox = new();
+    hbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+    hbox.SizeFlagsVertical = SizeFlags.ExpandFill;
+    hbox.Alignment = BoxContainer.AlignmentMode.Center;
+    vbox.AddChild(hbox);
+
+    List<Button> rewardButtons = new();
+
     foreach (int i in chosenIndices)
     {
-      // Get unit data
       UnitInfo unitInfo = _levelUnits[i];
 
-      // Create button with unit texture
       Button btn = new Button();
       btn.Text = unitInfo.Name;
       btn.Icon = unitInfo.Texture;
       btn.IconAlignment = HorizontalAlignment.Center;
       btn.VerticalIconAlignment = VerticalAlignment.Bottom;
       btn.ExpandIcon = true;
-      //btn.SizeFlagsHorizontal = SizeFlags.ExpandFill;
       btn.SizeFlagsVertical = SizeFlags.ExpandFill;
-      btn.Pressed += () => OnRewardButtonPressed(unitInfo);
 
-
-      // Set rarity color on button
       Color rarityColor = GetRarityColor(unitInfo.Rarity);
-      StyleBoxFlat style = GetRewardButtonStyle(rarityColor);
-      StyleBoxFlat stylePressed = GetRewardButtonStyle(rarityColor.Darkened(0.2f));
-      StyleBoxFlat styleHover = GetRewardButtonStyle(rarityColor.Lightened(0.2f));
-      btn.AddThemeStyleboxOverride("normal", style);
-      btn.AddThemeStyleboxOverride("pressed", stylePressed);
-      btn.AddThemeStyleboxOverride("hover", styleHover);
+      btn.AddThemeStyleboxOverride("normal", GetRewardButtonStyle(rarityColor));
+      btn.AddThemeStyleboxOverride("pressed", GetRewardButtonStyle(rarityColor.Darkened(0.2f)));
+      btn.AddThemeStyleboxOverride("hover", GetRewardButtonStyle(rarityColor.Lightened(0.2f)));
 
-      // Add button to message responses
-      _messageResponses.AddChild(btn);
+      btn.Pressed += () => OnRewardButtonSelected(unitInfo, btn, rewardButtons);
+
+      rewardButtons.Add(btn);
+      hbox.AddChild(btn);
     }
+
+    // Add confirm button
+    Button confirmBtn = new();
+    confirmBtn.Text = "Confirm";
+    confirmBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+    confirmBtn.CustomMinimumSize = new Vector2I(150, 0);
+    confirmBtn.Pressed += OnConfirmRewardPressed;
+    vbox.AddChild(confirmBtn);
   }
 
   private StyleBoxFlat GetRewardButtonStyle(Color rarityColor)
@@ -870,10 +887,24 @@ public partial class World : Node2D
     _unitsActivity[unit].HealingReceived += amount;
   }
 
-  private void OnRewardButtonPressed(UnitInfo unitInfo)
+  private void OnRewardButtonSelected(UnitInfo unitInfo, Button selected, List<Button> allButtons)
   {
-    _decksHandler.AddUnit(unitInfo);
+    _selectedReward = unitInfo;
+    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitInfoSelected, unitInfo);
+
+    // Dim all buttons then highlight the selected one
+    foreach (Button btn in allButtons)
+      btn.Modulate = new Color(0.5f, 0.5f, 0.5f);
+    selected.Modulate = new Color(1f, 1f, 1f);
+  }
+
+  private void OnConfirmRewardPressed()
+  {
+    if (_selectedReward == null) return;
+
+    _decksHandler.AddUnit(_selectedReward);
     _decksHandler.ResetUnitsSelection();
+    _selectedReward = null;
     Reset();
   }
 
