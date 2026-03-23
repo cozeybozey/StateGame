@@ -349,6 +349,13 @@ text = "Unit slots:"
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/UnitSlots" unique_id=1282180164]
 layout_mode = 2
 
+[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1986817800]
+layout_mode = 2
+text = "Types:"
+
+[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=724212074]
+layout_mode = 2
+
 [node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=236564824]
 layout_mode = 2
 

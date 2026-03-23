@@ -19,6 +19,7 @@ public partial class Unit : Node2D
 	public virtual List<Vector2I> occupiedCells { get; set; } = [new Vector2I(0, 0)];
 	public string description { get; set; }
 	public string rarity { get; set; }
+	public List<string> types { get; set; }
   public bool side = true; // true for player, false for enemy
   public bool SwitchedSides = false;
   public Vector2I occupiedMainCell;
@@ -105,6 +106,7 @@ public partial class Unit : Node2D
 		cost = unitInfo.Cost;
 		description = unitInfo.Description;
 		rarity = unitInfo.Rarity;
+    types = unitInfo.Types;
 		side = _side;
 		startCell = _startCell;
 		startUnitInfo = unitInfo;
@@ -161,7 +163,7 @@ public partial class Unit : Node2D
 	public UnitInfo GetInfo()
 	{
 		return new UnitInfo(id, name, texture, scenePath, occupiedCells, cost, maxHealth, 
-			health, damage, armor, speed, startingCooldown, cooldown, description, rarity);
+			health, damage, armor, speed, startingCooldown, cooldown, description, rarity, types);
 	}
 
   public UnitInfo GetStartInfo()

@@ -18,6 +18,7 @@ public partial class UnitInfo : RefCounted
 	public int Cooldown { get; set; }
 	public string Description { get; set; }
 	public string Rarity { get; set; }
+	public List<string> Types { get; set; }
 
 	public UnitInfo(
 		string id,
@@ -34,7 +35,8 @@ public partial class UnitInfo : RefCounted
 		int startCooldown,
 		int cooldown,
 		string description,
-		string rarity)
+		string rarity,
+		List<string> types)
 	{
 		Id = id;
 		Name = name;
@@ -51,5 +53,6 @@ public partial class UnitInfo : RefCounted
 		Cooldown = cooldown;
 		Description = description;
     Rarity = rarity;
+		Types = types;
 	}
 }

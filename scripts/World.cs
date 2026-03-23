@@ -1000,10 +1000,10 @@ public partial class World : Node2D
       int cooldown = (int)unitData["cooldown"];
       string description = (string)unitData["description"];
       string rarity = (string)unitData["rarity"];
+      List<string> types = unitData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
 
       Godot.Collections.Array cells = (Godot.Collections.Array)unitData["cells"];
       List<Vector2I> occupiedCells = new();
-
       foreach (Godot.Collections.Array cell in cells)
       {
         int x = (int)cell[0];
@@ -1012,7 +1012,7 @@ public partial class World : Node2D
       }
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
-        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity);
+        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity, types);
 
       int stage = (int)unitData["stage"];
       _unitsPerStage[stage].Add(GlobalConstants.UnitsData[unitId]);

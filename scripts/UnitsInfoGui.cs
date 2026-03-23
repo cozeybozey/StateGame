@@ -13,6 +13,7 @@ public partial class UnitsInfoGui : VBoxContainer
   private Label _cooldown = null!;
   private Label _unitSlots = null!;
   private Label _description = null!;
+  private VBoxContainer _types = null!;
   private GlobalSignals _globalSignals = null!;
   public Unit selectedUnit = null!;
 
@@ -27,6 +28,7 @@ public partial class UnitsInfoGui : VBoxContainer
     _cooldown = GetNode<Label>("Cooldown/Value");
     _unitSlots = GetNode<Label>("UnitSlots/Value");
     _description = GetNode<Label>("Description/Value");
+    _types = GetNode<VBoxContainer>("Types");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
   
     _globalSignals.UnitInfoSelected += OnUnitInfoSelected;
@@ -57,6 +59,17 @@ public partial class UnitsInfoGui : VBoxContainer
     _cooldown.Text = unitInfo.Cooldown.ToString() + '/' + unitInfo.StartCooldown.ToString();
     _unitSlots.Text = unitInfo.OccupiedCells.Count.ToString();
     _description.Text = unitInfo.Description.ToString();
+
+    foreach (var child in _types.GetChildren())
+      child.QueueFree();
+    foreach (string type in unitInfo.Types)
+    {
+      // Upper case the first letter TODO AKN make this nicer
+      string displayType = "  - ";
+      displayType += string.IsNullOrEmpty(type) ? type : char.ToUpper(type[0]) + type.Substring(1);
+      Label label = new Label() { Text = displayType };
+      _types.AddChild(label);
+    }
   }
 
   public void SetSelectedUnit(Unit unit)
