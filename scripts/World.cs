@@ -1021,7 +1021,7 @@ public partial class World : Node2D
 
   int GetMaxStageForDifficulty(int difficulty)
   {
-    if (difficulty < 3) return 0;
+    if (difficulty < 2) return 0;
     if (difficulty < 6) return 1;
     if (difficulty < 10) return 2;
     if (difficulty < 16) return 3;
@@ -1175,9 +1175,9 @@ public partial class World : Node2D
       if (unlockedLayer && layerIndex > 0)
       {
         _completedLayers++;
-        if (_completedLayers < _slowDownLayer)
+        if (_completedLayers < _slowDownLayer && _completedLayers % 2 == 0)
           _gridOverlay.IncreaseUnitCount(1);
-        else if (_completedLayers % 2 == 0)  // Only increase max unit slots by 1 every 2 layers after layer 20
+        else if (_completedLayers % 4 == 0)  // Only increase max unit slots by 1 every 4 layers after layer 20
           _gridOverlay.IncreaseUnitCount(1);
       }
     }
@@ -1299,8 +1299,6 @@ public partial class World : Node2D
 
   private void OnLevelSelected(LevelInfo levelInfo)
   {
-    _decksHandler.Hide();
-    _levelInfoContainer.Show();
     _levelInfoContainer.DisplayInfo(levelInfo);
   }
 
@@ -1339,7 +1337,7 @@ public partial class World : Node2D
         btn.Text = "Okay... :(";
         btn.SizeFlagsVertical = SizeFlags.ExpandFill;
         btn.Pressed += () => OnRedoCanceled();
-        btn.CustomMinimumSize = new Vector2I(80, 0);
+        btn.CustomMinimumSize = new Vector2I(80, 0); 
         _messageResponses.AddChild(btn);
       }
 
@@ -1387,7 +1385,19 @@ public partial class World : Node2D
 
   private void OnWorldMapPressed()
   {
-    _worldUi.GetParent<ScrollContainer>().Visible = !_worldUi.GetParent<ScrollContainer>().Visible;
+    if (_worldUi.GetParent<ScrollContainer>().Visible)
+    {
+      _worldUi.GetParent<ScrollContainer>().Hide();
+      _decksHandler.Show();
+      _levelInfoContainer.Hide();
+    }
+    else
+    {
+      _worldUi.GetParent<ScrollContainer>().Show();
+      _decksHandler.Hide();
+      _levelInfoContainer.Show();
+    }
+
     if (!_openedWorldOnce)
     {
       _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));

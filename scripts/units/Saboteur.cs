@@ -66,7 +66,7 @@ public partial class Saboteur : Unit
           targetUnit.ChangeHealth(-damage, this);
         }
       }
-      ChangeHealth(-health, this); // Sacrifice self
+      Die(); // Sacrifice self
     }
   }
 }
