@@ -10,21 +10,21 @@ public partial class Gravedigger : Unit
   protected override void Start()
   {
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
-    _globalSignals.UnitDied += OnUnitDied;
+    _globalSignals.GridEntityDied += OnUnitDied;
   }
 
-  private void OnUnitDied(Unit unit)
+  private void OnUnitDied(GridEntity gridEntity)
   {
-    if (!IsInsideTree())
+    if (!IsInsideTree() || gridEntity is not Unit unit)
       return;
 
-    if (unit.side == side)
+    if (unit.Side == Side)
       ChangeDamage(2);
   }
 
   public override void _ExitTree()
   {
     if (_globalSignals != null)
-      _globalSignals.UnitDied -= OnUnitDied;
+      _globalSignals.GridEntityDied -= OnUnitDied;
   }
 }

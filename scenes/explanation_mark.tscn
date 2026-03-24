@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://8ti5dby6naay"]
+
+[ext_resource type="Texture2D" uid="uid://wmdd0f0tx7a" path="res://sprites/explanation_mark.png" id="1_qustb"]
+
+[node name="ExplanationMark" type="Node2D" unique_id=995662800]
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=387835248]
+texture = ExtResource("1_qustb")

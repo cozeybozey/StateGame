@@ -13,22 +13,22 @@ public partial class TurretFactory : Unit
     _unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, turretUnitInfo.OccupiedCells, side);
+    Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, terrainGrid, turretUnitInfo.OccupiedCells, Side);
     if (randomPos.HasValue)
       return [randomPos.Value];
     else
       return [];
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     // Spawn unit
     foreach (Vector2I target in targets)
     {
       Unit unitInstance = GD.Load<PackedScene>(turretUnitInfo.ScenePath).Instantiate() as Unit;
-      unitInstance!.Initialize(turretUnitInfo, side, target);
+      unitInstance!.Initialize(turretUnitInfo, Side, target);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }

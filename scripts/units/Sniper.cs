@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Sniper : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
@@ -18,13 +18,13 @@ public partial class Sniper : Unit
       {
         Unit unit = unitsGrid[x, y];
 
-        if (unit == null || unit == this || unit.side == side)
+        if (unit == null || unit == this || unit.Side == Side)
           continue;
 
         Vector2I otherPos = new(x, y);
 
-        int dx = otherPos.X - occupiedMainCell.X;
-        int dy = otherPos.Y - occupiedMainCell.Y;
+        int dx = otherPos.X - OccupiedMainCell.X;
+        int dy = otherPos.Y - OccupiedMainCell.Y;
 
         float distanceSq = dx * dx + dy * dy;
 
@@ -42,7 +42,7 @@ public partial class Sniper : Unit
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     foreach (Vector2I target in targets)
     {
@@ -50,7 +50,7 @@ public partial class Sniper : Unit
       if (targetUnit != null)
       {
         // Scale damage with distance
-        targetUnit.ChangeHealth(-damage * Mathf.FloorToInt(Mathf.Abs(target.Y - occupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - occupiedMainCell.X) * 0.25f), this);
+        targetUnit.ChangeHealth(-Damage * Mathf.FloorToInt(Mathf.Abs(target.Y - OccupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - OccupiedMainCell.X) * 0.25f), this);
       }
     }
   }

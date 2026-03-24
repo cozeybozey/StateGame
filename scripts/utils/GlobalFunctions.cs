@@ -63,8 +63,9 @@ public partial class GlobalFunctions : Node
     return new Vector2I(targetCell.X - minX, targetCell.Y - minY);
   }
 
-  // Type T unitsGrid because it can be of type Unit[,] or UnitInfo[,] all we do is check for null
-  public static List<Vector2I> GetPossibleUnitLocations<T>(T[,] unitsGrid, List<Vector2I> occupiedCells, bool side)
+  // Type U unitsGrid because it can be of type Unit[,] or UnitInfo[,] all we do is check for null
+  // Type T terrainGrid because it can be of type Terrain[,] or TerrainInfo[,] all we do is check for null and blocking
+  public static List<Vector2I> GetPossibleUnitLocations<U, T>(U[,] unitsGrid, T[,] terrainGrid, List<Vector2I> occupiedCells, bool side)
   {
     int startY, endY;
     if (side)
@@ -88,7 +89,10 @@ public partial class GlobalFunctions : Node
         {
           int checkX = x + rel.X;
           int checkY = y + rel.Y;
-          if (checkX < 0 || checkY < startY || checkX >= GlobalConstants.GridSize.X || checkY >= endY || unitsGrid[checkX, checkY] != null)
+          if (checkX < 0 || checkY < startY || checkX >= GlobalConstants.GridSize.X || checkY >= endY || unitsGrid[checkX, checkY] != null || 
+            (terrainGrid[checkX, checkY] != null && 
+            ((terrainGrid[checkX, checkY] is Terrain terrain && terrain.Blocking) ||
+            (terrainGrid[checkX, checkY] is TerrainInfo terrainInfo && terrainInfo.Blocking))))
           {
             canPlace = false;
             break;
@@ -102,9 +106,9 @@ public partial class GlobalFunctions : Node
     return possiblePositions;
   }
 
-  public static Vector2I? GetRandomUnitSpawnLocation<T>(T[,] unitsGrid, List<Vector2I> occupiedCells, bool side)
+  public static Vector2I? GetRandomUnitSpawnLocation<U, T>(U[,] unitsGrid, T[,] terrainGrid, List<Vector2I> occupiedCells, bool side)
   {
-    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, occupiedCells, side);
+    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, terrainGrid, occupiedCells, side);
 
     if (possibleLocations.Count == 0)
       return null!;

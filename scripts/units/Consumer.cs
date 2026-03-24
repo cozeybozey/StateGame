@@ -8,7 +8,7 @@ public partial class Consumer : Unit
   private bool _shouldConsume = true;  // Start with a consume turn
   private int _consumedCount = 0; // number of units consumed
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     // If no targets, ensure we will attempt to consume next turn
     if (targets == null || targets.Count == 0)
@@ -26,7 +26,7 @@ public partial class Consumer : Unit
       if (GlobalFunctions.IsCellInsideGrid(alliedTarget))
       {
         Unit ally = unitsGrid[alliedTarget.X, alliedTarget.Y];
-        if (ally != null && ally.side == side && ally != this)
+        if (ally != null && ally.Side == Side && ally != this)
         {
           // Absorb ally's stats
           ChangeMaxHealth(4);
@@ -37,7 +37,7 @@ public partial class Consumer : Unit
           ally.Die();
 
           // Move to the ally's main cell (during play)
-          MoveToCell(ally.occupiedMainCell, true);
+          MoveToCell(ally.OccupiedMainCell, true);
 
           consumed = true;
           _consumedCount++;
@@ -56,9 +56,9 @@ public partial class Consumer : Unit
         if (GlobalFunctions.IsCellInsideGrid(t))
         {
           Unit targetUnit = unitsGrid[t.X, t.Y];
-          if (targetUnit != null && targetUnit.side != side)
+          if (targetUnit != null && targetUnit.Side != Side)
           {
-            targetUnit.ChangeHealth(-damage, this);
+            targetUnit.ChangeHealth(-Damage, this);
           }
         }
       }
@@ -68,34 +68,18 @@ public partial class Consumer : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
     if (_shouldConsume)
     {
-      Unit? closestAlly = null;
-      float closestDist = float.MaxValue;
-
-      if (units == null || units.Count == 0)
-        return new List<Vector2I>();
-
-      foreach (Unit unit in units)
-      {
-        if (unit == null || unit == this || unit.side != side)
-          continue;
-
-        float dist = occupiedMainCell.DistanceTo(unit.occupiedMainCell);
-        if (dist < closestDist)
-        {
-          closestDist = dist;
-          closestAlly = unit;
-        }
-      }
+      // Predicate makes sure closest unit has to be friendly
+      Tuple<Unit, Vector2I>? closestAlly = GetClosestUnit(units, u => u.Side == Side);
 
       if (closestAlly != null)
       {
-        result.Add(closestAlly.occupiedMainCell);
+        result.Add(closestAlly.Item1.OccupiedMainCell);
       }
       else
       {
@@ -124,14 +108,14 @@ public partial class Consumer : Unit
     if (maxTargets <= 0)
       return foundPositions;
 
-    if (side)
+    if (Side)
     {
       for (int y = GlobalConstants.GridSize.Y - 1; y >= 0; y--)
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {
           Unit unit = unitsGrid[x, y];
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
           {
             Vector2I pos = new Vector2I(x, y);
             if (!foundUnits.Contains(unit))
@@ -151,7 +135,7 @@ public partial class Consumer : Unit
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
           {
             Unit unit = unitsGrid[x, y];
             Vector2I pos = new Vector2I(x, y);

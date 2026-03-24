@@ -15,6 +15,7 @@ public partial class LevelInfo : RefCounted
 	public int CoinsReward { get; set; }
   public List<string> NextNodes { get; set; }
 	public List<UnitInfo[,]> Units { get; set; }
+	public List<TerrainInfo[,]> Terrains { get; set; }
 
 	public LevelInfo(
 		string id,
@@ -28,7 +29,8 @@ public partial class LevelInfo : RefCounted
 		List<UnitInfo> rewards,
 		int coinsReward,
 		List<string> nextNodes,
-    List<UnitInfo[,]> units)
+    List<UnitInfo[,]> units,
+    List<TerrainInfo[,]> terrains)
 	{
 		Id = id;
 		Name = name;
@@ -42,5 +44,6 @@ public partial class LevelInfo : RefCounted
 		CoinsReward = coinsReward;
 		NextNodes = nextNodes;
     Units = units;
+    Terrains = terrains;
 	}
 }

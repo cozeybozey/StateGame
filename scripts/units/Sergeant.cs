@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Sergeant : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
@@ -17,11 +17,11 @@ public partial class Sergeant : Unit
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       {
         Unit unit = unitsGrid[x, y];
-        if (unit != null && unit.side == side && unit != this)
+        if (unit != null && unit.Side == Side && unit != this)
         {
-          if (unit.cooldown > bestCooldown)
+          if (unit.Cooldown > bestCooldown)
           {
-            bestCooldown = unit.cooldown;
+            bestCooldown = unit.Cooldown;
             targetAlly = unit;
           }
         }
@@ -29,19 +29,19 @@ public partial class Sergeant : Unit
     }
 
     if (targetAlly != null)
-      result.Add(targetAlly.occupiedMainCell);
+      result.Add(targetAlly.OccupiedMainCell);
 
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     if (targets == null || targets.Count == 0)
       return;
 
     Vector2I target = targets[0];
     Unit ally = unitsGrid[target.X, target.Y];
-    if (ally == null || ally.side != side)
+    if (ally == null || ally.Side != Side)
       return;
 
     // Reduce the ally's cooldown by 1 (i.e. bring them closer to being able to act)

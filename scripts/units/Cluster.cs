@@ -7,7 +7,7 @@ public partial class Cluster : Unit
 {
   private int _nrOfTargets = 16;
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Random random = new();
 
@@ -15,7 +15,7 @@ public partial class Cluster : Unit
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
-      if (side)
+      if (Side)
       {
         for (int y = 0; y < GlobalConstants.GridSize.Y / 2; y++)
         {

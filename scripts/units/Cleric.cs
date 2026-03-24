@@ -8,8 +8,8 @@ public partial class Cleric : Unit
 
   protected override void Start()
   {
-    int ystart = (side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : 0;
-    int yend = (side) ? GlobalConstants.GridSize.Y : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
+    int ystart = (Side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : 0;
+    int yend = (Side) ? GlobalConstants.GridSize.Y : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
     for (int y = ystart; y < yend; y++)
     {
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
@@ -19,19 +19,19 @@ public partial class Cleric : Unit
     }
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && targetUnit.health < targetUnit.maxHealth)
+      if (targetUnit != null && targetUnit.Health < targetUnit.MaxHealth)
       {
-        targetUnit.ChangeHealth(damage, this);
+        targetUnit.ChangeHealth(Damage, this);
       }
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     return [.._targets];
   }

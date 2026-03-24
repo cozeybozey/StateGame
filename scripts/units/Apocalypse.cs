@@ -10,7 +10,7 @@ public partial class Apocalypse : Unit
 
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> targets = new List<Vector2I>();
     List<Vector2I> occupiedCells = GetOccupiedCells();

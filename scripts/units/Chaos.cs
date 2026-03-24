@@ -2,13 +2,14 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// TODO unit does not take into account terrain, it is disabled for now
 public partial class Chaos : Unit
 {
   protected override void Start()
   {
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     // Collect unique units currently on the grid (by reference)
     List<Unit> units = new List<Unit>();
@@ -27,18 +28,18 @@ public partial class Chaos : Unit
     // Move each unit to its mirrored position across the horizontal center
     foreach (Unit unit in units)
     {
-      Vector2I oldMain = unit.occupiedMainCell;
+      Vector2I oldMain = unit.OccupiedMainCell;
 
-      Vector2I dimensions = GlobalFunctions.CellsToDimensions(unit.occupiedCells);
-      Vector2I relPos = GlobalFunctions.GetRelPosInCells(unit.occupiedCells, unit.occupiedCells[0]);
-      int yPosToBeMirrored = unit.occupiedMainCell.Y + (dimensions.Y - 1 - relPos.Y);
+      Vector2I dimensions = GlobalFunctions.CellsToDimensions(unit.OccupiedCells);
+      Vector2I relPos = GlobalFunctions.GetRelPosInCells(unit.OccupiedCells, unit.OccupiedCells[0]);
+      int yPosToBeMirrored = unit.OccupiedMainCell.Y + (dimensions.Y - 1 - relPos.Y);
       
       Vector2I mirrored = new Vector2I(oldMain.X, GlobalConstants.GridSize.Y - 1 - yPosToBeMirrored);
       unit.MoveToCell(mirrored, playing: true);
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new List<Vector2I>();
 

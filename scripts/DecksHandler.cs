@@ -2,6 +2,7 @@ using Godot;
 using Godot.NativeInterop;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Security.Principal;
 
 public partial class DecksHandler : Control
 {
@@ -45,22 +46,26 @@ public partial class DecksHandler : Control
     _unitsList = GetNode<VBoxContainer>("UnitsSelectionContainer/ScrollContainer/VBoxContainer");
     _changeDeckButton = GetNode<Button>("UnitsSelectionContainer/ChangeDeck");
 
-    _globalSignals.UnitSpawned += OnUnitSpawned;
+    _globalSignals.GridEntitySpawned += OnUnitSpawned;
     _globalSignals.UnitRemoved += OnUnitRemoved;
-    _globalSignals.UnitMoved += OnUnitMoved;
+    _globalSignals.GridEntityMoved += OnUnitMoved;
     _createDeckButton.Pressed += OnCreateDeckPressed;
     _changeDeckButton.Pressed += OnChangeDeckPressed;
     _popup.Confirmed += OnPopupConfirmed;
   }
 
-  private void OnUnitSpawned(Unit unit, bool playing)
+  private void OnUnitSpawned(GridEntity gridEntity, bool playing)
   {
+    // Do not process spawned terrain
+    if (gridEntity is not Unit unit)
+      return;
+
     // Do not process enemy units and spawned units during simulation
     if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
-    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = unitInfo;
   }
 
   private void OnUnitRemoved(Unit unit)
@@ -68,18 +73,22 @@ public partial class DecksHandler : Control
     // If units were removed due to a switch deck call,
     // then the deck itself should not be changed
     if (_processUnitChanges)
-      Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
+      Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = null!;
   }
 
-  private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
+  private void OnUnitMoved(GridEntity gridEntity, Vector2I oldCell, bool playing)
   {
+    // Do not process spawned terrain
+    if (gridEntity is not Unit unit)
+      return;
+
     // Do not process enemy units and spawned units during simulation
     if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
     Decks[_selectedDeck][oldCell.X, oldCell.Y] = null!;
-    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = unitInfo;
   }
 
   private void OnCreateDeckPressed()

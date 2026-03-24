@@ -7,6 +7,8 @@ using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
 using System.Runtime.Serialization;
+using System.Security.Principal;
+using System.Threading;
 using static Godot.Control;
 using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -14,7 +16,6 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 public partial class World : Node2D
 {
   private CanvasLayer _canvasLayer;
-  private TextureButton _playButton;
   private Label _levelCounter;
   private Label _turnCounter;
   private Label _coinsCounter;
@@ -24,6 +25,7 @@ public partial class World : Node2D
   private GridOverlay _gridOverlay;
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
+  private Node _terrainNode;
   private OverlayLayer _playerSideUnitsLayer;
   private OverlayLayer _enemySideUnitsLayer;
   private OverlayLayer _selectedUnitLayer;
@@ -43,6 +45,7 @@ public partial class World : Node2D
   private List<Unit> _unitsToAct;
   private List<Unit> _removedUnits;
   private Unit[,] _unitsGrid;
+  private Terrain[,] _terrainGrid;
   private int _unitIndex = 0;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
@@ -89,6 +92,10 @@ public partial class World : Node2D
   private int _worldUiSpacing = 100;
   private bool _openedWorldOnce = false;
 
+  // Notify variables
+  private string _explanationMarkScenePath = "res://scenes/explanation_mark.tscn";
+  private Node2D[,] _explanationMarks = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+
   // Damage and healing tracking
   // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
   private System.Collections.Generic.Dictionary<Unit, UnitActivity> _unitsActivity = new System.Collections.Generic.Dictionary<Unit, UnitActivity>(); 
@@ -103,7 +110,6 @@ public partial class World : Node2D
   public override void _Ready()
   {
     _canvasLayer = GetNode<CanvasLayer>("CanvasLayer");
-    _playButton = GetNode<TextureButton>("CanvasLayer/BottomUi/PlayButton");
     _levelCounter = GetNode<Label>("CanvasLayer/BottomUi/LevelCounter/Counter");
     _turnCounter = GetNode<Label>("CanvasLayer/BottomUi/TurnCounter/Counter");
     _coinsCounter = GetNode<Label>("CanvasLayer/BottomUi/CoinsCounter/Counter");
@@ -113,6 +119,7 @@ public partial class World : Node2D
     _gridOverlay = GetNode<GridOverlay>("GridOverlay");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
+    _terrainNode = GetNode("Terrain");
     _playerSideUnitsLayer = GetNode<OverlayLayer>("PlayerSideUnitsLayer");
     _enemySideUnitsLayer = GetNode<OverlayLayer>("EnemySideUnitsLayer");
     _selectedUnitLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
@@ -137,7 +144,6 @@ public partial class World : Node2D
     _healingDoneStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/HealingDone/VBoxContainer");
 
     _canvasLayer.Offset = new Vector2I(GlobalConstants.TileSize, GlobalConstants.TileSize);
-    _playButton.Pressed += OnPlayButtonPressed;
     _speedPopup = _speedButton.GetPopup();
     _speedPopup.IdPressed += OnSpeedSelected;
     _playPauseButton.Pressed += OnPlayPauseButtonPressed;
@@ -148,17 +154,18 @@ public partial class World : Node2D
     _unitsToAct = new List<Unit>();
     _removedUnits = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    _globalSignals.UnitDied += OnUnitDied;
-    _globalSignals.UnitMoved += OnUnitMoved;
-    _globalSignals.UnitSpawned += OnUnitSpawned;
-    _globalSignals.UnitRemoved += OnUnitRemoved;
-    _globalSignals.SpeedChanged += OnUnitSpeedChanged;
-    _globalSignals.SizeChanged += OnUnitSizeChanged;
+    _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _globalSignals.GridEntityDied += OnGridEntityDied;
+    _globalSignals.GridEntityMoved += OnGridEntityMoved;
+    _globalSignals.GridEntitySpawned += OnGridEntitySpawned;
+    _globalSignals.SpeedChanged += OnGridEntitySpeedChanged;
+    _globalSignals.SizeChanged += OnGridEntitySizeChanged;
+    _globalSignals.DamageDealt += OnGridEntityDamageDealt;
+    _globalSignals.DamageTaken += OnGridEntityDamageTaken;
+    _globalSignals.HealingDone += OnGridEntityHealingDone;
+    _globalSignals.HealingReceived += OnGridEntityHealingReceived;
     _globalSignals.SideChanged += OnUnitSideChanged;
-    _globalSignals.DamageDealt += OnUnitDamageDealt;
-    _globalSignals.DamageTaken += OnUnitDamageTaken;
-    _globalSignals.HealingDone += OnUnitHealingDone;
-    _globalSignals.HealingReceived += OnUnitHealingReceived;
+    _globalSignals.UnitRemoved += OnUnitRemoved;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _statisticsPopup = _statisticsButton.GetPopup();
     _statisticsPopup.IdPressed += OnStatisticSelected;
@@ -189,6 +196,7 @@ public partial class World : Node2D
       _unitsPerStage.Add(new List<UnitInfo>());
     }
     ParseUnitsJson();
+    ParseTerrainsJson();
 
     string levelsJson = FileAccess.Open("res://scripts/levels.json", FileAccess.ModeFlags.Read).GetAsText();
     Variant parsed = Json.ParseString(levelsJson);
@@ -212,7 +220,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid);
+        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid, _terrainGrid);
         _unitIndex += 1;
         _turnCooldown = _turnStartCooldown;
         _acting = false;
@@ -224,7 +232,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _unitsToAct, _removedUnits);
+        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _terrainGrid, _unitsToAct, _removedUnits);
         _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
@@ -263,13 +271,33 @@ public partial class World : Node2D
     }
   }
 
-  private void StartLevel(UnitInfo[,] enemyUnits)
+  private void StartLevel(TerrainInfo[,] terrainGrid, UnitInfo[,] enemyUnits)
   {
-    _playButton.Disabled = true;
     _worldMapButton.Visible = false;
     _startButton.Visible = true;
     _quitButton.Visible = true;
     _decksHandler.LoadBeforeLevel();
+
+    // Load terrain
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
+        if (_terrainGrid[x, y] != null)
+          continue;
+
+        TerrainInfo terrainInfo = terrainGrid[x, y];
+        if (terrainInfo != null)
+        {
+          bool side = y >= GlobalConstants.GridSize.Y * 0.5;
+          Terrain terrainInstance = GD.Load<PackedScene>(terrainInfo.ScenePath).Instantiate() as Terrain;
+          terrainInstance!.Initialize(terrainInfo, new Vector2I(x, y), placed: true);
+          _terrainNode.AddChild(terrainInstance);
+          if (!side)
+            terrainInstance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
+        }
+      }
+    }
 
     // Load enemy units
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
@@ -290,6 +318,23 @@ public partial class World : Node2D
         }
       }
     }
+
+    // Check whether there are no units on blocking terrain
+    foreach (Unit unit in _units)
+    {
+      foreach (Vector2I cell in unit.GetOccupiedCells())
+      {
+        if (_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking)
+        {
+          Node2D explanationMarkInstance = GD.Load<PackedScene>(_explanationMarkScenePath).Instantiate() as Node2D;
+          explanationMarkInstance!.GlobalPosition = GlobalFunctions.CellToGlobalPosition(cell, 1, 1, new Vector2I(0, 0));
+          _unitsNode.AddChild(explanationMarkInstance);
+          _explanationMarks[cell.X, cell.Y] = explanationMarkInstance!;
+        }
+      }
+    }
+
+    _gridOverlay.SetTerrain(_terrainGrid);
   }
 
   private void StartPlaying()
@@ -303,7 +348,7 @@ public partial class World : Node2D
     // Show units side
     foreach (Unit unit in _units)
     {
-      if (unit.side)
+      if (unit.Side)
         _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
       else
         _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
@@ -320,15 +365,10 @@ public partial class World : Node2D
       Win();
   }
 
-  private void OnPlayButtonPressed()
-  {
-    UnitInfo[,] enemyUnits = LoadRandomLevel(_level);
-    StartLevel(enemyUnits);
-  }
-
-  private UnitInfo[,] LoadLevel(string levelId)
+  private Tuple<TerrainInfo[,], UnitInfo[,]> LoadLevel(string levelId)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    TerrainInfo[,] terrainGrid = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     Dictionary levelData = (Dictionary)_levelsData[levelId];
     Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
@@ -347,10 +387,73 @@ public partial class World : Node2D
       mainCellsUnitGrid[x, y] = unitInfo;
     }
 
-    return mainCellsUnitGrid;
+    return new Tuple<TerrainInfo[,], UnitInfo[,]>(terrainGrid, mainCellsUnitGrid);
   }
 
-  public UnitInfo[,] LoadRandomLevel(int difficulty)
+  private Tuple<TerrainInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty)
+  {
+    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty);
+    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain);
+    return new Tuple<TerrainInfo[,], UnitInfo[,]>(terrain, units);
+  }
+
+  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty)
+  {
+    TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+        terrain[x, y] = GlobalConstants.TerrainsData["grass"];
+
+    int expectedUnits = difficulty;
+    int requiredFreeTilesPerHalf = expectedUnits + 10;
+    int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+    int maxBlockingPerHalf = halfTiles - requiredFreeTilesPerHalf;
+
+    FastNoiseLite mountainNoise = new();
+    mountainNoise.Seed = _rng.Next();
+    mountainNoise.Frequency = 0.035f;
+    mountainNoise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
+
+    FastNoiseLite waterNoise = new();
+    waterNoise.Seed = _rng.Next();
+    waterNoise.Frequency = 0.035f;
+    waterNoise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
+
+    int topHalfBlocking = 0;
+    int bottomHalfBlocking = 0;
+    int midY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
+        bool isTopHalf = y < midY;
+        int blockingCount = isTopHalf ? topHalfBlocking : bottomHalfBlocking;
+        if (blockingCount >= maxBlockingPerHalf) continue;
+
+        float mountainVal = mountainNoise.GetNoise2D(x, y);
+        float waterVal = waterNoise.GetNoise2D(x, y);
+
+        if (mountainVal > 0.40f)
+        {
+          terrain[x, y] = GlobalConstants.TerrainsData["mountain"];
+          if (isTopHalf) topHalfBlocking++;
+          else bottomHalfBlocking++;
+        }
+        else if (waterVal > 0.40f)
+        {
+          terrain[x, y] = GlobalConstants.TerrainsData["water"];
+          if (isTopHalf) topHalfBlocking++;
+          else bottomHalfBlocking++;
+        }
+      }
+    }
+
+    return terrain;
+  }
+
+  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
@@ -375,7 +478,7 @@ public partial class World : Node2D
         continue;
 
       // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
-      List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, unitInfo.OccupiedCells, false);
+      List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, unitInfo.OccupiedCells, false);
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
       if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || unitInfo.Id == "bulwark")
@@ -495,6 +598,19 @@ public partial class World : Node2D
     _removedUnits.Clear();
 
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+
+    foreach (Terrain terrain in _terrainGrid)
+      terrain.QueueFree();
+    _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _gridOverlay.SetTerrain(_terrainGrid);
+
+    foreach (Node2D explanationMark in _explanationMarks)
+    {
+      if (explanationMark != null && IsInstanceValid(explanationMark))
+        explanationMark.QueueFree();
+    }
+    _explanationMarks = new Node2D[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+
     _unitIndex = 0;
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
@@ -513,7 +629,6 @@ public partial class World : Node2D
     _enemyUnitsCount = 0;
 
     _gridOverlay.SetInteractionLocked(false);
-    _playButton.Disabled = false;
     _worldMapButton.Visible = true;
     _playPauseButton.Visible = false;
     _surrenderButton.Visible = false;
@@ -720,24 +835,41 @@ public partial class World : Node2D
     return rarityColor;
   }
 
-  private void OnUnitDied(Unit unit)
+  private void OnGridEntityDied(GridEntity gridEntity)
   {
-    int index = _unitsToAct.IndexOf(unit);
-    if (index <= _unitIndex)
-      _unitIndex -= 1;
+    if (gridEntity is Unit unit)
+    {
+      int index = _unitsToAct.IndexOf(unit);
+      if (index <= _unitIndex)
+        _unitIndex -= 1;
 
-    RemoveUnit(unit);
-    _removedUnits.Add(unit);
+      RemoveUnit(unit);
+      _removedUnits.Add(unit);
 
-    if (_enemyUnitsCount == 0)
-      Win();
-    else if (_playerUnitsCount == 0)
-      Lose();
+      if (_enemyUnitsCount == 0)
+        Win();
+      else if (_playerUnitsCount == 0)
+        Lose();
+    }
+    else if (gridEntity is Terrain terrain)
+    {
+      foreach (Vector2I cell in terrain.GetOccupiedCells())
+        _terrainGrid[cell.X, cell.Y] = null!;
+    }
   }
 
   private void OnUnitRemoved(Unit unit)
   {
     RemoveUnit(unit);
+    foreach (Vector2I cell in unit.GetOccupiedCells())
+    {
+      Node2D explanationMark = _explanationMarks[cell.X, cell.Y];
+      if (explanationMark != null && IsInstanceValid(explanationMark))
+      {
+        _explanationMarks[cell.X, cell.Y].QueueFree();
+        _explanationMarks[cell.X, cell.Y] = null!;
+      }
+    }
   }
 
   private void RemoveUnit(Unit unit)
@@ -751,7 +883,7 @@ public partial class World : Node2D
     if (_playing)
     {
       // Update unit side layers
-      if (unit.side)
+      if (unit.Side)
         _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
       else
         _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
@@ -771,142 +903,200 @@ public partial class World : Node2D
     }
 
     // ^ = xor, which switches the condition if switched sides is true
-    if (unit.side ^ unit.SwitchedSides)
+    if (unit.Side ^ unit.SwitchedSides)
       _playerUnitsCount--;
     else
       _enemyUnitsCount--;
   }
 
-  private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
+  private void OnGridEntityMoved(GridEntity gridEntity, Vector2I oldCell, bool playing)
   {
-    if (_unitsGuiInfo.selectedUnit == unit)
+    if (gridEntity is Unit unit)
     {
-      _selectedUnitLayer.Clear();
-      _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
-    }
-    if (_activeUnit == unit)
-    {
-      _activeUnitLayer.Clear();
-      _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
-    }
-
-    List<Vector2I> removedCells = new List<Vector2I>();
-    foreach (Vector2I cell in unit.occupiedCells)
-    {
-      Vector2I removedCell = new Vector2I(oldCell.X + cell.X, oldCell.Y + cell.Y);
-      if (_unitsGrid[removedCell.X, removedCell.Y] == unit)  // Swapping can make it so a new unit is on this unit's old position
-        _unitsGrid[removedCell.X, removedCell.Y] = null!;
-      removedCells.Add(removedCell);
-    }
-    foreach (Vector2I cell in unit.GetOccupiedCells())
-    {
-      _unitsGrid[cell.X, cell.Y] = unit;
-    }
-
-    // Update unit side layers
-    if (_playing)
-    {
-      if (unit.side)
+      if (_unitsGuiInfo.selectedUnit == unit)
       {
-        _playerSideUnitsLayer.RemoveCells(removedCells);
-        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+        _selectedUnitLayer.Clear();
+        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
-      else
+      if (_activeUnit == unit)
       {
-        _enemySideUnitsLayer.RemoveCells(removedCells);
-        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+        _activeUnitLayer.Clear();
+        _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
-    }
 
-    if (_playing)
-      SortUnits(_unitsToAct);
-    else
-      SortUnits(_units);
-  }
-
-  private void OnUnitSpawned(Unit unit, bool playing)
-  {
-    foreach (Vector2I cell in unit.GetOccupiedCells())
-    {
-      _unitsGrid[cell.X, cell.Y] = unit;
-    }
-    _units.Add(unit);
-    _unitsActivity[unit] = new UnitActivity(0, 0, 0, 0);
-    if (_playing)
-    {
-      _unitsToAct.Add(unit);
+      List<Vector2I> removedCells = new List<Vector2I>();
+      foreach (Vector2I cell in unit.OccupiedCells)
+      {
+        Vector2I removedCell = new Vector2I(oldCell.X + cell.X, oldCell.Y + cell.Y);
+        if (_unitsGrid[removedCell.X, removedCell.Y] == unit)  // Swapping can make it so a new unit is on this unit's old position
+          _unitsGrid[removedCell.X, removedCell.Y] = null!;
+        removedCells.Add(removedCell);
+      }
+      foreach (Vector2I cell in unit.GetOccupiedCells())
+      {
+        _unitsGrid[cell.X, cell.Y] = unit;
+      }
 
       // Update unit side layers
-      if (unit.side)
-        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      if (_playing)
+      {
+        if (unit.Side)
+        {
+          _playerSideUnitsLayer.RemoveCells(removedCells);
+          _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+        }
+        else
+        {
+          _enemySideUnitsLayer.RemoveCells(removedCells);
+          _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+        }
+      }
       else
+      {
+        foreach (Vector2I cell in removedCells)
+        {
+          Node2D explanationMark = _explanationMarks[cell.X, cell.Y];
+          if (explanationMark != null && IsInstanceValid(explanationMark))
+          {
+            _explanationMarks[cell.X, cell.Y].QueueFree();
+            _explanationMarks[cell.X, cell.Y] = null!;
+          }
+        }
+      }
+
+      if (_playing)
+        SortUnits(_unitsToAct);
+      else
+        SortUnits(_units);
+    }
+    else if (gridEntity is Terrain terrain)
+    {
+      List<Vector2I> removedCells = new List<Vector2I>();
+      foreach (Vector2I cell in terrain.OccupiedCells)
+      {
+        Vector2I removedCell = new Vector2I(oldCell.X + cell.X, oldCell.Y + cell.Y);
+        if (_terrainGrid[removedCell.X, removedCell.Y] == terrain)  // Swapping can make it so a new terrain is on this terrain's old position
+          _terrainGrid[removedCell.X, removedCell.Y] = null!;
+        removedCells.Add(removedCell);
+      }
+      foreach (Vector2I cell in terrain.GetOccupiedCells())
+      {
+        _terrainGrid[cell.X, cell.Y] = terrain;
+      }
+    }
+  }
+
+  private void OnGridEntitySpawned(GridEntity gridEntity, bool playing)
+  {
+    if (gridEntity is Unit unit)
+    {
+      foreach (Vector2I cell in unit.GetOccupiedCells())
+      {
+        _unitsGrid[cell.X, cell.Y] = unit;
+      }
+      _units.Add(unit);
+      _unitsActivity[unit] = new UnitActivity(0, 0, 0, 0);
+      if (_playing)
+      {
+        _unitsToAct.Add(unit);
+
+        // Update unit side layers
+        if (unit.Side)
+          _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+        else
+          _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      }
+
+      if (unit.Side)
+        _playerUnitsCount++;
+      else
+        _enemyUnitsCount++;
+
+      if (_playing)
+        SortUnits(_unitsToAct);
+      else
+        SortUnits(_units);
+    }
+    else if (gridEntity is Terrain terrain)
+    {
+      foreach (Vector2I cell in terrain.GetOccupiedCells())
+      {
+        _terrainGrid[cell.X, cell.Y] = terrain;
+      }
+    }
+  }
+
+  private void OnGridEntitySizeChanged(GridEntity gridEntity, Godot.Collections.Array<Vector2I> oldOccupiedCells)
+  {
+    if (gridEntity is Unit unit)
+    {
+      if (_unitsGuiInfo.selectedUnit == unit)
+      {
+        _selectedUnitLayer.Clear();
+        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+      }
+      if (_activeUnit == unit)
+      {
+        _activeUnitLayer.Clear();
+        _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
+      }
+
+      // Update unit side layers
+      if (unit.Side)
+      {
+        _playerSideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
+        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      }
+      else
+      {
+        _enemySideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
         _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
+      }
+
+      foreach (Vector2I cell in oldOccupiedCells)
+      {
+        _unitsGrid[cell.X, cell.Y] = null!;
+      }
+
+      foreach (Vector2I cell in unit.GetOccupiedCells())
+      {
+        _unitsGrid[cell.X, cell.Y] = unit;
+      }
+
+      if (_playing)
+        SortUnits(_unitsToAct);
+      else
+        SortUnits(_units);
     }
+    else if (gridEntity is Terrain terrain)
+    {
+      foreach (Vector2I cell in oldOccupiedCells)
+      {
+        _terrainGrid[cell.X, cell.Y] = null!;
+      }
 
-    if (unit.side)
-      _playerUnitsCount++;
-    else
-      _enemyUnitsCount++;
-
-    if (_playing)
-      SortUnits(_unitsToAct);
-    else
-      SortUnits(_units);
+      foreach (Vector2I cell in terrain.GetOccupiedCells())
+      {
+        _terrainGrid[cell.X, cell.Y] = terrain;
+      }
+    }
   }
 
-  private void OnUnitSizeChanged(Unit unit, Godot.Collections.Array<Vector2I> oldOccupiedCells)
+  private void OnGridEntitySpeedChanged(GridEntity gridEntity)
   {
-    if (_unitsGuiInfo.selectedUnit == unit)
+    if (gridEntity is Unit unit)
     {
-      _selectedUnitLayer.Clear();
-      _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+      if (_playing)
+        SortUnits(_unitsToAct);
+      else
+        SortUnits(_units);
     }
-    if (_activeUnit == unit)
-    {
-      _activeUnitLayer.Clear();
-      _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
-    }
-
-    // Update unit side layers
-    if (unit.side)
-    {
-      _playerSideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
-      _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-    }
-    else
-    {
-      _enemySideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
-      _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
-    }
-
-    foreach (Vector2I cell in oldOccupiedCells)
-    {
-      _unitsGrid[cell.X, cell.Y] = null!;
-    }
-
-    foreach (Vector2I cell in unit.GetOccupiedCells())
-    {
-      _unitsGrid[cell.X, cell.Y] = unit;
-    }
-
-    if (_playing)
-      SortUnits(_unitsToAct);
-    else
-      SortUnits(_units);
-  }
-
-  private void OnUnitSpeedChanged(Unit unit)
-  {
-    if (_playing)
-      SortUnits(_unitsToAct);
-    else
-      SortUnits(_units);
   }
 
   private void OnUnitSideChanged(Unit unit)
   {
     // Update unit side layers
-    if (unit.side)
+    if (unit.Side)
     {
       _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
       _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
@@ -918,24 +1108,28 @@ public partial class World : Node2D
     }
   }
 
-  private void OnUnitDamageDealt(Unit unit, int amount)
+  private void OnGridEntityDamageDealt(GridEntity gridEntity, int amount)
   {
-    _unitsActivity[unit].DamageDealth += amount;
+    if (gridEntity is Unit unit)
+      _unitsActivity[unit].DamageDealth += amount;
   }
 
-  private void OnUnitDamageTaken(Unit unit, int amount)
+  private void OnGridEntityDamageTaken(GridEntity gridEntity, int amount)
   {
-    _unitsActivity[unit].DamageTaken += amount;
+    if (gridEntity is Unit unit)
+      _unitsActivity[unit].DamageTaken += amount;
   }
 
-  private void OnUnitHealingDone(Unit unit, int amount)
+  private void OnGridEntityHealingDone(GridEntity gridEntity, int amount)
   {
-    _unitsActivity[unit].HealingDone += amount;
+    if (gridEntity is Unit unit)
+      _unitsActivity[unit].HealingDone += amount;
   }
 
-  private void OnUnitHealingReceived(Unit unit, int amount)
+  private void OnGridEntityHealingReceived(GridEntity gridEntity, int amount)
   {
-    _unitsActivity[unit].HealingReceived += amount;
+    if (gridEntity is Unit unit)
+      _unitsActivity[unit].HealingReceived += amount;
   }
 
   private void OnRewardButtonSelected(UnitInfo unitInfo, Button selected, List<Button> allButtons)
@@ -1035,6 +1229,38 @@ public partial class World : Node2D
     }
   }
 
+  private void ParseTerrainsJson()
+  {
+    string terrainJson = FileAccess.Open("res://scripts/terrains/terrains.json", FileAccess.ModeFlags.Read).GetAsText();
+    Variant parsed = Json.ParseString(terrainJson);
+    Dictionary terrainsData = (Dictionary)parsed;
+    foreach (KeyValuePair<Variant, Variant> entry in terrainsData)
+    {
+      string terrainId = entry.Key.ToString();
+      Dictionary terrainData = (Dictionary)entry.Value;
+
+      string displayName = (string)terrainData["display_name"];
+      string texturePath = (string)terrainData["texture"];
+      Texture2D texture = GD.Load<Texture2D>(texturePath);
+      string scenePath = (string)terrainData["scene"];
+      string description = (string)terrainData["description"];
+      string rarity = (string)terrainData["rarity"];
+      bool blocking = (bool)terrainData["blocking"];
+
+      Godot.Collections.Array cells = (Godot.Collections.Array)terrainData["cells"];
+      List<Vector2I> occupiedCells = new();
+      foreach (Godot.Collections.Array cell in cells)
+      {
+        int x = (int)cell[0];
+        int y = (int)cell[1];
+        occupiedCells.Add(new Vector2I(x, y));
+      }
+
+      GlobalConstants.TerrainsData[terrainId] = new TerrainInfo(terrainId, displayName, texture, scenePath, 
+        occupiedCells, description, rarity, blocking);
+    }
+  }
+
   int GetMaxStageForDifficulty(int difficulty)
   {
     if (difficulty < 2) return 0;
@@ -1076,6 +1302,8 @@ public partial class World : Node2D
           levelId = "nuke";
         }
 
+        Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
+
         nodeId = layer.ToString() + '_' + nodeName;
         Levels[nodeId] = new LevelInfo(
             id: nodeId,
@@ -1089,7 +1317,8 @@ public partial class World : Node2D
             rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
             coinsReward: _coinsPerWin,
             nextNodes: new List<string>(),
-            units: [LoadLevel(levelId)]
+            units: [level.Item2 ],
+            terrains: [level.Item1]
         );
         layerNodes.Add(Levels[nodeId]);
         AmountOfNodesPerLayer[layer] = 1;
@@ -1103,9 +1332,14 @@ public partial class World : Node2D
           if (layer > 4 && _rng.NextDouble() < 0.2)
           {
             int numGauntletLevels = 4;
+            List<TerrainInfo[,]> gauntletTerrains = new List<TerrainInfo[,]>();
             List<UnitInfo[,]> gauntletUnits = new List<UnitInfo[,]>();
             for (int i = 0; i < numGauntletLevels; i++)
-              gauntletUnits.Add(LoadRandomLevel(layer));
+            {
+              Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
+              gauntletTerrains.Add(level.Item1);
+              gauntletUnits.Add(level.Item2);
+            }
 
             List<UnitInfo> rewardUnits = gauntletUnits
               .SelectMany(grid => grid.Cast<UnitInfo>())
@@ -1128,12 +1362,14 @@ public partial class World : Node2D
                 rewards: rewardUnits,
                 coinsReward: _coinsPerWin * 5,
                 nextNodes: new List<string>(),
-                units: gauntletUnits
+                units: gauntletUnits,
+                terrains: gauntletTerrains
             );
           }
           else
           {
             nodeName = $"L{layer + 1}_N{node + 1}";
+            Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer + 1);
             Levels[nodeId] = new LevelInfo(
                 id: nodeId,
                 name: nodeName,
@@ -1146,7 +1382,8 @@ public partial class World : Node2D
                 rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
                 coinsReward: _coinsPerWin,
                 nextNodes: new List<string>(),
-                units: [LoadRandomLevel(layer + 1)]
+                units: [level.Item2],
+                terrains: [level.Item1]
             );
           }
           layerNodes.Add(Levels[nodeId]);
@@ -1365,7 +1602,7 @@ public partial class World : Node2D
     {
       _worldUi.GetParent<ScrollContainer>().Hide();
       _activeLevel = levelInfo;
-      StartLevel(levelInfo.Units[0]);
+      StartLevel(levelInfo.Terrains[0], levelInfo.Units[0]);
     }
   }
 
@@ -1378,7 +1615,7 @@ public partial class World : Node2D
     UpdateCoins(-levelRedoCost);
     _worldUi.GetParent<ScrollContainer>().Hide();
     _activeLevel = levelInfo;
-    StartLevel(levelInfo.Units[0]);
+    StartLevel(levelInfo.Terrains[0], levelInfo.Units[0]);
   }
 
   private void OnRedoCanceled()
@@ -1496,6 +1733,32 @@ public partial class World : Node2D
 
   private void OnStartPlayingButtonPressed()
   {
+    // Check whether there are no units on blocking terrain
+    foreach (Unit unit in _units)
+    {
+      foreach (Vector2I cell in unit.GetOccupiedCells())
+      {
+        if (_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking)
+        {
+          ClearMessagePanel();
+          _message.Text = "You have units placed on blocking terrain. Please move those units before starting the level.";
+          Button btn = new Button();
+          btn.Text = "Okay";
+          btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
+          btn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+          btn.CustomMinimumSize = new Vector2I(150, 50);
+          btn.Pressed += () =>
+          {
+            ClearMessagePanel();
+            _messagePanel.Hide();
+          };
+          _messageResponses.AddChild(btn);
+          _messagePanel.Show();
+          return;
+        }
+      }
+    }
+
     StartPlaying();
   }
 
@@ -1509,16 +1772,16 @@ public partial class World : Node2D
     List<Unit> removedZombies = new List<Unit>();
     foreach (Unit unit in _removedUnits)
     {
-      if (unit.id == "zombie")
+      if (unit.Id == "zombie")
       {
         removedZombies.Add(unit);
 
-        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, unit.occupiedCells, unit.side);
+        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, _terrainGrid, unit.OccupiedCells, unit.Side);
         if (spawnCell == null)
           continue;
 
-        Unit unitInstance = GD.Load<PackedScene>(unit.scenePath).Instantiate() as Unit;
-        unitInstance!.Initialize(unit.GetStartInfo(), unit.side, spawnCell.Value);
+        Unit unitInstance = GD.Load<PackedScene>(unit.ScenePath).Instantiate() as Unit;
+        unitInstance!.Initialize(unit.GetStartInfo(), unit.Side, spawnCell.Value);
         _unitsNode.AddChild(unitInstance);
         unitInstance.SpawnFloatingText("Revived", Colors.Green);
       }
@@ -1541,12 +1804,12 @@ public partial class World : Node2D
     // Sort units by speed, then by position for consistent turn order
     List<Unit> sorted = units
     .Skip(currentIndex)  // Skip units that have already played their turn
-    .OrderByDescending(u => u.speed)  // Speed first
+    .OrderByDescending(u => u.Speed)  // Speed first
     .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
     .ThenBy(u =>
-        u.side
-            ? u.occupiedMainCell.Y  // Player: lower Y first
-            : GlobalConstants.GridSize.Y - 1 - u.occupiedMainCell.Y)  // Enemy: higher Y first
+        u.Side
+            ? u.OccupiedMainCell.Y  // Player: lower Y first
+            : GlobalConstants.GridSize.Y - 1 - u.OccupiedMainCell.Y)  // Enemy: higher Y first
     .ToList();
 
     units.RemoveRange(currentIndex, units.Count - currentIndex);
@@ -1583,7 +1846,7 @@ public partial class World : Node2D
 
     // Call turn end function of every unit
     foreach (Unit unit in _units)
-      unit.TurnEnd(_unitsGrid, _units, _removedUnits);
+      unit.TurnEnd(_unitsGrid, _terrainGrid, _units, _removedUnits);
   }
 
   public void UpdateCoins(int amount)
@@ -1637,7 +1900,7 @@ public partial class World : Node2D
     int maxDamageDealt = sortedByDamageDealt.FirstOrDefault().Value?.DamageDealth ?? 1;
 
     foreach (var entry in sortedByDamageDealt)
-      AddStatRow(_damageDealtStats, entry.Key.name, entry.Value.DamageDealth, maxDamageDealt, entry.Key.side);
+      AddStatRow(_damageDealtStats, entry.Key.DisplayName, entry.Value.DamageDealth, maxDamageDealt, entry.Key.Side);
 
     var sortedByDamageTaken = _unitsActivity
         .OrderByDescending(x => x.Value.DamageTaken)
@@ -1645,7 +1908,7 @@ public partial class World : Node2D
     int maxDamageTaken = sortedByDamageTaken.FirstOrDefault().Value?.DamageTaken ?? 1;
 
     foreach (var entry in sortedByDamageTaken)
-      AddStatRow(_damageTakenStats, entry.Key.name, entry.Value.DamageTaken, maxDamageTaken, entry.Key.side);
+      AddStatRow(_damageTakenStats, entry.Key.DisplayName, entry.Value.DamageTaken, maxDamageTaken, entry.Key.Side);
 
     var sortedByHealingDone = _unitsActivity
         .OrderByDescending(x => x.Value.HealingDone)
@@ -1653,7 +1916,7 @@ public partial class World : Node2D
     int maxHealingDone = sortedByHealingDone.FirstOrDefault().Value?.HealingDone ?? 1;
 
     foreach (var entry in sortedByHealingDone)
-      AddStatRow(_healingDoneStats, entry.Key.name, entry.Value.HealingDone, maxHealingDone, entry.Key.side);
+      AddStatRow(_healingDoneStats, entry.Key.DisplayName, entry.Value.HealingDone, maxHealingDone, entry.Key.Side);
 
     _gameStats.Show();
   }
@@ -1695,6 +1958,6 @@ public partial class World : Node2D
   {
     Reset();
     _messagePanel.Hide();
-    StartLevel(_activeLevel.Units[_activeGauntletLevelIndex]);
+    StartLevel(_activeLevel.Terrains[_activeGauntletLevelIndex], _activeLevel.Units[_activeGauntletLevelIndex]);
   }
 }

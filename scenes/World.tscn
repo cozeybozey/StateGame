@@ -758,6 +758,8 @@ custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Cancel"
 
+[node name="Terrain" type="Node2D" parent="." unique_id=915798487]
+
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 
 [node name="PlayerSideUnitsLayer" type="TileMapLayer" parent="." unique_id=211327906]

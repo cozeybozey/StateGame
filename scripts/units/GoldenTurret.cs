@@ -4,16 +4,16 @@ using System.Collections.Generic;
 
 public partial class GoldenTurret : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
-    damage = 0;
+    Damage = 0;
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         Unit unit = unitsGrid[x, y];
-        if (unit != null && unit.side == side && unit.types.Contains("machinery"))
-          damage++;
+        if (unit != null && unit.Side == Side && unit.Types.Contains("machinery"))
+          Damage++;
       }
     }
 
@@ -22,7 +22,7 @@ public partial class GoldenTurret : Unit
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null)
       {
-        targetUnit.ChangeHealth(-damage, this);
+        targetUnit.ChangeHealth(-Damage, this);
       }
     }
   }

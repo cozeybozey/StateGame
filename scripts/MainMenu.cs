@@ -337,7 +337,8 @@ public partial class MainMenu : Control
           rewards: rewards,
           coinsReward: levelData["coinsReward"].AsInt32(),
           nextNodes: nextNodes,
-          units: units
+          units: units,
+          terrains: [] // todo fix
       );
     }
     _world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray();

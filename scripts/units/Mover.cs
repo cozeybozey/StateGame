@@ -7,7 +7,7 @@ public partial class Mover : Unit
 {
   private bool _movingRight = true;
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     // Buff surrounding units
     List<Unit> buffed = new List<Unit>();
@@ -24,7 +24,7 @@ public partial class Mover : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new List<Vector2I>();
 
@@ -32,16 +32,16 @@ public partial class Mover : Unit
     bool moved = false;
 
     // Check primary direction
-    if (CanPlaceAtOffset(dir, unitsGrid))
+    if (CanPlaceAtOffset(dir, unitsGrid, terrainGrid))
     {
       moved = true;
-      MoveToCell(occupiedMainCell + new Vector2I(dir, 0), playing: true);
+      MoveToCell(OccupiedMainCell + new Vector2I(dir, 0), playing: true);
     }
     // Otherwise suggest opposite direction if possible (but do not change state)
-    else if (CanPlaceAtOffset(-dir, unitsGrid))
+    else if (CanPlaceAtOffset(-dir, unitsGrid, terrainGrid))
     {
       moved = true;
-      MoveToCell(occupiedMainCell + new Vector2I(-dir, 0), playing: true);
+      MoveToCell(OccupiedMainCell + new Vector2I(-dir, 0), playing: true);
     }
 
     if (!moved)
@@ -53,18 +53,18 @@ public partial class Mover : Unit
       for (int y = -1; y <= 1; y++)
       {
         Vector2I cell = new Vector2I(x, y);
-        if (cell != new Vector2I(0, 0) && GlobalFunctions.IsCellInsideGrid(occupiedMainCell + cell))
-          result.Add(occupiedMainCell + cell);
+        if (cell != new Vector2I(0, 0) && GlobalFunctions.IsCellInsideGrid(OccupiedMainCell + cell))
+          result.Add(OccupiedMainCell + cell);
       }
     }
 
     return result;
   }
 
-  private bool CanPlaceAtOffset(int xOffset, Unit[,] unitsGrid)
+  private bool CanPlaceAtOffset(int xOffset, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
-    Vector2I newMain = occupiedMainCell + new Vector2I(xOffset, 0);
-    foreach (Vector2I rel in occupiedCells)
+    Vector2I newMain = OccupiedMainCell + new Vector2I(xOffset, 0);
+    foreach (Vector2I rel in OccupiedCells)
     {
       int nx = newMain.X + rel.X;
       int ny = newMain.Y + rel.Y;
@@ -72,6 +72,9 @@ public partial class Mover : Unit
         return false;
       Unit unit = unitsGrid[nx, ny];
       if (unit != null && unit != this)
+        return false;
+      Terrain terrain = terrainGrid[nx, ny];
+      if (terrain != null && terrain.Blocking)
         return false;
     }
     return true;

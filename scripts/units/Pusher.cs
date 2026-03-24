@@ -5,18 +5,18 @@ using System.Linq;
 
 public partial class Pusher : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
-    for (int x = 0; x < occupiedMainCell.X; x++)
+    for (int x = 0; x < OccupiedMainCell.X; x++)
     {
-      Vector2I pos = new(x, occupiedMainCell.Y);
+      Vector2I pos = new(x, OccupiedMainCell.Y);
       result.Add(pos);
     }
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     List<Unit> movedUnits = new List<Unit>();
 
@@ -31,7 +31,8 @@ public partial class Pusher : Unit
           if (cell.X - 1 >= 0 && unitsGrid[cell.X - 1, cell.Y] == targetUnit)
             continue;
 
-          if (cell.X - 1 < 0 || unitsGrid[cell.X - 1, cell.Y] != null)
+          if (cell.X - 1 < 0 || unitsGrid[cell.X - 1, cell.Y] != null ||
+            (terrainGrid[cell.X - 1, cell.Y] != null && terrainGrid[cell.X - 1, cell.Y].Blocking))
           {
             canMove = false;
             break;
@@ -40,7 +41,7 @@ public partial class Pusher : Unit
 
         if (canMove)
         {
-          targetUnit.MoveToCell(targetUnit.occupiedMainCell + new Vector2I(-1, 0), playing: true);
+          targetUnit.MoveToCell(targetUnit.OccupiedMainCell + new Vector2I(-1, 0), playing: true);
           movedUnits.Add(targetUnit);
         }
       }

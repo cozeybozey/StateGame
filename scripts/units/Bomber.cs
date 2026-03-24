@@ -5,14 +5,14 @@ using System.Linq;
 
 public partial class Bomber : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Random random = new();
 
     List<Vector2I> enemies = new();
     for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-        if (unitsGrid[x, y] != null && unitsGrid[x, y].side != side)
+        if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
           enemies.Add(new Vector2I(x, y));
 
     if (enemies.Count == 0) return [];

@@ -4,22 +4,22 @@ using System.Collections.Generic;
 
 public partial class Supporter : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
   {
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null)
       {
-        targetUnit.ChangeMaxHealth(damage);
+        targetUnit.ChangeMaxHealth(Damage);
       }
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Predicate makes sure closest unit has to be friendly
-    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.side == side);
+    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.Side == Side);
 
     if (closest == null)
       return new List<Vector2I>();

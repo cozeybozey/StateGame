@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://t0ds8i6istev"]
+
+[ext_resource type="PackedScene" uid="uid://b5taemkk7es52" path="res://scenes/terrains/terrain.tscn" id="1_jvpci"]
+[ext_resource type="Script" uid="uid://8a786dhbhc3x" path="res://scripts/terrains/Grass.cs" id="2_7pfwc"]
+
+[node name="Terrain" unique_id=995662800 instance=ExtResource("1_jvpci")]
+script = ExtResource("2_7pfwc")
