@@ -11,7 +11,7 @@ public partial class DecksHandler : Control
 
   private string _selectedDeck;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
-  private bool _switchingDeck = false;
+  private bool _processUnitChanges = true;
 
   private GlobalSignals _globalSignals;
   private GridOverlay _gridOverlay;
@@ -56,7 +56,7 @@ public partial class DecksHandler : Control
   private void OnUnitSpawned(Unit unit, bool playing)
   {
     // Do not process enemy units and spawned units during simulation
-    if (!unit.side || playing)
+    if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
@@ -67,14 +67,14 @@ public partial class DecksHandler : Control
   {
     // If units were removed due to a switch deck call,
     // then the deck itself should not be changed
-    if (!_switchingDeck)
+    if (_processUnitChanges)
       Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
   }
 
   private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
   {
     // Do not process enemy units and spawned units during simulation
-    if (!unit.side || playing)
+    if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
@@ -103,13 +103,13 @@ public partial class DecksHandler : Control
 
   private void OnDeckSelected(Button button)
   {
-    _switchingDeck = true;
+    _processUnitChanges = false;
     _selectedDeck = button.Text;
     _gridOverlay.LoadDeck(Decks[_selectedDeck]);
     _decksContainer.Hide();
     _unitsSelectionContainer.Show();
     AddUnitsSelection(Decks[_selectedDeck]);
-    _switchingDeck = false;
+    _processUnitChanges = true;
   }
 
   private void OnChangeDeckPressed()
@@ -150,6 +150,39 @@ public partial class DecksHandler : Control
     }
   }
 
+  private void AddUnitsSelectionBeforeLevel(UnitInfo[,] unitsGrid)
+  {
+    List<UnitInfo> units = new List<UnitInfo>();
+    Dictionary<string, int> amountPlacedPerUnit = new Dictionary<string, int>(); // TODO can remove
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
+        UnitInfo unitInfo = unitsGrid[x, y];
+        if (unitInfo != null)
+        {
+          if (amountPlacedPerUnit.ContainsKey(unitInfo.Id))
+            amountPlacedPerUnit[unitInfo.Id] += 1;
+          else
+          {
+            amountPlacedPerUnit[unitInfo.Id] = 1;
+            units.Add(unitInfo);
+          }
+        }
+      }
+    }
+
+    foreach (UnitInfo unitInfo in units)
+    {
+      // Add initial turrent selection unit
+      UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+      unitGui!.Info = unitInfo;
+      unitGui.Amount = 0;
+      _unitsList.AddChild(unitGui);
+    }
+  }
+
   private void ClearUnitsSelection()
   {
     foreach (var child in _unitsList.GetChildren())
@@ -163,6 +196,25 @@ public partial class DecksHandler : Control
     ClearUnitsSelection();
     if (Decks.ContainsKey(_selectedDeck))
       AddUnitsSelection(Decks[_selectedDeck]);
+  }
+
+  public void LoadBeforeLevel()
+  {
+    _processUnitChanges = false;
+    _changeDeckButton.Visible = false;
+    _decksContainer.Hide();
+    _unitsSelectionContainer.Show();
+    //_gridOverlay.ClearUnits();
+    ClearUnitsSelection();
+    AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
+  }
+
+  public void LoadAfterLevel()
+  {
+    ResetUnitsSelection();
+    _gridOverlay.LoadDeck(Decks[_selectedDeck]);
+    _changeDeckButton.Visible = true;
+    _processUnitChanges = true;
   }
 
   public void AddUnit(UnitInfo unitInfo)

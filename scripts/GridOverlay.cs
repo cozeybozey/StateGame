@@ -216,19 +216,19 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
 	public void ClearUnits()
 	{
+		List<Unit> removedUnits = new List<Unit>();
+
 		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
 		{
 			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
 			{
 				Unit unit = _unitGrid[x, y];
-				if (unit != null)
-				{ 
-					foreach (Vector2I occupiedCell in unit!.GetOccupiedCells())
-            _unitGrid[occupiedCell.X, occupiedCell.Y] = null!;
-
-          if (IsInstanceValid(unit))
-						unit.Remove();
+				if (unit != null && IsInstanceValid(unit) && !removedUnits.Contains(unit))
+				{
+					unit.Remove();
+					removedUnits.Add(unit);
 				}
+				_unitGrid[x, y] = null!;
 			}
 		}
     _currentUnitSlotsCount = 0;

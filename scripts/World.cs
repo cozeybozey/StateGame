@@ -34,6 +34,8 @@ public partial class World : Node2D
   private UnitsInfoGui _unitsGuiInfo;
   private Button _playPauseButton;
   private Button _surrenderButton;
+  private Button _startButton;
+  private Button _quitButton;
   private DecksHandler _decksHandler;
   private LevelInfoContainer _levelInfoContainer;
 
@@ -122,6 +124,8 @@ public partial class World : Node2D
     _unitsGuiInfo = GetNode<UnitsInfoGui>("CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer");
     _playPauseButton = GetNode<Button>("CanvasLayer/BottomUi/PlayPauseButton");
     _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
+    _startButton = GetNode<Button>("CanvasLayer/BottomUi/StartButton");
+    _quitButton = GetNode<Button>("CanvasLayer/BottomUi/QuitButton");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _levelInfoContainer = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
 
@@ -138,6 +142,8 @@ public partial class World : Node2D
     _speedPopup.IdPressed += OnSpeedSelected;
     _playPauseButton.Pressed += OnPlayPauseButtonPressed;
     _surrenderButton.Pressed += OnSurrenderButtonPressed;
+    _startButton.Pressed += OnStartPlayingButtonPressed;
+    _quitButton.Pressed += OnQuitButtonPressed;
     _units = new List<Unit>();
     _unitsToAct = new List<Unit>();
     _removedUnits = new List<Unit>();
@@ -261,10 +267,11 @@ public partial class World : Node2D
   {
     _playButton.Disabled = true;
     _worldMapButton.Visible = false;
-    _playPauseButton.Visible = true;
-    _surrenderButton.Visible = true;
-    _gridOverlay.SetInteractionLocked(true);
+    _startButton.Visible = true;
+    _quitButton.Visible = true;
+    _decksHandler.LoadBeforeLevel();
 
+    // Load enemy units
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y * 0.5; y++)
@@ -283,6 +290,15 @@ public partial class World : Node2D
         }
       }
     }
+  }
+
+  private void StartPlaying()
+  {
+    _startButton.Visible = false;
+    _quitButton.Visible = false;
+    _playPauseButton.Visible = true;
+    _surrenderButton.Visible = true;
+    _gridOverlay.SetInteractionLocked(true);
 
     // Show units side
     foreach (Unit unit in _units)
@@ -294,7 +310,7 @@ public partial class World : Node2D
     }
 
     // Copy units to create a list of units that are going to act this turn
-    _unitsToAct = [.._units];
+    _unitsToAct = [.. _units];
     _playing = true;
 
     // Immediately win or lose when you or the enemy has no units
@@ -480,15 +496,12 @@ public partial class World : Node2D
 
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _unitIndex = 0;
-    _enemyUnitsCount = 0;
-    _playerUnitsCount = 0;
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
     _turnCooldown = _turnStartCooldown;
     ClearMessagePanel();
     _messagePanel.Hide();
     ResetGameStats();
-    _gridOverlay.LoadUnits();
     _levelCounter.Text = _level.ToString();
     _activeUnitLayer.Clear();
     _targetedCellsLayer.Clear();
@@ -496,12 +509,16 @@ public partial class World : Node2D
     _levelUnits.Clear();
     _playerSideUnitsLayer.Clear();
     _enemySideUnitsLayer.Clear();
+    _decksHandler.LoadAfterLevel();
+    _enemyUnitsCount = 0;
 
     _gridOverlay.SetInteractionLocked(false);
     _playButton.Disabled = false;
     _worldMapButton.Visible = true;
     _playPauseButton.Visible = false;
     _surrenderButton.Visible = false;
+    _startButton.Visible = false;
+    _quitButton.Visible = false;
   }
 
   private void Win()
@@ -937,7 +954,6 @@ public partial class World : Node2D
     if (_selectedReward == null) return;
 
     _decksHandler.AddUnit(_selectedReward);
-    _decksHandler.ResetUnitsSelection();
     _selectedReward = null;
     Reset();
   }
@@ -1442,36 +1458,22 @@ public partial class World : Node2D
         return;
       }
 
-      if (_playing)
+      Unit unit = _unitsGrid[cell.X, cell.Y];
+      if (unit != null)
       {
-        Unit unit = _unitsGrid[cell.X, cell.Y];
-        if (unit != null)
-        {
-          _unitsGuiInfo.SetSelectedUnit(unit);
-          _selectedUnitLayer.Clear();
-          _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
-        }
-        else
-        {
-          _unitsGuiInfo.ResetSelectedUnit();
-          _selectedUnitLayer.Clear();
-        }
+        _unitsGuiInfo.SetSelectedUnit(unit);
+        _selectedUnitLayer.Clear();
+        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
       else
       {
         _unitsGuiInfo.ResetSelectedUnit();
         _selectedUnitLayer.Clear();
-        Unit gridOverlayUnit = _gridOverlay.GetUnits()[cell.X, cell.Y];
-        if (gridOverlayUnit != null)
-        {
-          _unitsGuiInfo.SetSelectedUnit(gridOverlayUnit);
-          _selectedUnitLayer.ShowCells(gridOverlayUnit.GetOccupiedCells());
-        }
       }
     }
   }
 
-  public void OnPlayPauseButtonPressed()
+  private void OnPlayPauseButtonPressed()
   {
     if (_paused)
     {
@@ -1485,11 +1487,21 @@ public partial class World : Node2D
     }
   }
 
-  public void OnSurrenderButtonPressed()
+  private void OnSurrenderButtonPressed()
   {
     if (!_playing)
       return;
     Lose();
+  }
+
+  private void OnStartPlayingButtonPressed()
+  {
+    StartPlaying();
+  }
+
+  private void OnQuitButtonPressed()
+  {
+    // TODO AKN implement
   }
 
   private void RespawnZombies()

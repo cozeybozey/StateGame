@@ -475,6 +475,16 @@ visible = false
 layout_mode = 2
 text = "Surrender"
 
+[node name="StartButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=452502198]
+visible = false
+layout_mode = 2
+text = "Start"
+
+[node name="QuitButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=1377824111]
+visible = false
+layout_mode = 2
+text = "Quit"
+
 [node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
 visible = false
 anchors_preset = -1
