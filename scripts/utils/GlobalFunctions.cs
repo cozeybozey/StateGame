@@ -2,6 +2,7 @@ using Godot;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Security.Principal;
 
 public partial class GlobalFunctions : Node
 {
@@ -144,6 +145,65 @@ public partial class GlobalFunctions : Node
 
       // Check if there is blocking props at the target location
       if (propsGrid[checkLocation.X, checkLocation.Y] != null && propsGrid[checkLocation.X, checkLocation.Y] != gridEntity && propsGrid[checkLocation.X, checkLocation.Y].Blocking)
+        return false;
+    }
+
+    return true;
+  }
+
+  public static bool AreTypesCompatible(PropInfo prop, TerrainInfo terrain)
+  {
+    foreach (string propType in prop.Types)
+    {
+      if (!GlobalConstants.PropTerrainCompatibility.TryGetValue(propType, out var allowedTerrainTypes))
+        continue;
+
+      bool hasCompatibleTerrain = terrain.Types.Any(t => allowedTerrainTypes.Contains(t));
+      if (!hasCompatibleTerrain)
+        return false;
+    }
+
+    return true;
+  }
+
+  public static bool CanSpawnProp(Prop prop, Vector2I targetLocation, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  {
+    foreach (Vector2I cell in prop.OccupiedCells)
+    {
+      Vector2I checkLocation = targetLocation + cell;
+
+      // Check if location is inside the grid
+      if (!IsCellInsideGrid(checkLocation))
+        return false;
+
+      // Cannot place prop if other prop is already present
+      if (propsGrid[checkLocation.X, checkLocation.Y] != null && propsGrid[checkLocation.X, checkLocation.Y] != prop)
+        return false;
+
+      // Check if prop and terrain types are compatible
+      if (terrainGrid[checkLocation.X, checkLocation.Y] != null && !AreTypesCompatible(prop.GetInfo(), terrainGrid[checkLocation.X, checkLocation.Y].GetInfo()))
+        return false;
+    }
+
+    return true;
+  }
+
+  public static bool CanSpawnProp(PropInfo prop, Vector2I targetLocation, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    foreach (Vector2I cell in prop.OccupiedCells)
+    {
+      Vector2I checkLocation = targetLocation + cell;
+
+      // Check if location is inside the grid
+      if (!IsCellInsideGrid(checkLocation))
+        return false;
+
+      // Cannot place prop if other prop is already present
+      if (propsGrid[checkLocation.X, checkLocation.Y] != null)
+        return false;
+
+      // Check if prop and terrain types are compatible
+      if (terrainGrid[checkLocation.X, checkLocation.Y] != null && !AreTypesCompatible(prop, terrainGrid[checkLocation.X, checkLocation.Y]))
         return false;
     }
 

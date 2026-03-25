@@ -274,6 +274,7 @@ custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
 [node name="InfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=635696729]
+visible = false
 layout_mode = 2
 script = ExtResource("7_nrtoj")
 
@@ -305,6 +306,7 @@ layout_mode = 2
 text = "No unit selected"
 
 [node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer" unique_id=274891919]
+visible = false
 layout_mode = 2
 
 [node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=716529401]

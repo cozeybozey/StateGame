@@ -2,10 +2,12 @@ using Godot;
 using Godot.Collections;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
+using System.Runtime.Intrinsics.X86;
 using System.Runtime.Serialization;
 using System.Security.Principal;
 using System.Threading;
@@ -309,8 +311,6 @@ public partial class World : Node2D
           Prop propInstance = GD.Load<PackedScene>(propInfo.ScenePath).Instantiate() as Prop;
           propInstance!.Initialize(propInfo, new Vector2I(x, y), placed: true);
           _propsNode.AddChild(propInstance);
-          //if (!side)
-            //terrainInstance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
         }
       }
     }
@@ -483,12 +483,16 @@ public partial class World : Node2D
     int topHalfBlocking = 0;
     int bottomHalfBlocking = 0;
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
         if (terrainGrid[x, y] != null && terrainGrid[x, y].Blocking)
         {
           if (y < midY) topHalfBlocking++;
           else bottomHalfBlocking++;
         }
+      }
+    }
 
     bool CanPlaceBlocking(int x, int y)
     {
@@ -504,96 +508,106 @@ public partial class World : Node2D
 
     // Rocks
     int rockCount = _rng.Next(0, 4);
+    PropInfo propInfo = GlobalConstants.PropsData["rock"];
     for (int i = 0; i < rockCount; i++)
     {
       List<Vector2I> candidates = new();
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-          if (props[x, y] == null &&
-              terrainGrid[x, y] != null &&
-              (terrainGrid[x, y].Types.Contains("vegetation") || terrainGrid[x, y].Types.Contains("rocky")) &&
+          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, props) &&
               CanPlaceBlocking(x, y))
             candidates.Add(new Vector2I(x, y));
 
       if (candidates.Count == 0) break;
       Vector2I cell = candidates[_rng.Next(candidates.Count)];
-      props[cell.X, cell.Y] = GlobalConstants.PropsData["rock"];
+      props[cell.X, cell.Y] = propInfo;
       PlaceBlocking(cell.X, cell.Y);
     }
 
     // Bushes
     int bushCount = _rng.Next(0, 4);
+    propInfo = GlobalConstants.PropsData["bush"];
     for (int i = 0; i < bushCount; i++)
     {
       List<Vector2I> candidates = new();
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-          if (props[x, y] == null &&
-              terrainGrid[x, y] != null &&
-              terrainGrid[x, y].Types.Contains("vegetation") &&
+          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, props) &&
               CanPlaceBlocking(x, y))
             candidates.Add(new Vector2I(x, y));
 
       if (candidates.Count == 0) break;
       Vector2I cell = candidates[_rng.Next(candidates.Count)];
-      props[cell.X, cell.Y] = GlobalConstants.PropsData["bush"];
+      props[cell.X, cell.Y] = propInfo;
       PlaceBlocking(cell.X, cell.Y);
     }
 
-    // Fire (non-blocking, no need to check limit)
+    // Fire
     bool spawnFire = _rng.NextDouble() < 0.25;
+    propInfo = GlobalConstants.PropsData["fire"];
     if (spawnFire)
     {
-      List<Vector2I> fireCandidates = new();
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-          if (props[x, y] == null &&
-              terrainGrid[x, y] != null &&
-              terrainGrid[x, y].Types.Contains("vegetation"))
-            fireCandidates.Add(new Vector2I(x, y));
+      List<Vector2I> cluster = SpawnClusterOfPropType(propInfo, terrainGrid, props, _rng.Next(2, 6));
+      foreach (Vector2I cell in cluster)
+        props[cell.X, cell.Y] = propInfo;
+    }
 
-      if (fireCandidates.Count > 0)
-      {
-        Vector2I origin = fireCandidates[_rng.Next(fireCandidates.Count)];
-        int fireSize = _rng.Next(2, 6);
-
-        List<Vector2I> fireCluster = new() { origin };
-        List<Vector2I> frontier = new() { origin };
-
-        while (fireCluster.Count < fireSize && frontier.Count > 0)
-        {
-          Vector2I current = frontier[_rng.Next(frontier.Count)];
-          frontier.Remove(current);
-
-          Vector2I[] neighbors = {
-                    new(current.X + 1, current.Y),
-                    new(current.X - 1, current.Y),
-                    new(current.X, current.Y + 1),
-                    new(current.X, current.Y - 1),
-                };
-
-          foreach (Vector2I neighbor in neighbors)
-          {
-            if (fireCluster.Count >= fireSize) break;
-            if (neighbor.X < 0 || neighbor.Y < 0 ||
-                neighbor.X >= GlobalConstants.GridSize.X ||
-                neighbor.Y >= GlobalConstants.GridSize.Y) continue;
-            if (fireCluster.Contains(neighbor)) continue;
-            if (props[neighbor.X, neighbor.Y] != null) continue;
-            if (terrainGrid[neighbor.X, neighbor.Y] == null ||
-                !terrainGrid[neighbor.X, neighbor.Y].Types.Contains("vegetation")) continue;
-
-            fireCluster.Add(neighbor);
-            frontier.Add(neighbor);
-          }
-        }
-
-        foreach (Vector2I cell in fireCluster)
-          props[cell.X, cell.Y] = GlobalConstants.PropsData["fire"];
-      }
+    // Wild Fire
+    bool spawnWildFire = _rng.NextDouble() < 0.95;
+    propInfo = GlobalConstants.PropsData["wild_fire"];
+    if (spawnWildFire)
+    {
+      List<Vector2I> cluster = SpawnClusterOfPropType(propInfo, terrainGrid, props, _rng.Next(2, 6));
+      foreach (Vector2I cell in cluster)
+        props[cell.X, cell.Y] = propInfo;
     }
 
     return props;
+  }
+
+  private List<Vector2I> SpawnClusterOfPropType(PropInfo propInfo, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, int clusterSize, Func<int, int, bool>? extraCheck = null)
+  {
+    List<Vector2I> candidates = new();
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+        if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, propsGrid) &&
+            (extraCheck == null || extraCheck(x, y)))
+          candidates.Add(new Vector2I(x, y));
+
+    if (candidates.Count == 0) return [];
+
+    Vector2I origin = candidates[_rng.Next(candidates.Count)];
+    List<Vector2I> cluster = new() { origin };
+    List<Vector2I> frontier = new() { origin };
+
+    while (cluster.Count < clusterSize && frontier.Count > 0)
+    {
+      Vector2I current = frontier[_rng.Next(frontier.Count)];
+      frontier.Remove(current);
+
+      Vector2I[] neighbors = {
+            new(current.X + 1, current.Y),
+            new(current.X - 1, current.Y),
+            new(current.X, current.Y + 1),
+            new(current.X, current.Y - 1),
+        };
+
+      foreach (Vector2I neighbor in neighbors)
+      {
+        if (cluster.Count >= clusterSize) break;
+        if (neighbor.X < 0 || neighbor.Y < 0 ||
+            neighbor.X >= GlobalConstants.GridSize.X ||
+            neighbor.Y >= GlobalConstants.GridSize.Y) continue;
+        if (cluster.Contains(neighbor)) continue;
+        if (!GlobalFunctions.CanSpawnProp(propInfo, neighbor, terrainGrid, propsGrid)) continue;
+        if (extraCheck != null && !extraCheck(neighbor.X, neighbor.Y)) continue;
+
+        cluster.Add(neighbor);
+        frontier.Add(neighbor);
+      }
+    }
+
+    return cluster;
   }
 
   private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
@@ -2116,15 +2130,14 @@ public partial class World : Node2D
     RespawnZombies();
 
     // Call turn end function of every unit
-    foreach (Unit unit in _units)
+    // Use shallow copy to prevent spawned units having their turn end called as well
+    foreach (Unit unit in _units.ToList())  
       unit.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
 
     // Call turn end function of every prop
-    foreach (Prop prop in _propsGrid)
-    {
-      if (prop != null && IsInstanceValid(prop))
-        prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
-    }
+    // Use shallow copy to prevent spawned props having their turn end called as well
+    foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
+      prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
   }
 
   public void UpdateCoins(int amount)
