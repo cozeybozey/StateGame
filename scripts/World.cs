@@ -26,14 +26,15 @@ public partial class World : Node2D
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
   private Node _terrainNode;
+  private Node _propsNode;
   private OverlayLayer _playerSideUnitsLayer;
   private OverlayLayer _enemySideUnitsLayer;
-  private OverlayLayer _selectedUnitLayer;
+  private OverlayLayer _selectedCellsLayer;
   private OverlayLayer _activeUnitLayer;
   private OverlayLayer _targetedCellsLayer;
   private MenuButton _speedButton;
   private PopupMenu _speedPopup;
-  private UnitsInfoGui _unitsGuiInfo;
+  private InfoGui _infoGui;
   private Button _playPauseButton;
   private Button _surrenderButton;
   private Button _startButton;
@@ -46,6 +47,7 @@ public partial class World : Node2D
   private List<Unit> _removedUnits;
   private Unit[,] _unitsGrid;
   private Terrain[,] _terrainGrid;
+  private Prop[,] _propsGrid;
   private int _unitIndex = 0;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
@@ -94,7 +96,7 @@ public partial class World : Node2D
 
   // Notify variables
   private string _explanationMarkScenePath = "res://scenes/explanation_mark.tscn";
-  private Node2D[,] _explanationMarks = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+  private Node2D[,] _explanationMarks = new Node2D[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
   // Damage and healing tracking
   // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
@@ -120,15 +122,16 @@ public partial class World : Node2D
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
     _terrainNode = GetNode("Terrain");
+    _propsNode = GetNode("Props");
     _playerSideUnitsLayer = GetNode<OverlayLayer>("PlayerSideUnitsLayer");
     _enemySideUnitsLayer = GetNode<OverlayLayer>("EnemySideUnitsLayer");
-    _selectedUnitLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
+    _selectedCellsLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
     _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
     _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
-    _unitsGuiInfo = GetNode<UnitsInfoGui>("CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer");
+    _infoGui = GetNode<InfoGui>("CanvasLayer/SelectionUi/HBoxContainer/InfoContainer");
     _playPauseButton = GetNode<Button>("CanvasLayer/BottomUi/PlayPauseButton");
     _surrenderButton = GetNode<Button>("CanvasLayer/BottomUi/SurrenderButton");
     _startButton = GetNode<Button>("CanvasLayer/BottomUi/StartButton");
@@ -155,6 +158,7 @@ public partial class World : Node2D
     _removedUnits = new List<Unit>();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _propsGrid = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.GridEntityDied += OnGridEntityDied;
     _globalSignals.GridEntityMoved += OnGridEntityMoved;
     _globalSignals.GridEntitySpawned += OnGridEntitySpawned;
@@ -180,10 +184,10 @@ public partial class World : Node2D
     _enemySideUnitsLayer.HighlightCells = true;
     _enemySideUnitsLayer.HighlightColor = new Color(1, 0, 0, 0.15f);
     _enemySideUnitsLayer.LineWidth = 2f;
-    _selectedUnitLayer.OutlineColor = Colors.Blue;
-    _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
-    _selectedUnitLayer.OutlineColor = Colors.Blue;
-    _selectedUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
+    _selectedCellsLayer.OutlineColor = Colors.Blue;
+    _selectedCellsLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
+    _selectedCellsLayer.OutlineColor = Colors.Blue;
+    _selectedCellsLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _activeUnitLayer.OutlineColor = Colors.Yellow;
     _activeUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _targetedCellsLayer.OutlineColor = Colors.Red;
@@ -197,6 +201,7 @@ public partial class World : Node2D
     }
     ParseUnitsJson();
     ParseTerrainsJson();
+    ParsePropsJson();
 
     string levelsJson = FileAccess.Open("res://scripts/levels.json", FileAccess.ModeFlags.Read).GetAsText();
     Variant parsed = Json.ParseString(levelsJson);
@@ -220,7 +225,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid, _terrainGrid);
+        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid);
         _unitIndex += 1;
         _turnCooldown = _turnStartCooldown;
         _acting = false;
@@ -232,7 +237,7 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _terrainGrid, _unitsToAct, _removedUnits);
+        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
         _targetedCellsLayer.ShowCells(_selectedTargets);
         _acting = true;
         if (_selectedTargets.Count > 0)
@@ -271,21 +276,18 @@ public partial class World : Node2D
     }
   }
 
-  private void StartLevel(TerrainInfo[,] terrainGrid, UnitInfo[,] enemyUnits)
+  private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits)
   {
     _worldMapButton.Visible = false;
     _startButton.Visible = true;
     _quitButton.Visible = true;
     _decksHandler.LoadBeforeLevel();
 
-    // Load terrain
+    // Load terrain and props
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
-        if (_terrainGrid[x, y] != null)
-          continue;
-
         TerrainInfo terrainInfo = terrainGrid[x, y];
         if (terrainInfo != null)
         {
@@ -295,6 +297,20 @@ public partial class World : Node2D
           _terrainNode.AddChild(terrainInstance);
           if (!side)
             terrainInstance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
+        }
+
+        if (_propsGrid[x, y] != null)
+          continue;
+
+        PropInfo propInfo = propsGrid[x, y];
+        if (propInfo != null)
+        {
+          //bool side = y >= GlobalConstants.GridSize.Y * 0.5;
+          Prop propInstance = GD.Load<PackedScene>(propInfo.ScenePath).Instantiate() as Prop;
+          propInstance!.Initialize(propInfo, new Vector2I(x, y), placed: true);
+          _propsNode.AddChild(propInstance);
+          //if (!side)
+            //terrainInstance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
         }
       }
     }
@@ -319,12 +335,13 @@ public partial class World : Node2D
       }
     }
 
-    // Check whether there are no units on blocking terrain
+    // Check whether there are no units on blocking terrain or props
     foreach (Unit unit in _units)
     {
       foreach (Vector2I cell in unit.GetOccupiedCells())
       {
-        if (_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking)
+        if ((_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking) || 
+          (_propsGrid[cell.X, cell.Y] != null && _propsGrid[cell.X, cell.Y].Blocking))
         {
           Node2D explanationMarkInstance = GD.Load<PackedScene>(_explanationMarkScenePath).Instantiate() as Node2D;
           explanationMarkInstance!.GlobalPosition = GlobalFunctions.CellToGlobalPosition(cell, 1, 1, new Vector2I(0, 0));
@@ -335,6 +352,7 @@ public partial class World : Node2D
     }
 
     _gridOverlay.SetTerrain(_terrainGrid);
+    _gridOverlay.SetProps(_propsGrid);
   }
 
   private void StartPlaying()
@@ -365,10 +383,11 @@ public partial class World : Node2D
       Win();
   }
 
-  private Tuple<TerrainInfo[,], UnitInfo[,]> LoadLevel(string levelId)
+  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadLevel(string levelId)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     TerrainInfo[,] terrainGrid = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    PropInfo[,] propsGrid = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     Dictionary levelData = (Dictionary)_levelsData[levelId];
     Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
@@ -387,28 +406,30 @@ public partial class World : Node2D
       mainCellsUnitGrid[x, y] = unitInfo;
     }
 
-    return new Tuple<TerrainInfo[,], UnitInfo[,]>(terrainGrid, mainCellsUnitGrid);
+    return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrainGrid, propsGrid, mainCellsUnitGrid);
   }
 
-  private Tuple<TerrainInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty)
+  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty)
   {
-    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty);
-    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain);
-    return new Tuple<TerrainInfo[,], UnitInfo[,]>(terrain, units);
+    // Only place a limited amount of blocking terrains and props. So there is enough room for units.
+    int expectedUnitSlots = difficulty;
+    int requiredFreeTilesPerHalf = expectedUnitSlots + 10;
+    int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+    int maxBlockingPerHalf = halfTiles - requiredFreeTilesPerHalf;
+
+    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingPerHalf);
+    PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingPerHalf, terrain);
+    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props);
+    return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrain, props, units);
   }
 
-  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty)
+  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingPerHalf)
   {
     TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
         terrain[x, y] = GlobalConstants.TerrainsData["grass"];
-
-    int expectedUnits = difficulty;
-    int requiredFreeTilesPerHalf = expectedUnits + 10;
-    int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
-    int maxBlockingPerHalf = halfTiles - requiredFreeTilesPerHalf;
 
     FastNoiseLite mountainNoise = new();
     mountainNoise.Seed = _rng.Next();
@@ -453,7 +474,129 @@ public partial class World : Node2D
     return terrain;
   }
 
-  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid)
+  private PropInfo[,] LoadRandomLevelProps(int difficulty, int maxBlockingPerHalf, TerrainInfo[,] terrainGrid)
+  {
+    PropInfo[,] props = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+
+    // Count already blocking terrain per half
+    int midY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
+    int topHalfBlocking = 0;
+    int bottomHalfBlocking = 0;
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+        if (terrainGrid[x, y] != null && terrainGrid[x, y].Blocking)
+        {
+          if (y < midY) topHalfBlocking++;
+          else bottomHalfBlocking++;
+        }
+
+    bool CanPlaceBlocking(int x, int y)
+    {
+      int blocking = y < midY ? topHalfBlocking : bottomHalfBlocking;
+      return blocking < maxBlockingPerHalf;
+    }
+
+    void PlaceBlocking(int x, int y)
+    {
+      if (y < midY) topHalfBlocking++;
+      else bottomHalfBlocking++;
+    }
+
+    // Rocks
+    int rockCount = _rng.Next(0, 4);
+    for (int i = 0; i < rockCount; i++)
+    {
+      List<Vector2I> candidates = new();
+      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+          if (props[x, y] == null &&
+              terrainGrid[x, y] != null &&
+              (terrainGrid[x, y].Types.Contains("vegetation") || terrainGrid[x, y].Types.Contains("rocky")) &&
+              CanPlaceBlocking(x, y))
+            candidates.Add(new Vector2I(x, y));
+
+      if (candidates.Count == 0) break;
+      Vector2I cell = candidates[_rng.Next(candidates.Count)];
+      props[cell.X, cell.Y] = GlobalConstants.PropsData["rock"];
+      PlaceBlocking(cell.X, cell.Y);
+    }
+
+    // Bushes
+    int bushCount = _rng.Next(0, 4);
+    for (int i = 0; i < bushCount; i++)
+    {
+      List<Vector2I> candidates = new();
+      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+          if (props[x, y] == null &&
+              terrainGrid[x, y] != null &&
+              terrainGrid[x, y].Types.Contains("vegetation") &&
+              CanPlaceBlocking(x, y))
+            candidates.Add(new Vector2I(x, y));
+
+      if (candidates.Count == 0) break;
+      Vector2I cell = candidates[_rng.Next(candidates.Count)];
+      props[cell.X, cell.Y] = GlobalConstants.PropsData["bush"];
+      PlaceBlocking(cell.X, cell.Y);
+    }
+
+    // Fire (non-blocking, no need to check limit)
+    bool spawnFire = _rng.NextDouble() < 0.25;
+    if (spawnFire)
+    {
+      List<Vector2I> fireCandidates = new();
+      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+          if (props[x, y] == null &&
+              terrainGrid[x, y] != null &&
+              terrainGrid[x, y].Types.Contains("vegetation"))
+            fireCandidates.Add(new Vector2I(x, y));
+
+      if (fireCandidates.Count > 0)
+      {
+        Vector2I origin = fireCandidates[_rng.Next(fireCandidates.Count)];
+        int fireSize = _rng.Next(2, 6);
+
+        List<Vector2I> fireCluster = new() { origin };
+        List<Vector2I> frontier = new() { origin };
+
+        while (fireCluster.Count < fireSize && frontier.Count > 0)
+        {
+          Vector2I current = frontier[_rng.Next(frontier.Count)];
+          frontier.Remove(current);
+
+          Vector2I[] neighbors = {
+                    new(current.X + 1, current.Y),
+                    new(current.X - 1, current.Y),
+                    new(current.X, current.Y + 1),
+                    new(current.X, current.Y - 1),
+                };
+
+          foreach (Vector2I neighbor in neighbors)
+          {
+            if (fireCluster.Count >= fireSize) break;
+            if (neighbor.X < 0 || neighbor.Y < 0 ||
+                neighbor.X >= GlobalConstants.GridSize.X ||
+                neighbor.Y >= GlobalConstants.GridSize.Y) continue;
+            if (fireCluster.Contains(neighbor)) continue;
+            if (props[neighbor.X, neighbor.Y] != null) continue;
+            if (terrainGrid[neighbor.X, neighbor.Y] == null ||
+                !terrainGrid[neighbor.X, neighbor.Y].Types.Contains("vegetation")) continue;
+
+            fireCluster.Add(neighbor);
+            frontier.Add(neighbor);
+          }
+        }
+
+        foreach (Vector2I cell in fireCluster)
+          props[cell.X, cell.Y] = GlobalConstants.PropsData["fire"];
+      }
+    }
+
+    return props;
+  }
+
+  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
@@ -466,22 +609,40 @@ public partial class World : Node2D
 
     while (budget > 0)
     {
-      int stage = rng.RandiRange(0, maxStage);
-
-      List<UnitInfo> possibleUnits = _unitsPerStage[stage];
-      if (possibleUnits.Count == 0)
-        continue;
-
-      UnitInfo unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
+      // It is possible for a randomly chosen unit to not have any possible positions on the grid due to terrain or props/
+      // If that happens it can only be because of multi celled units, because there are always enough non-blocking tiles on each level
+      // Therefore we simply retry selecting random units until we find one that does have a possible location.
+      UnitInfo unitInfo = GlobalConstants.UnitsData["turret"];
+      List<Vector2I> possiblePositions = new List<Vector2I>();
       int cost = unitInfo.OccupiedCells.Count;
-      if (cost > budget) // TODO AKN (unitInfo.Cost > budget)
-        continue;
+      int nrOfTries = 0;
+      while (possiblePositions.Count == 0 && nrOfTries < 10)
+      {
+        nrOfTries++;
+        int stage = rng.RandiRange(0, maxStage);
 
-      // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
-      List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, unitInfo.OccupiedCells, false);
+        List<UnitInfo> possibleUnits = _unitsPerStage[stage];
+        if (possibleUnits.Count == 0)
+          continue;
+
+        unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
+        cost = unitInfo.OccupiedCells.Count;
+        if (cost > budget) // TODO AKN (unitInfo.Cost > budget)
+          continue;
+
+        // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
+        possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
+      }
+
+      // We failed finding a different unit
+      if (nrOfTries >= 10)
+      {
+        possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
+        GD.Print("Unit placement failed. Placing turret instead.");
+      }
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || unitInfo.Id == "bulwark")
+      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || unitInfo.Id == "bulwark" || unitInfo.Id == "berserker")
       {
         // Position these units in the front portion of the grid
         List<Vector2I> frontPositions = new List<Vector2I>();
@@ -584,6 +745,7 @@ public partial class World : Node2D
 
   private void Reset()
   {
+    // Reset units
     foreach (Unit unit in _units)
       unit.QueueFree();
     _units.Clear();
@@ -596,13 +758,21 @@ public partial class World : Node2D
         unit.QueueFree();
     }
     _removedUnits.Clear();
-
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
+    // Reset terrain
     foreach (Terrain terrain in _terrainGrid)
-      terrain.QueueFree();
+      if (IsInstanceValid(terrain))
+        terrain.QueueFree();
     _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _gridOverlay.SetTerrain(_terrainGrid);
+
+    // Reset props
+    foreach (Prop prop in _propsGrid)
+      if (IsInstanceValid(prop))
+        prop.QueueFree();
+    _propsGrid = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _gridOverlay.SetProps(_propsGrid);
 
     foreach (Node2D explanationMark in _explanationMarks)
     {
@@ -856,6 +1026,11 @@ public partial class World : Node2D
       foreach (Vector2I cell in terrain.GetOccupiedCells())
         _terrainGrid[cell.X, cell.Y] = null!;
     }
+    else if (gridEntity is Prop prop)
+    {
+      foreach (Vector2I cell in prop.GetOccupiedCells())
+        _propsGrid[cell.X, cell.Y] = null!;
+    }
   }
 
   private void OnUnitRemoved(Unit unit)
@@ -874,10 +1049,10 @@ public partial class World : Node2D
 
   private void RemoveUnit(Unit unit)
   {
-    if (_unitsGuiInfo.selectedUnit == unit)
+    if (_infoGui.GetSelectedUnit() == unit)
     {
-      _unitsGuiInfo.ResetSelectedUnit();
-      _selectedUnitLayer.Clear();
+      _infoGui.Reset();
+      _selectedCellsLayer.Clear();
     }
 
     if (_playing)
@@ -913,10 +1088,12 @@ public partial class World : Node2D
   {
     if (gridEntity is Unit unit)
     {
-      if (_unitsGuiInfo.selectedUnit == unit)
+      if (_infoGui.GetSelectedUnit() == unit)
       {
-        _selectedUnitLayer.Clear();
-        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+        _selectedCellsLayer.Clear();
+        _selectedCellsLayer.ShowCells(unit.GetOccupiedCells());
+        _infoGui.SetSelectedInfo(unit, _terrainGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], 
+          _propsGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], unit.OccupiedMainCell);
       }
       if (_activeUnit == unit)
       {
@@ -983,6 +1160,29 @@ public partial class World : Node2D
       {
         _terrainGrid[cell.X, cell.Y] = terrain;
       }
+
+      if (_infoGui.GetSelectedCell() == oldCell)
+        _infoGui.SetSelectedInfo(_unitsGrid[oldCell.X, oldCell.Y], _terrainGrid[oldCell.X, oldCell.Y],
+          _propsGrid[oldCell.X, oldCell.Y], oldCell);
+    }
+    else if (gridEntity is Prop prop)
+    {
+      List<Vector2I> removedCells = new List<Vector2I>();
+      foreach (Vector2I cell in prop.OccupiedCells)
+      {
+        Vector2I removedCell = new Vector2I(oldCell.X + cell.X, oldCell.Y + cell.Y);
+        if (_propsGrid[removedCell.X, removedCell.Y] == prop)  // Swapping can make it so a new terrain is on this terrain's old position
+          _propsGrid[removedCell.X, removedCell.Y] = null!;
+        removedCells.Add(removedCell);
+      }
+      foreach (Vector2I cell in prop.GetOccupiedCells())
+      {
+        _propsGrid[cell.X, cell.Y] = prop;
+      }
+
+      if (_infoGui.GetSelectedCell() == oldCell)
+        _infoGui.SetSelectedInfo(_unitsGrid[oldCell.X, oldCell.Y], _terrainGrid[oldCell.X, oldCell.Y],
+          _propsGrid[oldCell.X, oldCell.Y], oldCell);
     }
   }
 
@@ -1024,16 +1224,29 @@ public partial class World : Node2D
         _terrainGrid[cell.X, cell.Y] = terrain;
       }
     }
+    else if (gridEntity is Prop prop)
+    {
+      foreach (Vector2I cell in prop.GetOccupiedCells())
+      {
+        _propsGrid[cell.X, cell.Y] = prop;
+      }
+    }
+
+    if (_infoGui.GetSelectedCell() == gridEntity.OccupiedMainCell)
+      _infoGui.SetSelectedInfo(_unitsGrid[gridEntity.OccupiedMainCell.X, gridEntity.OccupiedMainCell.Y], _terrainGrid[gridEntity.OccupiedMainCell.X, gridEntity.OccupiedMainCell.Y],
+        _propsGrid[gridEntity.OccupiedMainCell.X, gridEntity.OccupiedMainCell.Y], gridEntity.OccupiedMainCell);
   }
 
   private void OnGridEntitySizeChanged(GridEntity gridEntity, Godot.Collections.Array<Vector2I> oldOccupiedCells)
   {
     if (gridEntity is Unit unit)
     {
-      if (_unitsGuiInfo.selectedUnit == unit)
+      if (_infoGui.GetSelectedUnit() == unit)
       {
-        _selectedUnitLayer.Clear();
-        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
+        _selectedCellsLayer.Clear();
+        _selectedCellsLayer.ShowCells(unit.GetOccupiedCells());
+        _infoGui.SetSelectedInfo(unit, _terrainGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y],
+          _propsGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], unit.OccupiedMainCell);
       }
       if (_activeUnit == unit)
       {
@@ -1078,6 +1291,18 @@ public partial class World : Node2D
       foreach (Vector2I cell in terrain.GetOccupiedCells())
       {
         _terrainGrid[cell.X, cell.Y] = terrain;
+      }
+    }
+    else if (gridEntity is Prop prop)
+    {
+      foreach (Vector2I cell in oldOccupiedCells)
+      {
+        _propsGrid[cell.X, cell.Y] = null!;
+      }
+
+      foreach (Vector2I cell in prop.GetOccupiedCells())
+      {
+        _propsGrid[cell.X, cell.Y] = prop;
       }
     }
   }
@@ -1246,6 +1471,7 @@ public partial class World : Node2D
       string description = (string)terrainData["description"];
       string rarity = (string)terrainData["rarity"];
       bool blocking = (bool)terrainData["blocking"];
+      List<string> types = terrainData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
 
       Godot.Collections.Array cells = (Godot.Collections.Array)terrainData["cells"];
       List<Vector2I> occupiedCells = new();
@@ -1257,7 +1483,45 @@ public partial class World : Node2D
       }
 
       GlobalConstants.TerrainsData[terrainId] = new TerrainInfo(terrainId, displayName, texture, scenePath, 
-        occupiedCells, description, rarity, blocking);
+        occupiedCells, description, rarity, blocking, types);
+    }
+  }
+
+  private void ParsePropsJson()
+  {
+    string propsJson = FileAccess.Open("res://scripts/props/props.json", FileAccess.ModeFlags.Read).GetAsText();
+    Variant parsed = Json.ParseString(propsJson);
+    Dictionary propsData = (Dictionary)parsed;
+    foreach (KeyValuePair<Variant, Variant> entry in propsData)
+    {
+      string propsId = entry.Key.ToString();
+      Dictionary propData = (Dictionary)entry.Value;
+
+      string displayName = (string)propData["display_name"];
+      string texturePath = (string)propData["texture"];
+      Texture2D texture = GD.Load<Texture2D>(texturePath);
+      string scenePath = (string)propData["scene"];
+      int health = (int)propData["health"];
+      int damage = (int)propData["damage"];
+      int armor = (int)propData["armor"];
+      string description = (string)propData["description"];
+      string rarity = (string)propData["rarity"];
+      bool damagable = (bool)propData["damagable"];
+      bool movable = (bool)propData["movable"];
+      bool blocking = (bool)propData["blocking"];
+      List<string> types = propData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
+
+      Godot.Collections.Array cells = (Godot.Collections.Array)propData["cells"];
+      List<Vector2I> occupiedCells = new();
+      foreach (Godot.Collections.Array cell in cells)
+      {
+        int x = (int)cell[0];
+        int y = (int)cell[1];
+        occupiedCells.Add(new Vector2I(x, y));
+      }
+
+      GlobalConstants.PropsData[propsId] = new PropInfo(propsId, displayName, texture, scenePath,
+        occupiedCells, health, health, damage, armor, description, rarity, damagable, movable, blocking, types);
     }
   }
 
@@ -1302,7 +1566,7 @@ public partial class World : Node2D
           levelId = "nuke";
         }
 
-        Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
+        Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
 
         nodeId = layer.ToString() + '_' + nodeName;
         Levels[nodeId] = new LevelInfo(
@@ -1317,8 +1581,9 @@ public partial class World : Node2D
             rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
             coinsReward: _coinsPerWin,
             nextNodes: new List<string>(),
-            units: [level.Item2 ],
-            terrains: [level.Item1]
+            terrains: [level.Item1],
+            props: [level.Item2],
+            units: [level.Item3]
         );
         layerNodes.Add(Levels[nodeId]);
         AmountOfNodesPerLayer[layer] = 1;
@@ -1333,12 +1598,14 @@ public partial class World : Node2D
           {
             int numGauntletLevels = 4;
             List<TerrainInfo[,]> gauntletTerrains = new List<TerrainInfo[,]>();
+            List<PropInfo[,]> gauntletProps = new List<PropInfo[,]>();
             List<UnitInfo[,]> gauntletUnits = new List<UnitInfo[,]>();
             for (int i = 0; i < numGauntletLevels; i++)
             {
-              Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
+              Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
               gauntletTerrains.Add(level.Item1);
-              gauntletUnits.Add(level.Item2);
+              gauntletProps.Add(level.Item2);
+              gauntletUnits.Add(level.Item3);
             }
 
             List<UnitInfo> rewardUnits = gauntletUnits
@@ -1362,14 +1629,15 @@ public partial class World : Node2D
                 rewards: rewardUnits,
                 coinsReward: _coinsPerWin * 5,
                 nextNodes: new List<string>(),
-                units: gauntletUnits,
-                terrains: gauntletTerrains
+                terrains: gauntletTerrains,
+                props: gauntletProps,
+                units: gauntletUnits
             );
           }
           else
           {
             nodeName = $"L{layer + 1}_N{node + 1}";
-            Tuple<TerrainInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer + 1);
+            Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer + 1);
             Levels[nodeId] = new LevelInfo(
                 id: nodeId,
                 name: nodeName,
@@ -1382,8 +1650,9 @@ public partial class World : Node2D
                 rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
                 coinsReward: _coinsPerWin,
                 nextNodes: new List<string>(),
-                units: [level.Item2],
-                terrains: [level.Item1]
+                terrains: [level.Item1],
+                props: [level.Item2],
+                units: [level.Item3]
             );
           }
           layerNodes.Add(Levels[nodeId]);
@@ -1602,7 +1871,7 @@ public partial class World : Node2D
     {
       _worldUi.GetParent<ScrollContainer>().Hide();
       _activeLevel = levelInfo;
-      StartLevel(levelInfo.Terrains[0], levelInfo.Units[0]);
+      StartLevel(levelInfo.Terrains[0], levelInfo.Props[0], levelInfo.Units[0]);
     }
   }
 
@@ -1615,7 +1884,7 @@ public partial class World : Node2D
     UpdateCoins(-levelRedoCost);
     _worldUi.GetParent<ScrollContainer>().Hide();
     _activeLevel = levelInfo;
-    StartLevel(levelInfo.Terrains[0], levelInfo.Units[0]);
+    StartLevel(levelInfo.Terrains[0], levelInfo.Props[0], levelInfo.Units[0]);
   }
 
   private void OnRedoCanceled()
@@ -1685,27 +1954,28 @@ public partial class World : Node2D
         mouse.ButtonIndex == MouseButton.Left &&
         mouse.Pressed)
     {
+      Control hovered = GetViewport().GuiGetHoveredControl();
+      if (hovered is Button || hovered is MenuButton)
+        return;
+
       Vector2 mousePos = mouse.Position;
       Vector2I cell = _gridOverlay.GetCellUnderMouse(mousePos) - new Vector2I(1, 1);
 
       if (!GlobalFunctions.IsCellInsideGrid(cell))
       {
-        _unitsGuiInfo.ResetSelectedUnit();
-        _selectedUnitLayer.Clear();
+        _infoGui.Reset();
+        _selectedCellsLayer.Clear();
         return;
-      }
-
-      Unit unit = _unitsGrid[cell.X, cell.Y];
-      if (unit != null)
-      {
-        _unitsGuiInfo.SetSelectedUnit(unit);
-        _selectedUnitLayer.Clear();
-        _selectedUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
       else
       {
-        _unitsGuiInfo.ResetSelectedUnit();
-        _selectedUnitLayer.Clear();
+        _infoGui.SetSelectedInfo(_unitsGrid[cell.X, cell.Y], _terrainGrid[cell.X, cell.Y], _propsGrid[cell.X, cell.Y], cell);
+        _selectedCellsLayer.Clear();
+
+        if (_unitsGrid[cell.X, cell.Y] != null)
+          _selectedCellsLayer.ShowCells(_unitsGrid[cell.X, cell.Y].GetOccupiedCells());
+        else
+          _selectedCellsLayer.ShowCells([cell]);
       }
     }
   }
@@ -1738,10 +2008,11 @@ public partial class World : Node2D
     {
       foreach (Vector2I cell in unit.GetOccupiedCells())
       {
-        if (_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking)
+        if ((_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking) ||
+          (_propsGrid[cell.X, cell.Y] != null && _propsGrid[cell.X, cell.Y].Blocking))
         {
           ClearMessagePanel();
-          _message.Text = "You have units placed on blocking terrain. Please move those units before starting the level.";
+          _message.Text = "You have units placed on blocking terrain or blocking props. Please move those units before starting the level.";
           Button btn = new Button();
           btn.Text = "Okay";
           btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
@@ -1776,7 +2047,7 @@ public partial class World : Node2D
       {
         removedZombies.Add(unit);
 
-        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, _terrainGrid, unit.OccupiedCells, unit.Side);
+        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, _terrainGrid, _propsGrid, unit.OccupiedCells, unit.Side);
         if (spawnCell == null)
           continue;
 
@@ -1846,7 +2117,14 @@ public partial class World : Node2D
 
     // Call turn end function of every unit
     foreach (Unit unit in _units)
-      unit.TurnEnd(_unitsGrid, _terrainGrid, _units, _removedUnits);
+      unit.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+
+    // Call turn end function of every prop
+    foreach (Prop prop in _propsGrid)
+    {
+      if (prop != null && IsInstanceValid(prop))
+        prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+    }
   }
 
   public void UpdateCoins(int amount)
@@ -1958,6 +2236,6 @@ public partial class World : Node2D
   {
     Reset();
     _messagePanel.Hide();
-    StartLevel(_activeLevel.Terrains[_activeGauntletLevelIndex], _activeLevel.Units[_activeGauntletLevelIndex]);
+    StartLevel(_activeLevel.Terrains[_activeGauntletLevelIndex], _activeLevel.Props[_activeGauntletLevelIndex], _activeLevel.Units[_activeGauntletLevelIndex]);
   }
 }

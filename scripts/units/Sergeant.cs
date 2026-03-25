@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Sergeant : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
@@ -34,7 +34,7 @@ public partial class Sergeant : Unit
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     if (targets == null || targets.Count == 0)
       return;

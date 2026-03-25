@@ -14,6 +14,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
 	private Unit[,] _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Terrain[,] _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+	private Prop[,] _propsGrid = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
 
   private bool _interactionLocked = false;
@@ -157,7 +158,11 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 			// Cannot place if this cell contains blocking terrain
 			if (_terrainGrid[cell.X + occupiedCell.X, cell.Y + occupiedCell.Y] != null && _terrainGrid[cell.X + occupiedCell.X, cell.Y + occupiedCell.Y].Blocking)
 				return false;
-		}
+
+      // Cannot place if this cell contains blocking prop
+      if (_propsGrid[cell.X + occupiedCell.X, cell.Y + occupiedCell.Y] != null && _propsGrid[cell.X + occupiedCell.X, cell.Y + occupiedCell.Y].Blocking)
+        return false;
+    }
 
 		return true;
 	}
@@ -266,5 +271,11 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	{
 		// Shallow copy
     _terrainGrid = (Terrain[,])terrainGrid.Clone();
+  }
+
+  public void SetProps(Prop[,] propsGrid)
+  {
+    // Shallow copy
+    _propsGrid = (Prop[,])propsGrid.Clone();
   }
 }

@@ -14,7 +14,7 @@ public partial class Priest : Unit
     _unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     foreach (Vector2I target in targets)
     {
@@ -26,7 +26,7 @@ public partial class Priest : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Pick random unit from dead units
     if (deadUnits.Count == 0)
@@ -44,7 +44,7 @@ public partial class Priest : Unit
     UnitInfo unitInfo = _unitToBeRevived.GetStartInfo();
 
     // Spawn unit at random location
-    List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, terrainGrid, unitInfo.OccupiedCells, Side);
+    List<Vector2I> possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, Side);
 
     // Now that the unit has been revided it can be removed from the dead units list
     if (IsInstanceValid(_unitToBeRevived))

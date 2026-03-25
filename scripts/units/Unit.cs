@@ -99,7 +99,7 @@ public partial class Unit : GridEntity
 		return true;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
 	{
 		foreach (Vector2I target in targets)
 		{
@@ -108,10 +108,16 @@ public partial class Unit : GridEntity
 			{
 				targetUnit.ChangeHealth(-Damage, this);
       }
+
+      Prop targetProp = propsGrid[target.X, target.Y];
+      if (targetProp != null)
+      {
+        targetProp.ChangeHealth(-Damage, this);
+      }
     }
   }
 
-	public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+	public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
     if (Side)
     {
@@ -139,7 +145,7 @@ public partial class Unit : GridEntity
 		return [];
   }
 
-  public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Reset units side to original side upon turn end
     if (SwitchedSides)

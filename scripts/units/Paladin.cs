@@ -13,9 +13,9 @@ public partial class Paladin : Unit
     _globalSignals.HealingReceived += OnUnitReceivedHealing;
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> result = base.GetTargets(unitsGrid, terrainGrid, units, deadUnits);
+    List<Vector2I> result = base.GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
     if (result.Count == 0)
       return result;
     Vector2I primary = result[0];

@@ -1,6 +1,7 @@
 using Godot;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 public partial class GlobalFunctions : Node
 {
@@ -65,13 +66,14 @@ public partial class GlobalFunctions : Node
 
   // Type U unitsGrid because it can be of type Unit[,] or UnitInfo[,] all we do is check for null
   // Type T terrainGrid because it can be of type Terrain[,] or TerrainInfo[,] all we do is check for null and blocking
-  public static List<Vector2I> GetPossibleUnitLocations<U, T>(U[,] unitsGrid, T[,] terrainGrid, List<Vector2I> occupiedCells, bool side)
+  // Type P propsGrid because it can be of type Prop[,] or PropInfo[,] all we do is check for null and blocking
+  public static List<Vector2I> GetPossibleUnitLocations<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
   {
     int startY, endY;
     if (side)
     {
       startY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
-      endY = GlobalConstants.GridSize.Y - 1;
+      endY = GlobalConstants.GridSize.Y;
     }
     else
     {
@@ -79,25 +81,28 @@ public partial class GlobalFunctions : Node
       endY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
     }
 
+    bool IsTerrainBlocking(T t) => t is Terrain terrain && terrain.Blocking ||
+                                   t is TerrainInfo terrainInfo && terrainInfo.Blocking;
+
+    bool IsPropBlocking(P p) => p is Prop prop && prop.Blocking ||
+                                p is PropInfo propInfo && propInfo.Blocking;
+
+    bool IsBlocked(int x, int y)
+    {
+      if (x < 0 || x >= GlobalConstants.GridSize.X) return true;
+      if (y < startY || y >= endY) return true;
+      if (unitsGrid[x, y] != null) return true;
+      if (terrainGrid[x, y] != null && IsTerrainBlocking(terrainGrid[x, y])) return true;
+      if (propsGrid[x, y] != null && IsPropBlocking(propsGrid[x, y])) return true;
+      return false;
+    }
+
     List<Vector2I> possiblePositions = new();
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = startY; y < endY; y++)
       {
-        bool canPlace = true;
-        foreach (Vector2I rel in occupiedCells)
-        {
-          int checkX = x + rel.X;
-          int checkY = y + rel.Y;
-          if (checkX < 0 || checkY < startY || checkX >= GlobalConstants.GridSize.X || checkY >= endY || unitsGrid[checkX, checkY] != null || 
-            (terrainGrid[checkX, checkY] != null && 
-            ((terrainGrid[checkX, checkY] is Terrain terrain && terrain.Blocking) ||
-            (terrainGrid[checkX, checkY] is TerrainInfo terrainInfo && terrainInfo.Blocking))))
-          {
-            canPlace = false;
-            break;
-          }
-        }
+        bool canPlace = occupiedCells.All(rel => !IsBlocked(x + rel.X, y + rel.Y));
         if (canPlace)
           possiblePositions.Add(new Vector2I(x, y));
       }
@@ -106,9 +111,9 @@ public partial class GlobalFunctions : Node
     return possiblePositions;
   }
 
-  public static Vector2I? GetRandomUnitSpawnLocation<U, T>(U[,] unitsGrid, T[,] terrainGrid, List<Vector2I> occupiedCells, bool side)
+  public static Vector2I? GetRandomUnitSpawnLocation<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
   {
-    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, terrainGrid, occupiedCells, side);
+    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, terrainGrid, propsGrid, occupiedCells, side);
 
     if (possibleLocations.Count == 0)
       return null!;
@@ -117,5 +122,31 @@ public partial class GlobalFunctions : Node
     RandomNumberGenerator rng = new RandomNumberGenerator();
     rng.Randomize();
     return possibleLocations[rng.RandiRange(0, possibleLocations.Count - 1)];
+  }
+
+  public static bool CanMoveToCell(GridEntity gridEntity, Vector2I targetLocation, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  {
+    foreach (Vector2I cell in gridEntity.OccupiedCells)
+    {
+      Vector2I checkLocation = targetLocation + cell;
+      
+      // Check if location is inside the grid
+      if (!IsCellInsideGrid(checkLocation))
+        return false;
+      
+      // Check if there are units at the target location
+      if (unitsGrid[checkLocation.X, checkLocation.Y] != null && unitsGrid[checkLocation.X, checkLocation.Y] != gridEntity)
+        return false;
+
+      // Check if there is blocking terrain at the target location
+      if (terrainGrid[checkLocation.X, checkLocation.Y] != null && terrainGrid[checkLocation.X, checkLocation.Y] != gridEntity && terrainGrid[checkLocation.X, checkLocation.Y].Blocking)
+        return false;
+
+      // Check if there is blocking props at the target location
+      if (propsGrid[checkLocation.X, checkLocation.Y] != null && propsGrid[checkLocation.X, checkLocation.Y] != gridEntity && propsGrid[checkLocation.X, checkLocation.Y].Blocking)
+        return false;
+    }
+
+    return true;
   }
 }

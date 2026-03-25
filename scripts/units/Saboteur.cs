@@ -5,7 +5,7 @@ using System.Linq;
 
 public partial class Saboteur : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
     for (int dx = -2; dx <= 2; dx++)
@@ -28,16 +28,14 @@ public partial class Saboteur : Unit
 
     if (Side)
     {
-      if (OccupiedMainCell.Y - 1 < 0 || unitsGrid[OccupiedMainCell.X, OccupiedMainCell.Y - 1] != null ||
-        (terrainGrid[OccupiedMainCell.X, OccupiedMainCell.Y - 1] != null && terrainGrid[OccupiedMainCell.X, OccupiedMainCell.Y - 1].Blocking))
+      if (!GlobalFunctions.CanMoveToCell(this, new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y - 1), unitsGrid, terrainGrid, propsGrid))
       {
         return result;
       }
     }
     else
     {
-      if (OccupiedMainCell.Y + 1 >= GlobalConstants.GridSize.Y || unitsGrid[OccupiedMainCell.X, OccupiedMainCell.Y + 1] != null ||
-        (terrainGrid[OccupiedMainCell.X, OccupiedMainCell.Y + 1] != null && terrainGrid[OccupiedMainCell.X, OccupiedMainCell.Y + 1].Blocking))
+      if (!GlobalFunctions.CanMoveToCell(this, new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y + 1), unitsGrid, terrainGrid, propsGrid))
       {
         return result;
       }
@@ -45,7 +43,7 @@ public partial class Saboteur : Unit
     return [];
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     if (targets.Count == 0)
     {

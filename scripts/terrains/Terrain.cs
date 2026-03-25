@@ -19,6 +19,7 @@ public partial class Terrain : GridEntity
     Description = terrainInfo.Description;
     Rarity = terrainInfo.Rarity;
     Blocking = terrainInfo.Blocking;
+    Types = terrainInfo.Types;
 
     StartCell = startCell;
     StartTerrainInfo = terrainInfo;
@@ -27,7 +28,7 @@ public partial class Terrain : GridEntity
 
 	public TerrainInfo GetInfo()
 	{
-		return new TerrainInfo(Id, Name, Texture, ScenePath, OccupiedCells, Description, Rarity, Blocking);
+		return new TerrainInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Description, Rarity, Blocking, Types);
 	}
 
   public TerrainInfo GetStartInfo()

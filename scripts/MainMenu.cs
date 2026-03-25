@@ -189,25 +189,57 @@ public partial class MainMenu : Control
     foreach (var level in _world.Levels)
     {
       var unitGrids = new Godot.Collections.Array();
-      foreach (UnitInfo[,] units in level.Value.Units)
+      var terrainGrids = new Godot.Collections.Array();
+      var propGrids = new Godot.Collections.Array();
+      for (int gauntletIndex = 0; gauntletIndex < level.Value.Units.Count; gauntletIndex++)
       {
-        var unitGrid = new Godot.Collections.Array();
+        var unitsGrid = new Godot.Collections.Array();
+        var terrainGrid = new Godot.Collections.Array();
+        var propsGrid = new Godot.Collections.Array();
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
         {
           for (int x = 0; x < GlobalConstants.GridSize.X; x++)
           {
-            UnitInfo unit = units[x, y];
-            if (unit == null) continue;
-            var unitData = new Godot.Collections.Dictionary()
+            // Save units
+            UnitInfo unit = level.Value.Units[gauntletIndex][x, y];
+            if (unit != null)
             {
-                { "x", x },
-                { "y", y },
-                { "id", unit.Id },
-            };
-            unitGrid.Add(unitData);
+              unitsGrid.Add(new Godot.Collections.Dictionary()
+              {
+                  { "x", x },
+                  { "y", y },
+                  { "id", unit.Id },
+              });
+            }
+
+            // Save terrain
+            TerrainInfo terrain = level.Value.Terrains[gauntletIndex][x, y];
+            if (terrain != null)
+            {
+              terrainGrid.Add(new Godot.Collections.Dictionary()
+              {
+                  { "x", x },
+                  { "y", y },
+                  { "id", terrain.Id },
+              });
+            }
+
+            // Save props
+            PropInfo prop = level.Value.Props[gauntletIndex][x, y];
+            if (prop != null)
+            {
+              propsGrid.Add(new Godot.Collections.Dictionary()
+              {
+                  { "x", x },
+                  { "y", y },
+                  { "id", prop.Id },
+              });
+            }
           }
         }
-        unitGrids.Add(unitGrid);
+        unitGrids.Add(unitsGrid);
+        terrainGrids.Add(terrainGrid);
+        propGrids.Add(propsGrid);
       }
 
       var rewardsList = new Godot.Collections.Array();
@@ -231,6 +263,8 @@ public partial class MainMenu : Control
             { "rewards", rewardsList },
             { "coinsReward", level.Value.CoinsReward},
             { "nextNodes", nextNodesList },
+            { "terrains", terrainGrids },
+            { "props", propGrids },
             { "units", unitGrids },
         };
       levelsData[level.Key] = levelData;
@@ -325,6 +359,38 @@ public partial class MainMenu : Control
         units.Add(grid);
       }
 
+      var terrainGrids = levelData["terrains"].AsGodotArray();
+      List<TerrainInfo[,]> terrains = new();
+      foreach (var gridEntry in terrainGrids)
+      {
+        TerrainInfo[,] grid = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+        foreach (var terrainEntry in gridEntry.AsGodotArray())
+        {
+          var terrainData = terrainEntry.AsGodotDictionary();
+          int x = terrainData["x"].AsInt32();
+          int y = terrainData["y"].AsInt32();
+          string id = terrainData["id"].AsString();
+          grid[x, y] = GlobalConstants.TerrainsData[id];
+        }
+        terrains.Add(grid);
+      }
+
+      var propGrids = levelData["props"].AsGodotArray();
+      List<PropInfo[,]> props = new();
+      foreach (var gridEntry in propGrids)
+      {
+        PropInfo[,] grid = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+        foreach (var propEntry in gridEntry.AsGodotArray())
+        {
+          var propData = propEntry.AsGodotDictionary();
+          int x = propData["x"].AsInt32();
+          int y = propData["y"].AsInt32();
+          string id = propData["id"].AsString();
+          grid[x, y] = GlobalConstants.PropsData[id];
+        }
+        props.Add(grid);
+      }
+
       _world.Levels[levelId] = new LevelInfo(
           id: levelId,
           name: levelData["name"].AsString(),
@@ -337,8 +403,9 @@ public partial class MainMenu : Control
           rewards: rewards,
           coinsReward: levelData["coinsReward"].AsInt32(),
           nextNodes: nextNodes,
-          units: units,
-          terrains: [] // todo fix
+          terrains: terrains,
+          props: props,
+          units: units
       );
     }
     _world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray();

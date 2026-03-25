@@ -8,7 +8,7 @@ public partial class Consumer : Unit
   private bool _shouldConsume = true;  // Start with a consume turn
   private int _consumedCount = 0; // number of units consumed
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     // If no targets, ensure we will attempt to consume next turn
     if (targets == null || targets.Count == 0)
@@ -68,7 +68,7 @@ public partial class Consumer : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 

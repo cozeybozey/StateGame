@@ -8,8 +8,11 @@
 [ext_resource type="Script" uid="uid://c75kv2ravi8k6" path="res://scripts/DecksHandler.cs" id="4_hlk0d"]
 [ext_resource type="Script" uid="uid://cex0prnqmtw17" path="res://scripts/OverlayLayer.cs" id="5_1lgw5"]
 [ext_resource type="Script" uid="uid://b1y5qdn52lyrt" path="res://scripts/UnitsSelectionContainer.cs" id="6_ygioq"]
+[ext_resource type="Script" uid="uid://dg2ka0dm0pdou" path="res://scripts/InfoGui.cs" id="7_nrtoj"]
 [ext_resource type="Script" uid="uid://d2aedhulpavp2" path="res://scripts/MainMenuButton.cs" id="7_ygioq"]
+[ext_resource type="Script" uid="uid://dqcxmtgcm80wn" path="res://scripts/TerrainsInfoGui.cs" id="8_7c4bj"]
 [ext_resource type="Script" uid="uid://bx3s4pdwfwle" path="res://scripts/LevelInfoContainer.cs" id="8_pdh0q"]
+[ext_resource type="Script" uid="uid://dngmuh4qb5wn1" path="res://scripts/PropsInfoGui.cs" id="9_nrtoj"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -270,100 +273,281 @@ text = "Change Deck"
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
-[node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=2040826589]
-visible = false
+[node name="InfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=635696729]
+layout_mode = 2
+script = ExtResource("7_nrtoj")
+
+[node name="Info" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1884338662]
+layout_mode = 2
+text = "Info"
+
+[node name="InfoTypeButton" type="MenuButton" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1119841916]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+text = "Unit Info"
+flat = false
+item_count = 3
+popup/item_0/text = "Unit Info"
+popup/item_0/id = 0
+popup/item_1/text = "Terrain Info"
+popup/item_1/id = 1
+popup/item_2/text = "Prop Info"
+popup/item_2/id = 2
+
+[node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=2040826589]
 layout_mode = 2
 script = ExtResource("4_d1c63")
 
-[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1387435983]
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer" unique_id=1681875231]
 layout_mode = 2
-text = "Unit Info:"
+text = "No unit selected"
 
-[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=716529401]
-layout_mode = 2
-
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Id" unique_id=887211304]
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer" unique_id=274891919]
 layout_mode = 2
 
-[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Id" unique_id=667948868]
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=716529401]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Id" unique_id=887211304]
+layout_mode = 2
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Id" unique_id=667948868]
 layout_mode = 2
 stretch_mode = 2
 
-[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1774858179]
+[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1774858179]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Health" unique_id=2130200108]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Health" unique_id=2130200108]
 layout_mode = 2
 text = "Health: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Health" unique_id=1670683559]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Health" unique_id=1670683559]
 layout_mode = 2
 
-[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1271192212]
+[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1271192212]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Damage" unique_id=1248566064]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Damage" unique_id=1248566064]
 layout_mode = 2
 text = "Damage: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Damage" unique_id=1766909245]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Damage" unique_id=1766909245]
 layout_mode = 2
 
-[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=299803042]
+[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=299803042]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Armor" unique_id=800382474]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Armor" unique_id=800382474]
 layout_mode = 2
 text = "Armor: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Armor" unique_id=550631701]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Armor" unique_id=550631701]
 layout_mode = 2
 
-[node name="Speed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1304916229]
+[node name="Speed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1304916229]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Speed" unique_id=313589130]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Speed" unique_id=313589130]
 layout_mode = 2
 text = "Speed: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Speed" unique_id=1705863185]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Speed" unique_id=1705863185]
 layout_mode = 2
 
-[node name="Cooldown" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=321577487]
+[node name="Cooldown" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=321577487]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=616350665]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=616350665]
 layout_mode = 2
 text = "Cooldown: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Cooldown" unique_id=828379318]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=828379318]
 layout_mode = 2
 
-[node name="UnitSlots" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=103124016]
+[node name="UnitSlots" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=103124016]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/UnitSlots" unique_id=470073801]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/UnitSlots" unique_id=470073801]
 layout_mode = 2
 text = "Unit slots:"
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/UnitSlots" unique_id=1282180164]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/UnitSlots" unique_id=1282180164]
 layout_mode = 2
 
-[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=1986817800]
+[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1986817800]
 layout_mode = 2
 text = "Types:"
 
-[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=724212074]
+[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=724212074]
 layout_mode = 2
 
-[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer" unique_id=236564824]
+[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=236564824]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Description" unique_id=1979432891]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Description" unique_id=1979432891]
 layout_mode = 2
 text = "Description: "
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/UnitsInfoContainer/Description" unique_id=1463439410]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Description" unique_id=1463439410]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="TerrainsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1884374630]
+visible = false
+layout_mode = 2
+script = ExtResource("8_7c4bj")
+
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer" unique_id=1669993624]
+layout_mode = 2
+text = "No terrain selected"
+
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer" unique_id=2118050977]
+visible = false
+layout_mode = 2
+
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=564343133]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Id" unique_id=442405577]
+layout_mode = 2
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Id" unique_id=1025269038]
+layout_mode = 2
+stretch_mode = 2
+
+[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=817998107]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Blocking" unique_id=134745063]
+layout_mode = 2
+text = "Blocking: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Blocking" unique_id=1167541010]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=1352360972]
+layout_mode = 2
+text = "Types:"
+
+[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=335986239]
+layout_mode = 2
+
+[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=1857647690]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Description" unique_id=529965672]
+layout_mode = 2
+text = "Description: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Description" unique_id=64524810]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="PropsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=10163695]
+visible = false
+layout_mode = 2
+script = ExtResource("9_nrtoj")
+
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer" unique_id=791514114]
+layout_mode = 2
+text = "No unit selected"
+
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer" unique_id=389329630]
+visible = false
+layout_mode = 2
+
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1393586919]
+layout_mode = 2
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Id" unique_id=547700243]
+layout_mode = 2
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Id" unique_id=1215925203]
+layout_mode = 2
+stretch_mode = 2
+
+[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=2054011970]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Health" unique_id=622049112]
+layout_mode = 2
+text = "Health: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Health" unique_id=2041440717]
+layout_mode = 2
+
+[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1459580304]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damage" unique_id=960025865]
+layout_mode = 2
+text = "Damage: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damage" unique_id=576445509]
+layout_mode = 2
+
+[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=738845525]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Armor" unique_id=613622785]
+layout_mode = 2
+text = "Armor: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Armor" unique_id=1253486363]
+layout_mode = 2
+
+[node name="Damagable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1926782364]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damagable" unique_id=1045236489]
+layout_mode = 2
+text = "Damagable: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damagable" unique_id=1373406800]
+layout_mode = 2
+
+[node name="Movable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1901263613]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Movable" unique_id=533198456]
+layout_mode = 2
+text = "Movable: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Movable" unique_id=355642953]
+layout_mode = 2
+
+[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1793046524]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Blocking" unique_id=949351745]
+layout_mode = 2
+text = "Blocking: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Blocking" unique_id=301068499]
+layout_mode = 2
+
+[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1927709251]
+layout_mode = 2
+text = "Types:"
+
+[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=581792707]
+layout_mode = 2
+
+[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=277464677]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Description" unique_id=2070621797]
+layout_mode = 2
+text = "Description: "
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Description" unique_id=1299918939]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 autowrap_mode = 2
@@ -759,6 +943,8 @@ layout_mode = 2
 text = "Cancel"
 
 [node name="Terrain" type="Node2D" parent="." unique_id=915798487]
+
+[node name="Props" type="Node2D" parent="." unique_id=912004966]
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 

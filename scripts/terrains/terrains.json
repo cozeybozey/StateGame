@@ -7,7 +7,10 @@
 		"stage": 0,
 		"blocking": true,
 		"description": "Units cannot traverse this terrain.",
-		"rarity": "common"
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
 	},
 	"grass": {
 		"display_name": "Grass",
@@ -17,7 +20,10 @@
 		"stage": 0,
 		"blocking": false,
 		"description": "Units can traverse this terrain. Can be burned.",
-		"rarity": "common"
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
 	},
 	"water": {
 		"display_name": "Water",
@@ -27,6 +33,9 @@
 		"stage": 0,
 		"blocking": true,
 		"description": "Units cannot traverse this terrain.",
-		"rarity": "common"
+		"rarity": "common",
+		"types": [
+			"liquid"
+		]
 	}
 }

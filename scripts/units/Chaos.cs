@@ -9,7 +9,7 @@ public partial class Chaos : Unit
   {
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     // Collect unique units currently on the grid (by reference)
     List<Unit> units = new List<Unit>();
@@ -39,7 +39,7 @@ public partial class Chaos : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new List<Vector2I>();
 

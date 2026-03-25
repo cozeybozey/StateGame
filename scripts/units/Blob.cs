@@ -8,7 +8,7 @@ public partial class Blob : Unit
   private Vector2I _newOccupiedMainCell;
   private List<Vector2I> _newOccupiedCells = new List<Vector2I>();
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     List<Unit> consumedUnits = new List<Unit>();
     foreach (Vector2I target in targets)
@@ -37,7 +37,7 @@ public partial class Blob : Unit
     _sprite.Scale = GlobalFunctions.CellsToDimensions(OccupiedCells);
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I currentDimensions = GlobalFunctions.CellsToDimensions(OccupiedCells);
     int currentSize = currentDimensions.X; // Can also use Y here cause unit should be square

@@ -491,7 +491,7 @@
 		"scene": "res://scenes/units/betrayer.tscn",
 		"cells": [[0, 0]],
 		"stage": 5, 
-		"cost": 0,
+		"cost": 2,
 		"description": "Change the allegiance of a random unit for one turn.",
 		"health": 10,
 		"damage": 0,

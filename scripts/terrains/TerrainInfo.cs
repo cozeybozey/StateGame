@@ -11,6 +11,7 @@ public partial class TerrainInfo : RefCounted
 	public string Description { get; set; }
 	public string Rarity { get; set; }
 	public bool Blocking { get; set; }
+	public List<string> Types { get; set; }
 
 	public TerrainInfo(
 		string id,
@@ -20,7 +21,8 @@ public partial class TerrainInfo : RefCounted
 		List<Vector2I> occupiedCells,
 		string description,
 		string rarity,
-		bool blocking
+		bool blocking,
+		List<string> types
 	)
 	{
 		Id = id;
@@ -31,5 +33,6 @@ public partial class TerrainInfo : RefCounted
 		Description = description;
     Rarity = rarity;
 		Blocking = blocking;
+		Types = types;
 	}
 }

@@ -7,7 +7,7 @@ public partial class Enabler : Unit
   private int _currentIndex = 0;
   private List<Unit> _units = new List<Unit>();
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     foreach (Vector2I target in targets)
     {
@@ -22,7 +22,7 @@ public partial class Enabler : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Predicate makes sure closest unit has to be friendly and not another enabler
     Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.Side == Side && u is not Enabler);

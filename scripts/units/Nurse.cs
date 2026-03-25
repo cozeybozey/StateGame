@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public partial class Nurse : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     foreach (Vector2I target in targets)
     {
@@ -16,7 +16,7 @@ public partial class Nurse : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I targetVector = new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y - 1);
 

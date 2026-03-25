@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public partial class Vampire : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     foreach (Vector2I target in targets)
     {

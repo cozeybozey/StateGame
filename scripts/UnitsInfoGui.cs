@@ -4,6 +4,8 @@ using Godot.Collections;
 
 public partial class UnitsInfoGui : VBoxContainer
 {
+  private Label _emptyContainer = null!;
+  private VBoxContainer _info = null!;
   private Label _name = null!;
   private TextureRect _texture = null!;
   private Label _health = null!;
@@ -14,42 +16,33 @@ public partial class UnitsInfoGui : VBoxContainer
   private Label _unitSlots = null!;
   private Label _description = null!;
   private VBoxContainer _types = null!;
-  private GlobalSignals _globalSignals = null!;
-  public Unit selectedUnit = null!;
+  public Unit? SelectedUnit = null!;
 
   public override void _Ready()
   {
-    _name = GetNode<Label>("Id/Name");
-    _texture = GetNode<TextureRect>("Id/Texture");
-    _health = GetNode<Label>("Health/Value");
-    _damage = GetNode<Label>("Damage/Value");
-    _armor = GetNode<Label>("Armor/Value");
-    _speed = GetNode<Label>("Speed/Value");
-    _cooldown = GetNode<Label>("Cooldown/Value");
-    _unitSlots = GetNode<Label>("UnitSlots/Value");
-    _description = GetNode<Label>("Description/Value");
-    _types = GetNode<VBoxContainer>("Types");
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
-  
-    _globalSignals.UnitInfoSelected += OnUnitInfoSelected;
+    _emptyContainer = GetNode<Label>("EmptyContainer");
+    _info = GetNode<VBoxContainer>("Info");
+    _name = GetNode<Label>("Info/Id/Name");
+    _texture = GetNode<TextureRect>("Info/Id/Texture");
+    _health = GetNode<Label>("Info/Health/Value");
+    _damage = GetNode<Label>("Info/Damage/Value");
+    _armor = GetNode<Label>("Info/Armor/Value");
+    _speed = GetNode<Label>("Info/Speed/Value");
+    _cooldown = GetNode<Label>("Info/Cooldown/Value");
+    _unitSlots = GetNode<Label>("Info/UnitSlots/Value");
+    _description = GetNode<Label>("Info/Description/Value");
+    _types = GetNode<VBoxContainer>("Info/Types");
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
   public override void _Process(double delta)
   {
-    if (selectedUnit != null)
-      DisplayInfo(selectedUnit.GetInfo());
+    if (SelectedUnit != null)
+      DisplayInfo(SelectedUnit.GetInfo());
   }
 
-  private void OnUnitInfoSelected(UnitInfo unitInfo)
+  public void DisplayInfo(UnitInfo unitInfo)
   {
-    ResetSelectedUnit();
-    DisplayInfo(unitInfo);
-  }
-
-  private void DisplayInfo(UnitInfo unitInfo)
-  {
-    Visible = true;
     _name.Text = unitInfo.Name;
     _texture.Texture = unitInfo.Texture;
     _health.Text = unitInfo.Health.ToString() + '/' + unitInfo.MaxHealth.ToString();
@@ -72,14 +65,31 @@ public partial class UnitsInfoGui : VBoxContainer
     }
   }
 
-  public void SetSelectedUnit(Unit unit)
+  public void SetSelectedUnit(Unit? unit)
   {
-    selectedUnit = unit;
+    SelectedUnit = unit;
+    if (SelectedUnit != null)
+    {
+      _info.Show();
+      _emptyContainer.Hide();
+    }
+    else
+    {
+      _info.Hide();
+      _emptyContainer.Show();
+    }
   }
 
   public void ResetSelectedUnit()
   {
-    selectedUnit = null!;
-    Visible = false;
+    SelectedUnit = null;
+    _info.Hide();
+    _emptyContainer.Show();
+  }
+
+  public void ShowInfo()
+  {
+    _info.Show();
+    _emptyContainer.Hide();
   }
 }

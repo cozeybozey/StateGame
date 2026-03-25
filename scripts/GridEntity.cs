@@ -105,16 +105,16 @@ public partial class GridEntity : Node2D
     return false;
   }
 
-  public virtual void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid)
+  public virtual void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
 	{
   }
 
-	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+	public virtual List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
     return [];
   }
 
-  public virtual void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, List<Unit> units, List<Unit> deadUnits)
+  public virtual void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
   }
 
@@ -148,7 +148,7 @@ public partial class GridEntity : Node2D
 			Health -= effectiveDamage;
 			displayedText = effectiveDamage.ToString();
       _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageTaken, this, damageTaken);
-      if (unit != null)
+      if (unit != null && this is Unit)  // Only track damage dealt to units
         _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageDealt, unit, damageTaken);
       if (Health <= 0)
       {
@@ -162,7 +162,7 @@ public partial class GridEntity : Node2D
       displayedText = effectiveHealing.ToString();
 			displayedColor = Colors.Green;
       _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingReceived, this, effectiveHealing);
-      if (unit != null)
+      if (unit != null && this is Unit) // Only track healing done to units
         _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveHealing);
     }
     _healthBar.Value = Health;
