@@ -83,18 +83,21 @@ public partial class World : Node2D
 
   // World generation
   public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
-  public int[] AmountOfNodesPerLayer;
+  public int[,] AmountOfNodesPerLayerPerQuadrant;
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private int _numLayers = 30;
-  private int _maxNodesPerLayer = 3;
+  private int _numLayers = 10;
+  private int _maxNodesPerLayer = 8;
   private int _buttonWidth = 75;
   private int _buttonHeight = 35;
   private LevelInfo _activeLevel = null!;
   private int _activeGauntletLevelIndex = 0;
   private int _worldUiSpacing = 100;
   private bool _openedWorldOnce = false;
+
+  private Vector2 _worldCenter;
+  private float _ringSpacing = 150f; // pixels between rings
 
   // Notify variables
   private string _explanationMarkScenePath = "res://scenes/explanation_mark.tscn";
@@ -193,7 +196,6 @@ public partial class World : Node2D
     _activeUnitLayer.OutlineColor = Colors.Yellow;
     _activeUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _targetedCellsLayer.OutlineColor = Colors.Red;
-    AmountOfNodesPerLayer = new int[_numLayers];
 
     _levelUnits = new List<UnitInfo>();
     _unitsPerStage = new List<List<UnitInfo>>(10);
@@ -213,6 +215,13 @@ public partial class World : Node2D
     _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
     _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
 
+
+    // World generation
+    _worldCenter = new Vector2(
+      _maxNodesPerLayer * _ringSpacing,
+      _numLayers * _ringSpacing
+    );
+    AmountOfNodesPerLayerPerQuadrant = new int[_numLayers, 4];
     GenerateWorld();
   }
 
@@ -553,7 +562,7 @@ public partial class World : Node2D
     }
 
     // Wild Fire
-    bool spawnWildFire = _rng.NextDouble() < 0.95;
+    bool spawnWildFire = _rng.NextDouble() < 0.15;
     propInfo = GlobalConstants.PropsData["wild_fire"];
     if (spawnWildFire)
     {
@@ -1551,153 +1560,304 @@ public partial class World : Node2D
 
   void PopulateLevels()
   {
-    List<List<LevelInfo>> layers = new();
-    int currentNodesInLayer = 1;
+    // Layer 0: single start node
+    string startId = "start";
+    Levels[startId] = CreateLevelInfo(startId, 0, 0, false, 0);
+    AmountOfNodesPerLayerPerQuadrant[0, 0] = 1;
+    AmountOfNodesPerLayerPerQuadrant[0, 1] = 1;
+    AmountOfNodesPerLayerPerQuadrant[0, 2] = 1;
+    AmountOfNodesPerLayerPerQuadrant[0, 3] = 1;
 
-    for (int layer = 0; layer < _numLayers; layer++)
+    string[] quadrants = { "north", "east", "south", "west" };
+
+    for (int q = 0; q < 4; q++)
     {
-      List<LevelInfo> layerNodes = new();
-      string nodeId;
-      string nodeName;
-      bool isBoss = (layer + 1) % 100 == 0;
+      List<List<LevelInfo>> quadrantLayers = new();
 
-      if (isBoss)
+      // Layer 1: one entry node per quadrant
+      string entryId = $"Q{q}_L1_N0";
+      Levels[entryId] = CreateLevelInfo(entryId, 1, 0, false, q);
+      Levels[startId].NextNodes.Add(entryId);
+      quadrantLayers.Add(new List<LevelInfo> { Levels[entryId] });
+      AmountOfNodesPerLayerPerQuadrant[1, q] = 1;
+
+      // Remaining layers expand like a cone
+      for (int layer = 2; layer < _numLayers; layer++)
       {
-        string levelId;
-        if (layer + 1 == 10)
-        {
-          nodeName = "Golden Turret";
-          levelId = "golden_turret";
-        }
-        else if (layer + 1 == 20)
-        {
-          nodeName = "Blob";
-          levelId = "blob";
-        }
-        else
-        {
-          nodeName = "Nuke";
-          levelId = "nuke";
-        }
+        bool isBoss = layer % 100 == 0;
+        //int nodesInLayer = isBoss ? 1 : _rng.Next(1, Mathf.Min(layer, _maxNodesPerLayer) + 1);
+        int nodesInLayer = _rng.Next(AmountOfNodesPerLayerPerQuadrant[layer - 1, q], AmountOfNodesPerLayerPerQuadrant[layer - 1, q] + 5);
+        List<LevelInfo> layerNodes = new();
 
-        Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
-
-        nodeId = layer.ToString() + '_' + nodeName;
-        Levels[nodeId] = new LevelInfo(
-            id: nodeId,
-            name: nodeName,
-            completed: false,
-            unlocked: layer == 0,
-            layer: layer,
-            layerIndex: 0,
-            boss: true,
-            gauntlet: false,
-            rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
-            coinsReward: _coinsPerWin,
-            nextNodes: new List<string>(),
-            terrains: [level.Item1],
-            props: [level.Item2],
-            units: [level.Item3]
-        );
-        layerNodes.Add(Levels[nodeId]);
-        AmountOfNodesPerLayer[layer] = 1;
-      }
-      else
-      {
-        for (int node = 0; node < currentNodesInLayer; node++)
+        for (int node = 0; node < nodesInLayer; node++)
         {
-          // One in ten levels will be a gauntlet, but only after layer 5
-          nodeId = $"L{layer + 1}_N{node + 1}";
-          if (layer > 4 && _rng.NextDouble() < 0.2)
-          {
-            int numGauntletLevels = 4;
-            List<TerrainInfo[,]> gauntletTerrains = new List<TerrainInfo[,]>();
-            List<PropInfo[,]> gauntletProps = new List<PropInfo[,]>();
-            List<UnitInfo[,]> gauntletUnits = new List<UnitInfo[,]>();
-            for (int i = 0; i < numGauntletLevels; i++)
-            {
-              Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
-              gauntletTerrains.Add(level.Item1);
-              gauntletProps.Add(level.Item2);
-              gauntletUnits.Add(level.Item3);
-            }
-
-            List<UnitInfo> rewardUnits = gauntletUnits
-              .SelectMany(grid => grid.Cast<UnitInfo>())
-              .Where(u => u != null)
-              .DistinctBy(u => u.Id)
-              .OrderBy(_ => _rng.Next())
-              .Take(3)
-              .ToList();
-
-            nodeName = $"Gauntlet";
-            Levels[nodeId] = new LevelInfo(
-                id: nodeId,
-                name: nodeName,
-                completed: false,
-                unlocked: layer == 0,
-                layer: layer,
-                layerIndex: node,
-                boss: false,
-                gauntlet: true,
-                rewards: rewardUnits,
-                coinsReward: _coinsPerWin * 5,
-                nextNodes: new List<string>(),
-                terrains: gauntletTerrains,
-                props: gauntletProps,
-                units: gauntletUnits
-            );
-          }
-          else
-          {
-            nodeName = $"L{layer + 1}_N{node + 1}";
-            Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer + 1);
-            Levels[nodeId] = new LevelInfo(
-                id: nodeId,
-                name: nodeName,
-                completed: false,
-                unlocked: layer == 0,
-                layer: layer,
-                layerIndex: node,
-                boss: false,
-                gauntlet: false,
-                rewards: [],  // Empty rewards means the player can choose from 1 of 3 random units in the level
-                coinsReward: _coinsPerWin,
-                nextNodes: new List<string>(),
-                terrains: [level.Item1],
-                props: [level.Item2],
-                units: [level.Item3]
-            );
-          }
+          string nodeId = isBoss
+              ? $"Q{q}_L{layer}_Boss"
+              : $"Q{q}_L{layer}_N{node}";
+          Levels[nodeId] = CreateLevelInfo(nodeId, layer, node, isBoss, q);
           layerNodes.Add(Levels[nodeId]);
         }
-        AmountOfNodesPerLayer[layer] = currentNodesInLayer;
+
+        ConnectRings(quadrantLayers[^1], layerNodes, isBoss);
+        quadrantLayers.Add(layerNodes);
+        AmountOfNodesPerLayerPerQuadrant[layer, q] = nodesInLayer;
       }
-
-      layers.Add(layerNodes);
-
-      if (layer > 0)
-        ConnectLayers(layers[layer - 1], layers[layer], isBoss);
-
-      currentNodesInLayer = _rng.Next(1, _maxNodesPerLayer + 1);
     }
   }
 
+  //void ConnectRings(List<LevelInfo> inner, List<LevelInfo> outer, bool isBoss)
+  //{
+  //  if (isBoss)
+  //  {
+  //    // All inner nodes connect to the single boss node
+  //    foreach (LevelInfo node in inner)
+  //      node.NextNodes.Add(outer[0].Id);
+  //    return;
+  //  }
+
+  //  int innerCount = inner.Count;
+  //  int outerCount = outer.Count;
+
+  //  // Map each outer node to the closest inner node(s)
+  //  for (int j = 0; j < outerCount; j++)
+  //  {
+  //    // Find the proportionally closest inner node
+  //    int closestInner = Mathf.RoundToInt((float)j / (outerCount - 1 == 0 ? 1 : outerCount - 1) * (innerCount - 1));
+  //    closestInner = Mathf.Clamp(closestInner, 0, innerCount - 1);
+
+  //    if (!inner[closestInner].NextNodes.Contains(outer[j].Id))
+  //      inner[closestInner].NextNodes.Add(outer[j].Id);
+
+  //    //// Occasionally also connect to an adjacent inner node
+  //    //if (_rng.NextDouble() < 0.4)
+  //    //{
+  //    //  int adjacentInner = closestInner + (_rng.NextDouble() < 0.5 ? -1 : 1);
+  //    //  adjacentInner = Mathf.Clamp(adjacentInner, 0, innerCount - 1);
+
+  //    //  if (adjacentInner != closestInner && !inner[adjacentInner].NextNodes.Contains(outer[j].Id))
+  //    //    inner[adjacentInner].NextNodes.Add(outer[j].Id);
+  //    //}
+  //  }
+
+  //  //// Add some extra cross-connections for variety
+  //  //for (int i = 0; i < innerCount; i++)
+  //  //{
+  //  //  if (_rng.NextDouble() < 0.4)
+  //  //  {
+  //  //    // Find the indices of nodes this inner node is already connected to
+  //  //    List<int> connectedOuterIndices = inner[i].NextNodes
+  //  //        .Select(id => outer.FindIndex(n => n.Id == id))
+  //  //        .Where(idx => idx >= 0)
+  //  //        .ToList();
+
+  //  //    if (connectedOuterIndices.Count == 0) continue;
+
+  //  //    // Only allow targets adjacent to already connected nodes
+  //  //    HashSet<int> allowedTargets = new();
+  //  //    foreach (int connected in connectedOuterIndices)
+  //  //    {
+  //  //      if (connected > 0) allowedTargets.Add(connected - 1);
+  //  //      if (connected < outerCount - 1) allowedTargets.Add(connected + 1);
+  //  //    }
+
+  //  //    // Remove already connected ones
+  //  //    allowedTargets.ExceptWith(connectedOuterIndices);
+
+  //  //    if (allowedTargets.Count == 0) continue;
+
+  //  //    int target = allowedTargets.ElementAt(_rng.Next(allowedTargets.Count));
+  //  //    inner[i].NextNodes.Add(outer[target].Id);
+  //  //  }
+  //  //}
+  //}
+
+  void ConnectRings(List<LevelInfo> inner, List<LevelInfo> outer, bool isBoss)
+  {
+    if (isBoss)
+    {
+      foreach (LevelInfo node in inner)
+        node.NextNodes.Add(outer[0].Id);
+      return;
+    }
+
+    int innerCount = inner.Count;
+    int outerCount = outer.Count;
+
+    // Pass 1: map each inner node to its proportional outer node
+    for (int i = 0; i < innerCount; i++)
+    {
+      int mapped = Mathf.Clamp(
+          Mathf.RoundToInt((float)i / (innerCount == 1 ? 1 : innerCount - 1) * (outerCount - 1)),
+          0, outerCount - 1);
+      if (!inner[i].NextNodes.Contains(outer[mapped].Id))
+        inner[i].NextNodes.Add(outer[mapped].Id);
+    }
+
+    // Ensure every outer node has at least one incoming connection
+    for (int j = 0; j < outerCount; j++)
+    {
+      if (!inner.Any(n => n.NextNodes.Contains(outer[j].Id)))
+      {
+        int closest = Mathf.Clamp(
+            Mathf.RoundToInt((float)j / (outerCount == 1 ? 1 : outerCount - 1) * (innerCount - 1)),
+            0, innerCount - 1);
+        inner[closest].NextNodes.Add(outer[j].Id);
+      }
+    }
+
+    // Pass 2: add extra adjacent connections, using actual connected ranges
+    // to prevent crossings
+    for (int i = 0; i < innerCount; i++)
+    {
+      if (_rng.Next(0, 3) == 0) continue; // skip extra connections sometimes
+
+      List<int> connected = Enumerable.Range(0, outerCount)
+          .Where(j => inner[i].NextNodes.Contains(outer[j].Id))
+          .ToList();
+
+      int leftmost = connected.Min();
+      int rightmost = connected.Max();
+
+      // The strict bounds: never go past what neighboring inner nodes connect to
+      int strictLeft = i > 0
+          ? Enumerable.Range(0, outerCount)
+              .Where(j => inner[i - 1].NextNodes.Contains(outer[j].Id))
+              .DefaultIfEmpty(0).Max() // left neighbor's rightmost
+          : 0;
+
+      int strictRight = i < innerCount - 1
+          ? Enumerable.Range(0, outerCount)
+              .Where(j => inner[i + 1].NextNodes.Contains(outer[j].Id))
+              .DefaultIfEmpty(outerCount - 1).Min() // right neighbor's leftmost
+          : outerCount - 1;
+
+      // Try extending left
+      if (leftmost - 1 >= 0 && leftmost - 1 >= strictLeft && _rng.NextDouble() < 0.5)
+        inner[i].NextNodes.Add(outer[leftmost - 1].Id);
+
+      // Try extending right
+      if (rightmost + 1 <= outerCount - 1 && rightmost + 1 <= strictRight && _rng.NextDouble() < 0.5)
+        inner[i].NextNodes.Add(outer[rightmost + 1].Id);
+    }
+  }
+
+  private LevelInfo CreateLevelInfo(string nodeId, int layer, int node, bool isBoss, int quadrant)
+  {
+    if (isBoss)
+    {
+      string levelId;
+      string nodeName;
+      if (layer + 1 == 10)
+      {
+        nodeName = "Golden Turret";
+        levelId = "golden_turret";
+      }
+      else if (layer + 1 == 20)
+      {
+        nodeName = "Blob";
+        levelId = "blob";
+      }
+      else
+      {
+        nodeName = "Nuke";
+        levelId = "nuke";
+      }
+
+      Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
+      return new LevelInfo(
+          id: nodeId,
+          name: nodeName,
+          completed: false,
+          unlocked: layer == 0,
+          layer: layer,
+          layerIndex: node,
+          boss: true,
+          gauntlet: false,
+          rewards: [],
+          coinsReward: _coinsPerWin,
+          quadrant,
+          nextNodes: new List<string>(),
+          terrains: [level.Item1],
+          props: [level.Item2],
+          units: [level.Item3]
+      );
+    }
+
+    if (layer > 4 && _rng.NextDouble() < 0.2)
+    {
+      int numGauntletLevels = 4;
+      List<TerrainInfo[,]> gauntletTerrains = new();
+      List<PropInfo[,]> gauntletProps = new();
+      List<UnitInfo[,]> gauntletUnits = new();
+
+      for (int i = 0; i < numGauntletLevels; i++)
+      {
+        Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
+        gauntletTerrains.Add(level.Item1);
+        gauntletProps.Add(level.Item2);
+        gauntletUnits.Add(level.Item3);
+      }
+
+      List<UnitInfo> rewardUnits = gauntletUnits
+          .SelectMany(grid => grid.Cast<UnitInfo>())
+          .Where(u => u != null)
+          .DistinctBy(u => u.Id)
+          .OrderBy(_ => _rng.Next())
+          .Take(3)
+          .ToList();
+
+      return new LevelInfo(
+          id: nodeId,
+          name: "Gauntlet",
+          completed: false,
+          unlocked: layer == 0,
+          layer: layer,
+          layerIndex: node,
+          boss: false,
+          gauntlet: true,
+          rewards: rewardUnits,
+          coinsReward: _coinsPerWin * 5,
+          quadrant,
+          nextNodes: new List<string>(),
+          terrains: gauntletTerrains,
+          props: gauntletProps,
+          units: gauntletUnits
+      );
+    }
+
+    Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> randomLevel = LoadRandomLevel(layer + 1);
+    return new LevelInfo(
+        id: nodeId,
+        name: nodeId,
+        completed: false,
+        unlocked: layer == 0,
+        layer: layer,
+        layerIndex: node,
+        boss: false,
+        gauntlet: false,
+        rewards: [],
+        coinsReward: _coinsPerWin,
+        quadrant,
+        nextNodes: new List<string>(),
+        terrains: [randomLevel.Item1],
+        props: [randomLevel.Item2],
+        units: [randomLevel.Item3]
+    );
+  }
+
+
   public void GenerateWorldUi()
   {
-    _worldUi.CustomMinimumSize = new Vector2(
-        _maxNodesPerLayer * _worldUiSpacing + 300,
-        _numLayers * 0.5f * _worldUiSpacing + 200
-    );
+    float diameter = _numLayers * _ringSpacing * 2 + 300;
+    _worldUi.CustomMinimumSize = new Vector2(diameter, diameter);
+    _worldCenter = _worldUi.CustomMinimumSize / 2.0f;
 
-    // Group levels by layer
     var layers = Levels.Values
         .GroupBy(l => l.Layer)
         .OrderBy(g => g.Key)
         .Select(g => g.OrderBy(l => l.LayerIndex).ToList())
         .ToList();
 
-    // Add UI for all layers except the last
     for (int layerIndex = 0; layerIndex < layers.Count; layerIndex++)
     {
       bool unlockedLayer = false;
@@ -1713,61 +1873,8 @@ public partial class World : Node2D
         _completedLayers++;
         if (_completedLayers < _slowDownLayer && _completedLayers % 2 == 0)
           _gridOverlay.IncreaseUnitCount(1);
-        else if (_completedLayers % 4 == 0)  // Only increase max unit slots by 1 every 4 layers after layer 20
+        else if (_completedLayers % 4 == 0)
           _gridOverlay.IncreaseUnitCount(1);
-      }
-    }
-  }
-
-  void ConnectLayers(List<LevelInfo> prev, List<LevelInfo> next, bool isBoss)
-  {
-    int prevCount = prev.Count;
-    int nextCount = next.Count;
-
-    if (isBoss)
-    {
-      // Simply connect all nodes to the boss if there is one
-      for (int i = 0; i < prevCount; i++)
-      {
-        prev[i].NextNodes.Add(next[0].Id);
-      }
-      return;
-    }
-
-    // Guarantee every next node has at least one incoming
-    for (int j = 0; j < nextCount; j++)
-    {
-      int closestPrev = nextCount == 1 ? 0 : Mathf.RoundToInt((float)j / (nextCount - 1) * (prevCount - 1));
-      prev[closestPrev].NextNodes.Add(next[j].Id);
-    }
-
-    // Add some extra forward connections (optional)
-    for (int i = 0; i < prevCount; i++)
-    {
-      if (_rng.NextDouble() < 0.5)
-      {
-        int target = Mathf.Clamp(i + _rng.Next(-1, 2), 0, nextCount - 1);
-
-        // Block crossing connections
-        if (i > 0)
-        {
-          bool blockTarget = false;
-          foreach (string levelNode in prev[i - 1].NextNodes)
-          {
-            if (next.IndexOf(Levels[levelNode]) > target)
-            {
-              blockTarget = true; 
-              break;
-            }
-          }
-          if (blockTarget)
-            continue;
-        }
-
-        if (!prev[i].NextNodes.Contains(next[target].Id))
-        {
-          prev[i].NextNodes.Add(next[target].Id);
-        }
       }
     }
   }
@@ -1775,18 +1882,17 @@ public partial class World : Node2D
   void AddLevelUi(LevelInfo levelNode, int nodesInLayer)
   {
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
-    Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, nodesInLayer);
+    Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerQuadrant[levelNode.Layer, levelNode.Quadrant], levelNode.Quadrant);
 
     Button button = new();
     button.Text = levelNode.Name;
     button.Disabled = !levelNode.Unlocked;
     button.CustomMinimumSize = buttonSize;
-    button.Position = buttonPos;
+    button.Position = buttonPos - buttonSize / 2.0f; // center the button on the position
     button.Pressed += () => OnLevelSelected(levelNode);
 
     if (levelNode.Completed)
     {
-      // Set button to green to indicate it has been completed
       Color color = Colors.LightGreen;
       StyleBoxFlat style = GetRewardButtonStyle(color);
       StyleBoxFlat stylePressed = GetRewardButtonStyle(color.Darkened(0.2f));
@@ -1799,38 +1905,51 @@ public partial class World : Node2D
     _levelButtons[levelNode.Id] = button;
     _worldUi.AddChild(button);
 
-    //Vector2 fromCenter = btn.Position + btn.Size / 2.0f;
-    // Convert to global coordinates relative to the CanvasLayer so Line2D (a Node2D) can be added there
-    //Vector2 fromGlobal = _worldUi.RectGlobalPosition + fromCenter;
-    Vector2 fromGlobal = buttonPos + buttonSize / 2.0f;
+    Vector2 fromCenter = buttonPos;
 
     foreach (string id in levelNode.NextNodes)
     {
+      LevelInfo nextLevel = Levels[id];
 
-      Vector2 nextButtonPos = GetLevelButtonPosition(levelNode.Layer + 1, Levels[id].LayerIndex, AmountOfNodesPerLayer[Levels[id].Layer]);
+      Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerQuadrant[nextLevel.Layer, nextLevel.Quadrant], nextLevel.Quadrant);
 
-      //Vector2 toCenter = toBtn.Position + toBtn.RectSize / 2.0f;
-      Vector2 toGlobal = nextButtonPos + buttonSize / 2.0f;
-
-      Line2D line = new Line2D();
-
-      line.Points = new Vector2[] { fromGlobal, toGlobal };
+      Line2D line = new();
+      line.Points = new Vector2[] { fromCenter, toCenter };
       line.Width = 2.0f;
       line.DefaultColor = new Color(1, 1, 1, 0.8f);
       _worldUi.AddChild(line);
     }
   }
 
-  Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInLayer)
+  Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInQuadrant, int quadrant)
   {
-    // Calculate X so the nodes in the layer are centered around the panel's center.
-    // For n nodes we place them with a fixed spacing and center the group:
-    // startX = center - ((n-1) * spacing) / 2
-    double centerX = _worldUi.CustomMinimumSize.X / 2.0;
-    double totalWidth = _worldUiSpacing * (nodesInLayer - 1);
-    double startX = centerX - (totalWidth / 2.0);
-    double xPos = startX + layerIndex * _worldUiSpacing;
-    return new Vector2((float)xPos, (float)(_worldUi.CustomMinimumSize.Y - 100 - layer * _worldUiSpacing * 0.5f));
+    if (layer == 0)
+      return _worldCenter;
+
+    if (layer == 1)
+    {
+      // Place the 4 entry nodes in the 4 cardinal directions
+      float entryRadius = _ringSpacing;
+      float angle = quadrant * Mathf.Pi / 2.0f - Mathf.Pi / 2.0f;
+      return _worldCenter + new Vector2(Mathf.Cos(angle) * entryRadius, Mathf.Sin(angle) * entryRadius);
+    }
+
+    float radius = layer * _ringSpacing;
+    float quadrantAngle = quadrant * Mathf.Pi / 2.0f - Mathf.Pi / 2.0f;
+    float coneWidth = Mathf.Pi / 2.0f;
+    float margin = coneWidth * 0.15f;
+
+    float nodeAngle;
+    if (nodesInQuadrant <= 1)
+      nodeAngle = quadrantAngle;
+    else
+      nodeAngle = quadrantAngle - coneWidth / 2.0f + margin +
+                  (float)layerIndex / (nodesInQuadrant - 1) * (coneWidth - margin * 2);
+
+    return _worldCenter + new Vector2(
+        Mathf.Cos(nodeAngle) * radius,
+        Mathf.Sin(nodeAngle) * radius
+    );
   }
 
   private void OnLevelSelected(LevelInfo levelInfo)

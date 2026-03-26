@@ -270,7 +270,7 @@ public partial class MainMenu : Control
       levelsData[level.Key] = levelData;
     }
     saveData["levels"] = levelsData;
-    saveData["levelNodesPerLayer"] = _world.AmountOfNodesPerLayer;
+    //saveData["levelNodesPerLayer"] = _world.AmountOfNodesPerLayer; todo fix
     saveData["coins"] = _world.Coins;
 
     // Write to file
@@ -402,13 +402,14 @@ public partial class MainMenu : Control
           gauntlet: levelData["gauntlet"].AsBool(),
           rewards: rewards,
           coinsReward: levelData["coinsReward"].AsInt32(),
+          quadrant: 0, // TODO fix
           nextNodes: nextNodes,
           terrains: terrains,
           props: props,
           units: units
       );
     }
-    _world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray();
+    //_world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray(); todo fix
     _world.UpdateCoins(saveData["coins"].AsInt32());
     _world.LoadLevels();
 
