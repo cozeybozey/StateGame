@@ -13,7 +13,7 @@ public partial class LevelInfo : RefCounted
   public bool Gauntlet { get; set; }
 	public List<UnitInfo> Rewards { get; set; }
 	public int CoinsReward { get; set; }
-  public int Quadrant { get; set; } // 0=north, 1=east, 2=south, 3=west, -1=start
+  public int LevelSection { get; set; }
   public List<string> NextNodes { get; set; }
   public List<TerrainInfo[,]> Terrains { get; set; }
   public List<PropInfo[,]> Props { get; set; }
@@ -46,7 +46,7 @@ public partial class LevelInfo : RefCounted
 		Gauntlet = gauntlet;
 		Rewards = rewards;
 		CoinsReward = coinsReward;
-		Quadrant = quadrant;
+		LevelSection = quadrant;
 		NextNodes = nextNodes;
     Terrains = terrains;
 		Props = props;

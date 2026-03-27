@@ -1,21 +1,8 @@
 {
-	"mountain": {
-		"display_name": "Mountain",
-		"texture": "res://sprites/terrains/mountain.png",
-		"scene": "res://scenes/terrains/mountain.tscn",
-		"cells": [[0, 0]],
-		"stage": 0,
-		"blocking": true,
-		"description": "Units cannot traverse this terrain.",
-		"rarity": "common",
-		"types": [
-			"rocky"
-		]
-	},
 	"grass": {
 		"display_name": "Grass",
 		"texture": "res://sprites/terrains/grass.png",
-		"scene": "res://scenes/terrains/grass.tscn",
+		"scene": "res://scenes/terrains/terrain.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
 		"blocking": false,
@@ -25,10 +12,182 @@
 			"vegetation"
 		]
 	},
+	"white_floor_tiles": {
+		"display_name": "White Floor Tiles",
+		"texture": "res://sprites/terrains/white_floor_tiles.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": false,
+		"description": "Units can traverse this terrain. Can be burned.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"stone_floor": {
+		"display_name": "Stone Floor",
+		"texture": "res://sprites/terrains/stone_floor.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": false,
+		"description": "Units can traverse this terrain. Can be burned.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"dark_grass": {
+		"display_name": "Dark Grass",
+		"texture": "res://sprites/terrains/dark_grass.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": false,
+		"description": "Units can traverse this terrain. Can be burned.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"gray_floor_tiles": {
+		"display_name": "Gray Floor Tiles",
+		"texture": "res://sprites/terrains/gray_floor_tiles.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": false,
+		"description": "Units can traverse this terrain. Can be burned.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+
+	"mountain": {
+		"display_name": "Mountain",
+		"texture": "res://sprites/terrains/mountain.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"green_mountain": {
+		"display_name": "Green Mountain",
+		"texture": "res://sprites/terrains/green_mountain.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"hole_in_floor": {
+		"display_name": "Hole In Floor",
+		"texture": "res://sprites/terrains/hole_in_floor.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"mud": {
+		"display_name": "Mud",
+		"texture": "res://sprites/terrains/mud.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"lower_gray_floor_tiles": {
+		"display_name": "Lower Gray Floor Tiles",
+		"texture": "res://sprites/terrains/lower_gray_floor_tiles.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+
+
 	"water": {
 		"display_name": "Water",
 		"texture": "res://sprites/terrains/water.png",
-		"scene": "res://scenes/terrains/water.tscn",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"liquid"
+		]
+	},
+	"holy_water": {
+		"display_name": "Holy Water",
+		"texture": "res://sprites/terrains/holy_water.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"liquid"
+		]
+	},
+	"oil": {
+		"display_name": "Oil",
+		"texture": "res://sprites/terrains/oil.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"liquid"
+		]
+	},
+	"poisoned_water": {
+		"display_name": "Poisoned Water",
+		"texture": "res://sprites/terrains/poisoned_water.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"blocking": true,
+		"description": "Units cannot traverse this terrain.",
+		"rarity": "common",
+		"types": [
+			"liquid"
+		]
+	},
+	"blood": {
+		"display_name": "Blood",
+		"texture": "res://sprites/terrains/blood.png",
+		"scene": "res://scenes/terrains/terrain.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
 		"blocking": true,

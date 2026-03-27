@@ -58,6 +58,7 @@ public partial class World : Node2D
   private bool _playing = false;
   private int _level = 1;
   private int _completedLayers = 0;
+  private int _completedLevels = 0;
   private int _slowDownLayer = 15;
   private int _turn = 0;
   private double _turnStartCooldown = 1.0f;
@@ -83,11 +84,11 @@ public partial class World : Node2D
 
   // World generation
   public Godot.Collections.Dictionary<string, LevelInfo> Levels = new Godot.Collections.Dictionary<string, LevelInfo>();
-  public int[,] AmountOfNodesPerLayerPerQuadrant;
+  public int[,] AmountOfNodesPerLayerPerSection;
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private int _numLayers = 10;
+  private int _numLayers = 16;
   private int _maxNodesPerLayer = 8;
   private int _buttonWidth = 75;
   private int _buttonHeight = 35;
@@ -98,6 +99,7 @@ public partial class World : Node2D
 
   private Vector2 _worldCenter;
   private float _ringSpacing = 150f; // pixels between rings
+  private int _numLevelSections = 5;
 
   // Notify variables
   private string _explanationMarkScenePath = "res://scenes/explanation_mark.tscn";
@@ -221,7 +223,7 @@ public partial class World : Node2D
       _maxNodesPerLayer * _ringSpacing,
       _numLayers * _ringSpacing
     );
-    AmountOfNodesPerLayerPerQuadrant = new int[_numLayers, 4];
+    AmountOfNodesPerLayerPerSection = new int[_numLayers, _numLevelSections];
     GenerateWorld();
   }
 
@@ -418,7 +420,7 @@ public partial class World : Node2D
     return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrainGrid, propsGrid, mainCellsUnitGrid);
   }
 
-  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty)
+  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty, int levelSection)
   {
     // Only place a limited amount of blocking terrains and props. So there is enough room for units.
     int expectedUnitSlots = difficulty;
@@ -426,19 +428,22 @@ public partial class World : Node2D
     int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
     int maxBlockingPerHalf = halfTiles - requiredFreeTilesPerHalf;
 
-    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingPerHalf);
-    PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingPerHalf, terrain);
+    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingPerHalf, levelSection);
+    PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingPerHalf, terrain, levelSection);
     UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props);
     return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrain, props, units);
   }
 
-  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingPerHalf)
+  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingPerHalf, int levelSection)
   {
     TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    List<string> nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"];
+    List<string> blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"];
+    List<string> blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"];
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        terrain[x, y] = GlobalConstants.TerrainsData["grass"];
+        terrain[x, y] = GlobalConstants.TerrainsData[nonBlockingTerrains[levelSection]];
 
     FastNoiseLite mountainNoise = new();
     mountainNoise.Seed = _rng.Next();
@@ -467,13 +472,13 @@ public partial class World : Node2D
 
         if (mountainVal > 0.40f)
         {
-          terrain[x, y] = GlobalConstants.TerrainsData["mountain"];
+          terrain[x, y] = GlobalConstants.TerrainsData[blockingTerrains1[levelSection]];
           if (isTopHalf) topHalfBlocking++;
           else bottomHalfBlocking++;
         }
         else if (waterVal > 0.40f)
         {
-          terrain[x, y] = GlobalConstants.TerrainsData["water"];
+          terrain[x, y] = GlobalConstants.TerrainsData[blockingTerrains2[levelSection]];
           if (isTopHalf) topHalfBlocking++;
           else bottomHalfBlocking++;
         }
@@ -483,9 +488,13 @@ public partial class World : Node2D
     return terrain;
   }
 
-  private PropInfo[,] LoadRandomLevelProps(int difficulty, int maxBlockingPerHalf, TerrainInfo[,] terrainGrid)
+  private PropInfo[,] LoadRandomLevelProps(int difficulty, int maxBlockingPerHalf, TerrainInfo[,] terrainGrid, int levelSection)
   {
     PropInfo[,] props = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    List<string> movableProps = ["bush", "vase", "broken_turret", "dark_bush", "demonic_vase"];
+    List<string> damagableProps = ["rock", "white_statue", "rock", "gravestone", "statue"];
+    List<string> specialProps1 = ["fire", "fire", "fire", "fire", "fire"];
+    List<string> specialProps2 = ["wild_fire", "wild_fire", "wild_fire", "wild_fire", "wild_fire"];
 
     // Count already blocking terrain per half
     int midY = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
@@ -515,9 +524,9 @@ public partial class World : Node2D
       else bottomHalfBlocking++;
     }
 
-    // Rocks
+    // Movable prop
     int rockCount = _rng.Next(0, 4);
-    PropInfo propInfo = GlobalConstants.PropsData["rock"];
+    PropInfo propInfo = GlobalConstants.PropsData[movableProps[levelSection]];
     for (int i = 0; i < rockCount; i++)
     {
       List<Vector2I> candidates = new();
@@ -533,9 +542,9 @@ public partial class World : Node2D
       PlaceBlocking(cell.X, cell.Y);
     }
 
-    // Bushes
+    // Damagable prop
     int bushCount = _rng.Next(0, 4);
-    propInfo = GlobalConstants.PropsData["bush"];
+    propInfo = GlobalConstants.PropsData[damagableProps[levelSection]];
     for (int i = 0; i < bushCount; i++)
     {
       List<Vector2I> candidates = new();
@@ -551,9 +560,9 @@ public partial class World : Node2D
       PlaceBlocking(cell.X, cell.Y);
     }
 
-    // Fire
+    // Special prop
     bool spawnFire = _rng.NextDouble() < 0.25;
-    propInfo = GlobalConstants.PropsData["fire"];
+    propInfo = GlobalConstants.PropsData[specialProps1[levelSection]];
     if (spawnFire)
     {
       List<Vector2I> cluster = SpawnClusterOfPropType(propInfo, terrainGrid, props, _rng.Next(2, 6));
@@ -561,9 +570,9 @@ public partial class World : Node2D
         props[cell.X, cell.Y] = propInfo;
     }
 
-    // Wild Fire
+    // Special prop 2
     bool spawnWildFire = _rng.NextDouble() < 0.15;
-    propInfo = GlobalConstants.PropsData["wild_fire"];
+    propInfo = GlobalConstants.PropsData[specialProps2[levelSection]];
     if (spawnWildFire)
     {
       List<Vector2I> cluster = SpawnClusterOfPropType(propInfo, terrainGrid, props, _rng.Next(2, 6));
@@ -624,7 +633,7 @@ public partial class World : Node2D
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
-    int budget = difficulty; //+ (difficulty / 2);
+    int budget = difficulty + (difficulty / 2);
     int maxStage = GetMaxStageForDifficulty(difficulty);
 
     RandomNumberGenerator rng = new();
@@ -870,7 +879,15 @@ public partial class World : Node2D
 
     if (_activeLevel != null)
     {
-      _activeLevel.Completed = true;
+      if (!_activeLevel.Completed)
+      {
+        _activeLevel.Completed = true;
+        _completedLevels++;
+
+        // Increase max unit slots every 5 completed levels
+        if (_completedLevels % 5 == 0)
+          _gridOverlay.IncreaseUnitCount(1);
+      }
 
       // Set button to green to indicate it has been completed
       Color color = Colors.LightGreen;
@@ -887,10 +904,6 @@ public partial class World : Node2D
         if (_activeLevel.Layer >= _completedLayers)
         {
           _completedLayers++;
-          if (_completedLayers < _slowDownLayer && _completedLayers % 2 == 0)
-            _gridOverlay.IncreaseUnitCount(1);
-          else if (_completedLayers % 4 == 0)  // Only increase max unit slots by 1 every 4 layers after layer 20
-            _gridOverlay.IncreaseUnitCount(1);
         }
       }
 
@@ -1551,10 +1564,10 @@ public partial class World : Node2D
   int GetMaxStageForDifficulty(int difficulty)
   {
     if (difficulty < 2) return 0;
-    if (difficulty < 6) return 1;
-    if (difficulty < 10) return 2;
-    if (difficulty < 16) return 3;
-    if (difficulty < 22) return 4;
+    if (difficulty < 4) return 1;
+    if (difficulty < 6) return 2;
+    if (difficulty < 8) return 3;
+    if (difficulty < 10) return 4;
     return 5;
   }
 
@@ -1563,30 +1576,36 @@ public partial class World : Node2D
     // Layer 0: single start node
     string startId = "start";
     Levels[startId] = CreateLevelInfo(startId, 0, 0, false, 0);
-    AmountOfNodesPerLayerPerQuadrant[0, 0] = 1;
-    AmountOfNodesPerLayerPerQuadrant[0, 1] = 1;
-    AmountOfNodesPerLayerPerQuadrant[0, 2] = 1;
-    AmountOfNodesPerLayerPerQuadrant[0, 3] = 1;
+    AmountOfNodesPerLayerPerSection[0, 0] = 1;
+    AmountOfNodesPerLayerPerSection[0, 1] = 1;
+    AmountOfNodesPerLayerPerSection[0, 2] = 1;
+    AmountOfNodesPerLayerPerSection[0, 3] = 1;
+    AmountOfNodesPerLayerPerSection[0, 4] = 1;
 
-    string[] quadrants = { "north", "east", "south", "west" };
-
-    for (int q = 0; q < 4; q++)
+    for (int q = 0; q < _numLevelSections; q++)
     {
-      List<List<LevelInfo>> quadrantLayers = new();
+      List<List<LevelInfo>> sectionLayers = new();
 
-      // Layer 1: one entry node per quadrant
+      // Layer 1: one entry node per section
       string entryId = $"Q{q}_L1_N0";
       Levels[entryId] = CreateLevelInfo(entryId, 1, 0, false, q);
       Levels[startId].NextNodes.Add(entryId);
-      quadrantLayers.Add(new List<LevelInfo> { Levels[entryId] });
-      AmountOfNodesPerLayerPerQuadrant[1, q] = 1;
+      sectionLayers.Add(new List<LevelInfo> { Levels[entryId] });
+      AmountOfNodesPerLayerPerSection[1, q] = 1;
 
       // Remaining layers expand like a cone
       for (int layer = 2; layer < _numLayers; layer++)
       {
-        bool isBoss = layer % 100 == 0;
+        bool isBoss = layer % 15 == 0;
         //int nodesInLayer = isBoss ? 1 : _rng.Next(1, Mathf.Min(layer, _maxNodesPerLayer) + 1);
-        int nodesInLayer = _rng.Next(AmountOfNodesPerLayerPerQuadrant[layer - 1, q], AmountOfNodesPerLayerPerQuadrant[layer - 1, q] + 5);
+        int nodesInLayer = 0;
+        if (layer < 10)
+          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 2;
+        else if (layer < 15) // After a while the layers converge to one boss layer
+          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 3;
+        else
+          nodesInLayer = 1;
+
         List<LevelInfo> layerNodes = new();
 
         for (int node = 0; node < nodesInLayer; node++)
@@ -1598,9 +1617,9 @@ public partial class World : Node2D
           layerNodes.Add(Levels[nodeId]);
         }
 
-        ConnectRings(quadrantLayers[^1], layerNodes, isBoss);
-        quadrantLayers.Add(layerNodes);
-        AmountOfNodesPerLayerPerQuadrant[layer, q] = nodesInLayer;
+        ConnectRings(sectionLayers[^1], layerNodes, isBoss);
+        sectionLayers.Add(layerNodes);
+        AmountOfNodesPerLayerPerSection[layer, q] = nodesInLayer;
       }
     }
   }
@@ -1741,7 +1760,7 @@ public partial class World : Node2D
     }
   }
 
-  private LevelInfo CreateLevelInfo(string nodeId, int layer, int node, bool isBoss, int quadrant)
+  private LevelInfo CreateLevelInfo(string nodeId, int layer, int node, bool isBoss, int section)
   {
     if (isBoss)
     {
@@ -1775,7 +1794,7 @@ public partial class World : Node2D
           gauntlet: false,
           rewards: [],
           coinsReward: _coinsPerWin,
-          quadrant,
+          section,
           nextNodes: new List<string>(),
           terrains: [level.Item1],
           props: [level.Item2],
@@ -1792,7 +1811,7 @@ public partial class World : Node2D
 
       for (int i = 0; i < numGauntletLevels; i++)
       {
-        Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer);
+        Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadRandomLevel(layer, section);
         gauntletTerrains.Add(level.Item1);
         gauntletProps.Add(level.Item2);
         gauntletUnits.Add(level.Item3);
@@ -1817,7 +1836,7 @@ public partial class World : Node2D
           gauntlet: true,
           rewards: rewardUnits,
           coinsReward: _coinsPerWin * 5,
-          quadrant,
+          section,
           nextNodes: new List<string>(),
           terrains: gauntletTerrains,
           props: gauntletProps,
@@ -1825,7 +1844,7 @@ public partial class World : Node2D
       );
     }
 
-    Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> randomLevel = LoadRandomLevel(layer + 1);
+    Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> randomLevel = LoadRandomLevel(layer + 1, section);
     return new LevelInfo(
         id: nodeId,
         name: nodeId,
@@ -1837,7 +1856,7 @@ public partial class World : Node2D
         gauntlet: false,
         rewards: [],
         coinsReward: _coinsPerWin,
-        quadrant,
+        section,
         nextNodes: new List<string>(),
         terrains: [randomLevel.Item1],
         props: [randomLevel.Item2],
@@ -1882,7 +1901,7 @@ public partial class World : Node2D
   void AddLevelUi(LevelInfo levelNode, int nodesInLayer)
   {
     Vector2 buttonSize = new Vector2(_buttonWidth, _buttonHeight);
-    Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerQuadrant[levelNode.Layer, levelNode.Quadrant], levelNode.Quadrant);
+    Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerSection[levelNode.Layer, levelNode.LevelSection], levelNode.LevelSection);
 
     Button button = new();
     button.Text = levelNode.Name;
@@ -1911,7 +1930,7 @@ public partial class World : Node2D
     {
       LevelInfo nextLevel = Levels[id];
 
-      Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerQuadrant[nextLevel.Layer, nextLevel.Quadrant], nextLevel.Quadrant);
+      Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
 
       Line2D line = new();
       line.Points = new Vector2[] { fromCenter, toCenter };
@@ -1921,30 +1940,27 @@ public partial class World : Node2D
     }
   }
 
-  Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInQuadrant, int quadrant)
+  Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInLayer, int section)
   {
     if (layer == 0)
       return _worldCenter;
 
-    if (layer == 1)
-    {
-      // Place the 4 entry nodes in the 4 cardinal directions
-      float entryRadius = _ringSpacing;
-      float angle = quadrant * Mathf.Pi / 2.0f - Mathf.Pi / 2.0f;
-      return _worldCenter + new Vector2(Mathf.Cos(angle) * entryRadius, Mathf.Sin(angle) * entryRadius);
-    }
-
     float radius = layer * _ringSpacing;
-    float quadrantAngle = quadrant * Mathf.Pi / 2.0f - Mathf.Pi / 2.0f;
-    float coneWidth = Mathf.Pi / 2.0f;
-    float margin = coneWidth * 0.15f;
+    float sectionAngle = section * (Mathf.Tau / _numLevelSections) - Mathf.Pi / 2.0f;
+
+    // Shrink the cone based on how many nodes are in this layer
+    float maxConeWidth = Mathf.Tau / _numLevelSections * 0.95f; // 95% of available space per branch
+    float coneWidth = Mathf.Min(maxConeWidth, nodesInLayer * 0.15f);
 
     float nodeAngle;
-    if (nodesInQuadrant <= 1)
-      nodeAngle = quadrantAngle;
+    if (nodesInLayer <= 1)
+      nodeAngle = sectionAngle;
     else
-      nodeAngle = quadrantAngle - coneWidth / 2.0f + margin +
-                  (float)layerIndex / (nodesInQuadrant - 1) * (coneWidth - margin * 2);
+    {
+      float margin = coneWidth * 0.1f;
+      nodeAngle = sectionAngle - coneWidth / 2.0f + margin +
+                  (float)layerIndex / (nodesInLayer - 1) * (coneWidth - margin * 2);
+    }
 
     return _worldCenter + new Vector2(
         Mathf.Cos(nodeAngle) * radius,
@@ -2055,7 +2071,8 @@ public partial class World : Node2D
 
     if (!_openedWorldOnce)
     {
-      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * 0.5f * _worldUiSpacing + 200));
+      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * _ringSpacing - 100));
+      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_horizontal", Mathf.FloorToInt(_numLayers * _ringSpacing - 100));
       _openedWorldOnce = true;
     }
   }
@@ -2222,7 +2239,6 @@ public partial class World : Node2D
 
   private void TurnEnd()
   {
-    _unitIndex = 0;
     _turn += 1;
     SortUnits(_units);
     _unitsToAct = [.._units];  // Reset units to act to level units list
@@ -2241,7 +2257,6 @@ public partial class World : Node2D
       }
       _turnEndDamage += 1;  // Increase end of turn damage for next turn
       _turnCooldown = _turnStartCooldown;
-      _unitIndex = 0;  // Set to 0 again incase a unit died and change the _unitIndex value
       return;
     }
 
@@ -2257,6 +2272,8 @@ public partial class World : Node2D
     // Use shallow copy to prevent spawned props having their turn end called as well
     foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
       prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+
+    _unitIndex = 0;
   }
 
   public void UpdateCoins(int amount)

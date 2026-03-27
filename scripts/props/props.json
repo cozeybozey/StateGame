@@ -1,26 +1,8 @@
 {
-	"rock": {
-		"display_name": "Rock",
-		"texture": "res://sprites/props/rock.png",
-		"scene": "res://scenes/props/rock.tscn",
-		"cells": [[0, 0]],
-		"stage": 0,
-		"health": 15,
-		"damage": 0,
-		"armor": 1,
-		"damagable": true,
-		"movable": false,
-		"blocking": true,
-		"description": "Does nothing.",
-		"rarity": "common",
-		"types": [
-			"rocky"
-		]
-	},
 	"bush": {
 		"display_name": "Bush",
 		"texture": "res://sprites/props/bush.png",
-		"scene": "res://scenes/props/bush.tscn",
+		"scene": "res://scenes/props/prop.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
 		"health": 8,
@@ -35,6 +17,153 @@
 			"vegetation"
 		]
 	},
+	"vase": {
+		"display_name": "Vase",
+		"texture": "res://sprites/props/vase.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 8,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"broken_turret": {
+		"display_name": "Broken Turret",
+		"texture": "res://sprites/props/broken_turret.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 8,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"dark_bush": {
+		"display_name": "Dark Bush",
+		"texture": "res://sprites/props/dark_bush.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 8,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+	"demonic_vase": {
+		"display_name": "Demonic Vase",
+		"texture": "res://sprites/props/demonic_vase.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 8,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"vegetation"
+		]
+	},
+
+
+	"rock": {
+		"display_name": "Rock",
+		"texture": "res://sprites/props/rock.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 15,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": false,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"white_statue": {
+		"display_name": "White Statue",
+		"texture": "res://sprites/props/white_statue.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 15,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": false,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"gravestone": {
+		"display_name": "Gravestone",
+		"texture": "res://sprites/props/gravestone.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 15,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": false,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+	"statue": {
+		"display_name": "Statue",
+		"texture": "res://sprites/props/statue.png",
+		"scene": "res://scenes/props/prop.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 15,
+		"damage": 0,
+		"armor": 1,
+		"damagable": true,
+		"movable": false,
+		"blocking": true,
+		"description": "Does nothing.",
+		"rarity": "common",
+		"types": [
+			"rocky"
+		]
+	},
+
 	"fire": {
 		"display_name": "Fire",
 		"texture": "res://sprites/props/fire.png",
