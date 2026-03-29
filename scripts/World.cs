@@ -76,7 +76,6 @@ public partial class World : Node2D
   private int _coinsPerWin = 20;
   private int _levelRedoCost = 100;
 
-  private List<List<UnitInfo>> _unitsPerStage;
   private List<UnitInfo> _levelUnits; // List of units in the current level, used for rewards
   private Dictionary _levelsData;
   private Random _rng = new Random();
@@ -200,11 +199,6 @@ public partial class World : Node2D
     _targetedCellsLayer.OutlineColor = Colors.Red;
 
     _levelUnits = new List<UnitInfo>();
-    _unitsPerStage = new List<List<UnitInfo>>(10);
-    for (int i = 0; i < 11; i++)
-    {
-      _unitsPerStage.Add(new List<UnitInfo>());
-    }
     ParseUnitsJson();
     ParseTerrainsJson();
     ParsePropsJson();
@@ -213,9 +207,9 @@ public partial class World : Node2D
     Variant parsed = Json.ParseString(levelsJson);
     _levelsData = (Dictionary)parsed;
 
-    // Start with 2 turrets
-    _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
-    _decksHandler.AddUnit(GlobalConstants.UnitsData["turret"]);
+    // Start with 2 archers
+    _decksHandler.AddUnit(GlobalConstants.UnitsData["archer"]);
+    _decksHandler.AddUnit(GlobalConstants.UnitsData["archer"]);
 
 
     // World generation
@@ -385,6 +379,8 @@ public partial class World : Node2D
 
     // Copy units to create a list of units that are going to act this turn
     _unitsToAct = [.. _units];
+    foreach (Unit unit in _unitsToAct)
+      unit.GameStart(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct);
     _playing = true;
 
     // Immediately win or lose when you or the enemy has no units
@@ -430,16 +426,16 @@ public partial class World : Node2D
 
     TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingPerHalf, levelSection);
     PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingPerHalf, terrain, levelSection);
-    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props);
+    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props, levelSection);
     return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrain, props, units);
   }
 
   private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingPerHalf, int levelSection)
   {
     TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    List<string> nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"];
-    List<string> blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"];
-    List<string> blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"];
+    List<string> nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"]; // TODO move
+    List<string> blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"]; // TODO move
+    List<string> blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"]; // TODO move
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
@@ -628,13 +624,28 @@ public partial class World : Node2D
     return cluster;
   }
 
-  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, int levelSection)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    List<string> dominantUnitTypes = ["primal", "holy", "machinery", "rotten", "demonic"]; // TODO move
+    string dominantType = dominantUnitTypes[levelSection];
 
-    int budget = difficulty + (difficulty / 2);
+    int budget = difficulty; // + (difficulty / 2);
     int maxStage = GetMaxStageForDifficulty(difficulty);
+
+    // Build unit pools
+    List<UnitInfo> dominantPool = GlobalConstants.UnitsData.Values
+        .Where(u => u.Types.Contains(dominantType) && u.Stage <= maxStage)
+        .ToList();
+
+    List<UnitInfo> typelessPool = GlobalConstants.UnitsData.Values
+        .Where(u => u.Types.Count == 0 && u.Stage <= maxStage)
+        .ToList();
+
+    List<UnitInfo> otherPool = GlobalConstants.UnitsData.Values
+        .Where(u => !u.Types.Contains(dominantType) && u.Types.Count > 0 && u.Stage <= maxStage)
+        .ToList();
 
     RandomNumberGenerator rng = new();
     rng.Randomize();
@@ -651,16 +662,27 @@ public partial class World : Node2D
       while (possiblePositions.Count == 0 && nrOfTries < 10)
       {
         nrOfTries++;
-        int stage = rng.RandiRange(0, maxStage);
 
-        List<UnitInfo> possibleUnits = _unitsPerStage[stage];
-        if (possibleUnits.Count == 0)
-          continue;
+        // Pick pool based on probability
+        double roll = rng.Randf();
+        List<UnitInfo> pool;
+        if (roll < 0.60f)
+          pool = dominantPool;
+        else if (roll < 0.85f)
+          pool = typelessPool;
+        else
+          pool = otherPool;
 
-        unitInfo = possibleUnits[rng.RandiRange(0, possibleUnits.Count - 1)];
-        cost = unitInfo.OccupiedCells.Count;
-        if (cost > budget) // TODO AKN (unitInfo.Cost > budget)
+        if (pool.Count == 0)
+          pool = typelessPool.Count > 0 ? typelessPool : GlobalConstants.UnitsData.Values.ToList();
+
+        // Pick random unit from pool within budget
+        List<UnitInfo> affordableUnits = pool
+            .Where(u => u.OccupiedCells.Count <= budget)
+            .ToList();
+        if (affordableUnits.Count == 0)
           continue;
+        unitInfo = affordableUnits[rng.RandiRange(0, affordableUnits.Count - 1)];
 
         // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
         possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
@@ -1472,6 +1494,7 @@ public partial class World : Node2D
       string description = (string)unitData["description"];
       string rarity = (string)unitData["rarity"];
       List<string> types = unitData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
+      int stage = (int)unitData["stage"];
 
       Godot.Collections.Array cells = (Godot.Collections.Array)unitData["cells"];
       List<Vector2I> occupiedCells = new();
@@ -1483,10 +1506,7 @@ public partial class World : Node2D
       }
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
-        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity, types);
-
-      int stage = (int)unitData["stage"];
-      _unitsPerStage[stage].Add(GlobalConstants.UnitsData[unitId]);
+        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity, types, stage);
     }
   }
 
@@ -2257,7 +2277,6 @@ public partial class World : Node2D
       }
       _turnEndDamage += 1;  // Increase end of turn damage for next turn
       _turnCooldown = _turnStartCooldown;
-      return;
     }
 
     // Possibly respawn zombies

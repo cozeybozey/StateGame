@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 public partial class Unit : GridEntity
 {
-  public bool Side = true; // true for player, false for enemy
   public bool SwitchedSides = false;
-	public UnitInfo StartUnitInfo = null!;
+  public bool Stunned = false;
+  public UnitInfo StartUnitInfo = null!;
 
 	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell, bool placed = false)
 	{
@@ -30,6 +30,7 @@ public partial class Unit : GridEntity
 		Description = unitInfo.Description;
 		Rarity = unitInfo.Rarity;
     Types = unitInfo.Types;
+    Stage = unitInfo.Stage;
 		Side = _side;
 		StartCell = _startCell;
 		StartUnitInfo = unitInfo;
@@ -81,7 +82,7 @@ public partial class Unit : GridEntity
 	public UnitInfo GetInfo()
 	{
 		return new UnitInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Cost, MaxHealth, 
-			Health, Damage, Armor, Speed, StartingCooldown, Cooldown, Description, Rarity, Types);
+			Health, Damage, Armor, Speed, StartingCooldown, Cooldown, Description, Rarity, Types, Stage);
 	}
 
   public UnitInfo GetStartInfo()
@@ -91,6 +92,12 @@ public partial class Unit : GridEntity
 
   public override bool CanAct()
 	{
+    if (Stunned)
+    {
+      SpawnFloatingText("Stunned", Colors.Red);
+      return false;
+    }
+
     Cooldown -= 1;
     if (Cooldown > 0)
       return false;
@@ -149,9 +156,10 @@ public partial class Unit : GridEntity
   {
     // Reset units side to original side upon turn end
     if (SwitchedSides)
-    {
       SwitchSides();
-    }
+
+    // Unstun the unit upon turn end
+    Stunned = false;
   }
 
   public void SwitchSides()
@@ -162,9 +170,20 @@ public partial class Unit : GridEntity
     _globalSignals.EmitSignal(GlobalSignals.SignalName.SideChanged, this);
   }
 
+  public void Stun()
+  {
+    Stunned = true;
+    SpawnFloatingText("Stunned", Colors.Red);
+  }
+
   public override void Remove()
   {
     _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitRemoved, this);
     QueueFree();
+  }
+
+  public float GetHealthPercentage()
+  {
+    return (float)Health / MaxHealth;
   }
 }

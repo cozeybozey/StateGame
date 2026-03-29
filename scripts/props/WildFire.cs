@@ -24,7 +24,7 @@ public partial class WildFire : Prop
     {
       Vector2I targetLocation = OccupiedMainCell + cell;
 
-      if (!GlobalFunctions.CanSpawnProp(this, targetLocation, terrainGrid, propsGrid))
+      if (!GlobalFunctions.CanSpawnProp(GetInfo(), targetLocation, terrainGrid, propsGrid))
         continue;
 
       Prop propInstance = GD.Load<PackedScene>(ScenePath).Instantiate() as Prop;

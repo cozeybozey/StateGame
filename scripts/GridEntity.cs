@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class GridEntity : Node2D
 {
@@ -21,9 +22,12 @@ public partial class GridEntity : Node2D
 	public string Rarity { get; set; } = null!;
 	public List<string> Types { get; set; } = null!;
   public int Cost { get; set; }
+  public int Stage { get; set; }
   public bool Movable { get; set; }
   public bool Damagable { get; set; }
   public bool Blocking { get; set; }
+  public bool Side = true; // true for player, false for enemy
+
   public Vector2I OccupiedMainCell;
 	public Vector2I StartCell;
   public Texture2D Texture = null!;
@@ -114,6 +118,10 @@ public partial class GridEntity : Node2D
     return [];
   }
 
+  public virtual void GameStart(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units)
+  {
+  }
+
   public virtual void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
   }
@@ -132,15 +140,16 @@ public partial class GridEntity : Node2D
     QueueFree();
   }
 
-  public virtual void ChangeHealth(int amount, GridEntity? unit)
+  public virtual int ChangeHealth(int amount, GridEntity? unit)
   {
 		if (_dead || !Damagable)
-			return;
+			return 0;
 
 		string displayedText = "";
 		Color displayedColor = Colors.White;
+    int effectiveAmount = amount;
 
-		if (amount <= 0)
+    if (amount <= 0)
 		{
 			int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - Armor);
@@ -150,6 +159,7 @@ public partial class GridEntity : Node2D
       _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageTaken, this, damageTaken);
       if (unit != null && this is Unit)  // Only track damage dealt to units
         _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageDealt, unit, damageTaken);
+      effectiveAmount = damageTaken;
       if (Health <= 0)
       {
         Die();
@@ -164,6 +174,7 @@ public partial class GridEntity : Node2D
       _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingReceived, this, effectiveHealing);
       if (unit != null && this is Unit) // Only track healing done to units
         _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveHealing);
+      effectiveAmount = effectiveHealing;
     }
     _healthBar.Value = Health;
 
@@ -175,6 +186,8 @@ public partial class GridEntity : Node2D
       ModulateSprite(new Color(1, 1, 1, 0.5f));
       SpawnFloatingText(displayedText, displayedColor);
     }
+
+    return effectiveAmount;
   }
 
   public virtual void ChangeDamage(int amount)
@@ -321,7 +334,34 @@ public partial class GridEntity : Node2D
 		return occupiedCells;
   }
 
-	public void MoveToCell(Vector2I newCell, bool playing = false)
+  public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeSides = true)
+  {
+    List<Vector2I> occupied = GetOccupiedCells();
+    HashSet<Vector2I> surroundingCells = new();
+
+    int frontDir = Side ? -1 : 1; // front direction depends on side
+
+    foreach (Vector2I cell in occupied)
+    {
+      Vector2I front = new(cell.X, cell.Y + frontDir);
+      Vector2I back = new(cell.X, cell.Y - frontDir);
+      Vector2I left = new(cell.X - 1, cell.Y);
+      Vector2I right = new(cell.X + 1, cell.Y);
+
+      if (includeFront && GlobalFunctions.IsCellInsideGrid(front) && !occupied.Contains(front))
+        surroundingCells.Add(front);
+      if (includeBack && GlobalFunctions.IsCellInsideGrid(back) && !occupied.Contains(back))
+        surroundingCells.Add(back);
+      if (includeSides && GlobalFunctions.IsCellInsideGrid(left) && !occupied.Contains(left))
+        surroundingCells.Add(left);
+      if (includeSides && GlobalFunctions.IsCellInsideGrid(right) && !occupied.Contains(right))
+        surroundingCells.Add(right);
+    }
+
+    return surroundingCells.ToList();
+  }
+
+  public void MoveToCell(Vector2I newCell, bool playing = false)
 	{
     if (!Movable)
       return;

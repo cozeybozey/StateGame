@@ -1,11 +1,11 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Drawing;
 
-public partial class TurretFactory : Unit
+public partial class Conjurer : Unit
 {
-  private UnitInfo turretUnitInfo = GlobalConstants.UnitsData["turret"];
+  private UnitInfo impUnitInfo = GlobalConstants.UnitsData["imp"];
   private Node _unitsNode = null!;
 
   protected override void Start()
@@ -15,11 +15,15 @@ public partial class TurretFactory : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, terrainGrid, propsGrid, turretUnitInfo.OccupiedCells, Side);
-    if (randomPos.HasValue)
-      return [randomPos.Value];
-    else
-      return [];
+    List<Vector2I> positions = new List<Vector2I>();
+    for (int i = 0; i < 2; i++)
+    {
+      Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, terrainGrid, propsGrid, impUnitInfo.OccupiedCells, Side);
+      if (randomPos.HasValue)
+        positions.Add(randomPos.Value);
+    }
+
+    return positions;
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
@@ -27,8 +31,8 @@ public partial class TurretFactory : Unit
     // Spawn unit
     foreach (Vector2I target in targets)
     {
-      Unit unitInstance = GD.Load<PackedScene>(turretUnitInfo.ScenePath).Instantiate() as Unit;
-      unitInstance!.Initialize(turretUnitInfo, Side, target);
+      Unit unitInstance = GD.Load<PackedScene>(impUnitInfo.ScenePath).Instantiate() as Unit;
+      unitInstance!.Initialize(impUnitInfo, Side, target);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }
