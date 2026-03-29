@@ -126,10 +126,13 @@ public partial class GridEntity : Node2D
   {
   }
 
+  public virtual void DeathRattle(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+  }
+
   public void Die()
 	{
     _dead = true;
-    DeathRattle();
     _globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntityDied, this);
     _healthBar.Hide();
     _sprite.Hide();
@@ -319,11 +322,6 @@ public partial class GridEntity : Node2D
     }
   }
 
-  public void DeathRattle()
-	{
-		
-	}
-
 	public List<Vector2I> GetOccupiedCells()
 	{
 		List<Vector2I> occupiedCells = new List<Vector2I>();
@@ -361,7 +359,7 @@ public partial class GridEntity : Node2D
     return surroundingCells.ToList();
   }
 
-  public void MoveToCell(Vector2I newCell, bool playing = false)
+  public void MoveToCell(Vector2I newCell, bool playing)
 	{
     if (!Movable)
       return;

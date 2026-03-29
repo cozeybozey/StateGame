@@ -95,7 +95,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       }
 
       // Move unit to new cells
-      unit.MoveToCell(targetCell);
+      unit.MoveToCell(targetCell, false);
 
 			// Assign unit to new cells
       foreach (var cell in unit.GetOccupiedCells())

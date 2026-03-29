@@ -57,7 +57,7 @@ public partial class Hellhound : Unit
 
     // Jump to the landing cell
     if (_targetLocation.Value != OccupiedMainCell)
-      MoveToCell(_targetLocation.Value);
+      MoveToCell(_targetLocation.Value, true);
 
     // Deal damage to the enemy in front
     Unit enemy = unitsGrid[targets[0].X, targets[0].Y];

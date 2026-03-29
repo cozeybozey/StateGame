@@ -696,7 +696,9 @@ public partial class World : Node2D
       }
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || unitInfo.Id == "bulwark" || unitInfo.Id == "berserker")
+      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || 
+        unitInfo.Id == "bulwark" || unitInfo.Id == "berserker" || unitInfo.Id == "abomination" || unitInfo.Id == "pit_fiend" ||
+        unitInfo.Id == "guardian" || unitInfo.Id == "earth_elemental")
       {
         // Position these units in the front portion of the grid
         List<Vector2I> frontPositions = new List<Vector2I>();
@@ -1065,6 +1067,7 @@ public partial class World : Node2D
 
   private void OnGridEntityDied(GridEntity gridEntity)
   {
+    gridEntity.DeathRattle(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     if (gridEntity is Unit unit)
     {
       int index = _unitsToAct.IndexOf(unit);
