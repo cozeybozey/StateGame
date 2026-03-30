@@ -145,35 +145,33 @@ public partial class GridEntity : Node2D
 
   public virtual int ChangeHealth(int amount, GridEntity? unit)
   {
-		if (_dead || !Damagable)
-			return 0;
+    if (_dead || !Damagable)
+      return 0;
 
-		string displayedText = "";
-		Color displayedColor = Colors.White;
+    string displayedText = "";
+    Color displayedColor = Colors.White;
     int effectiveAmount = amount;
 
     if (amount <= 0)
-		{
-			int damage = -amount;
+    {
+      int damage = -amount;
       int effectiveDamage = Mathf.Max(0, damage - Armor);
       int damageTaken = Mathf.Min(effectiveDamage, Health);
-			Health -= effectiveDamage;
-			displayedText = effectiveDamage.ToString();
-      _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageTaken, this, damageTaken);
-      if (unit != null && this is Unit)  // Only track damage dealt to units
-        _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageDealt, unit, damageTaken);
+      Health -= effectiveDamage;
+      displayedText = effectiveDamage.ToString();
+
       effectiveAmount = damageTaken;
       if (Health <= 0)
       {
         Die();
       }
     }
-		else
-		{
+    else
+    {
       int effectiveHealing = Mathf.Min(MaxHealth - Health, amount);
       Health += effectiveHealing;
       displayedText = effectiveHealing.ToString();
-			displayedColor = Colors.Green;
+      displayedColor = Colors.Green;
       _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingReceived, this, effectiveHealing);
       if (unit != null && this is Unit) // Only track healing done to units
         _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveHealing);
@@ -188,6 +186,20 @@ public partial class GridEntity : Node2D
       _affected = true;
       ModulateSprite(new Color(1, 1, 1, 0.5f));
       SpawnFloatingText(displayedText, displayedColor);
+    }
+
+    // Emit signals after everything is done
+    if (amount <= 0)
+    {
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageTaken, this, effectiveAmount);
+      if (unit != null && this is Unit)  // Only track damage dealt to units
+        _globalSignals.EmitSignal(GlobalSignals.SignalName.DamageDealt, unit, effectiveAmount);
+    }
+    else
+    {
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingReceived, this, effectiveAmount);
+      if (unit != null && this is Unit) // Only track healing done to units
+        _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveAmount);
     }
 
     return effectiveAmount;
@@ -332,7 +344,7 @@ public partial class GridEntity : Node2D
 		return occupiedCells;
   }
 
-  public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeSides = true)
+  public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeSides = true, bool includeDiagonals = false)
   {
     List<Vector2I> occupied = GetOccupiedCells();
     HashSet<Vector2I> surroundingCells = new();
@@ -354,6 +366,23 @@ public partial class GridEntity : Node2D
         surroundingCells.Add(left);
       if (includeSides && GlobalFunctions.IsCellInsideGrid(right) && !occupied.Contains(right))
         surroundingCells.Add(right);
+
+      if (includeDiagonals)
+      {
+        Vector2I frontLeft = new(cell.X - 1, cell.Y + frontDir);
+        Vector2I frontRight = new(cell.X + 1, cell.Y + frontDir);
+        Vector2I backLeft = new(cell.X - 1, cell.Y - frontDir);
+        Vector2I backRight = new(cell.X + 1, cell.Y - frontDir);
+
+        if (includeFront && GlobalFunctions.IsCellInsideGrid(frontLeft) && !occupied.Contains(frontLeft))
+          surroundingCells.Add(frontLeft);
+        if (includeFront && GlobalFunctions.IsCellInsideGrid(frontRight) && !occupied.Contains(frontRight))
+          surroundingCells.Add(frontRight);
+        if (includeBack && GlobalFunctions.IsCellInsideGrid(backLeft) && !occupied.Contains(backLeft))
+          surroundingCells.Add(backLeft);
+        if (includeBack && GlobalFunctions.IsCellInsideGrid(backRight) && !occupied.Contains(backRight))
+          surroundingCells.Add(backRight);
+      }
     }
 
     return surroundingCells.ToList();

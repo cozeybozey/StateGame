@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://gadd2n1h6061"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_c5ici"]
+[ext_resource type="Script" uid="uid://cpj2suok5qb33" path="res://scripts/units/HighInquisitor.cs" id="2_kt4ij"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_c5ici")]
+script = ExtResource("2_kt4ij")

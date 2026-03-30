@@ -50,7 +50,7 @@ public partial class World : Node2D
   private Unit[,] _unitsGrid;
   private Terrain[,] _terrainGrid;
   private Prop[,] _propsGrid;
-  private int _unitIndex = 0;
+  private Unit? _unitToAct = null;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
   List<Vector2I> _selectedTargets;
@@ -232,8 +232,9 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _unitsToAct[_unitIndex].Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid);
-        _unitIndex += 1;
+        if (_unitToAct != null)
+          _unitToAct.Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid);
+        AdvanceToNextUnit();
         _turnCooldown = _turnStartCooldown;
         _acting = false;
         _actingCooldown = _actingStartCooldown;
@@ -244,15 +245,17 @@ public partial class World : Node2D
       _actingCooldown -= delta;
       if (_actingCooldown <= 0)
       {
-        _selectedTargets = _unitsToAct[_unitIndex].GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
-        _targetedCellsLayer.ShowCells(_selectedTargets);
-        _acting = true;
-        if (_selectedTargets.Count > 0)
-          _actingCooldown = _actingStartCooldown;
-        else
-          _actingCooldown = 0; // If there are no targets, skip directly to acting phase
+        if (_unitToAct != null)
+        {
+          _selectedTargets = _unitToAct.GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
+          _targetedCellsLayer.ShowCells(_selectedTargets);
+          _acting = true;
+          if (_selectedTargets.Count > 0)
+            _actingCooldown = _actingStartCooldown;
+          else
+            _actingCooldown = 0; // If there are no targets, skip directly to acting phase
+        }
         _targeting = false;
-
       }
     }
     else if (_playing)
@@ -260,27 +263,33 @@ public partial class World : Node2D
       _turnCooldown -= delta;
       if (_turnCooldown <= 0)
       {
-        if (_unitIndex >= _unitsToAct.Count)
-        {
+        if (_unitToAct == null)
           TurnEnd();
-        }
 
         _activeUnitLayer.Clear();
         _activeUnit = null!;
         _targetedCellsLayer.Clear();
-        if (_unitsToAct[_unitIndex].CanAct())
+        if (_unitToAct != null && _unitToAct.CanAct())
         {
           // Show overlay on selected cells
-          _activeUnitLayer.ShowCells(_unitsToAct[_unitIndex].GetOccupiedCells());
-          _activeUnit = _unitsToAct[_unitIndex];
+          _activeUnitLayer.ShowCells(_unitToAct.GetOccupiedCells());
+          _activeUnit = _unitToAct;
           _targeting = true;
         }
         else
-        {
-          _unitIndex += 1;
-        }
+          AdvanceToNextUnit();
       }
     }
+  }
+
+  // After a unit acts, find the next one
+  private void AdvanceToNextUnit()
+  {
+    if (_unitToAct == null)
+      return;
+
+    int currentIndex = _unitsToAct.IndexOf(_unitToAct);
+    _unitToAct = currentIndex + 1 < _unitsToAct.Count ? _unitsToAct[currentIndex + 1] : null;
   }
 
   private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits)
@@ -382,6 +391,9 @@ public partial class World : Node2D
     foreach (Unit unit in _unitsToAct)
       unit.GameStart(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct);
     _playing = true;
+
+    // Set unit to act to first unit
+    _unitToAct = _unitsToAct.FirstOrDefault();
 
     // Immediately win or lose when you or the enemy has no units
     if (_playerUnitsCount == 0)
@@ -837,7 +849,7 @@ public partial class World : Node2D
     }
     _explanationMarks = new Node2D[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
-    _unitIndex = 0;
+    _unitToAct = null;
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
     _turnCooldown = _turnStartCooldown;
@@ -1070,9 +1082,8 @@ public partial class World : Node2D
     gridEntity.DeathRattle(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     if (gridEntity is Unit unit)
     {
-      int index = _unitsToAct.IndexOf(unit);
-      if (index <= _unitIndex)
-        _unitIndex -= 1;
+      if (unit == _unitToAct)
+        AdvanceToNextUnit();
 
       RemoveUnit(unit);
       _removedUnits.Add(unit);
@@ -2241,7 +2252,9 @@ public partial class World : Node2D
 
   private void SortUnits(List<Unit> units)
   {
-    int currentIndex = _unitIndex;
+    int currentIndex = 0;
+    if (_unitToAct != null)
+      currentIndex = units.IndexOf(_unitToAct);
     if (_targeting || _acting)
       currentIndex++;  // Increase current index by one to ensure the unit that is acting now is not resorted
 
@@ -2263,8 +2276,6 @@ public partial class World : Node2D
   private void TurnEnd()
   {
     _turn += 1;
-    SortUnits(_units);
-    _unitsToAct = [.._units];  // Reset units to act to level units list
     _turnCounter.Text = _turn.ToString();
     if (_turn > 10)
     {
@@ -2295,7 +2306,11 @@ public partial class World : Node2D
     foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
       prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
 
-    _unitIndex = 0;
+    SortUnits(_units);
+    _unitsToAct = [.. _units];  // Reset units to act to level units list
+
+    // Set unit to act to first unit again, because sorting might have changed the first unit
+    _unitToAct = _unitsToAct.FirstOrDefault();
   }
 
   public void UpdateCoins(int amount)
