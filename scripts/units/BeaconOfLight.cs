@@ -6,7 +6,7 @@ using System.Drawing;
 public partial class BeaconOfLight : Unit
 {
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {

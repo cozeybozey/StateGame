@@ -14,7 +14,8 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"vegetation",
+			"nature"
 		]
 	},
 	"vase": {
@@ -68,7 +69,8 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"vegetation",
+			"nature"
 		]
 	},
 	"demonic_vase": {
@@ -106,7 +108,8 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"rocky",
+			"nature"
 		]
 	},
 	"white_statue": {
@@ -203,7 +206,7 @@
 	"pool_of_water": {
 		"display_name": "Pool of Water",
 		"texture": "res://sprites/props/pool_of_water.png",
-		"scene": "res://scenes/props/pool_of_water.tscn",
+		"scene": "res://scenes/props/prop.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
 		"health": 0,
@@ -215,7 +218,8 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"liquid"
+			"liquid",
+			"nature"
 		]
 	},
 	"pool_of_blood": {
@@ -230,10 +234,87 @@
 		"damagable": false,
 		"movable": false,
 		"blocking": false,
-		"description": "Heals demonic units for 2 health at the end of each turn.",
+		"description": "Heals demonic units on top of this cell for 2 health at the end of each turn.",
 		"rarity": "common",
 		"types": [
 			"liquid"
+		]
+	},
+
+	"totem_of_fire": {
+		"display_name": "Totem of Fire",
+		"texture": "res://sprites/props/totem_of_fire.png",
+		"scene": "res://scenes/props/totem_of_fire.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 1,
+		"damage": 0,
+		"armor": 0,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Give a random friendly unit +1 attack at the end of each turn.",
+		"rarity": "common",
+		"types": [
+			"totem",
+			"nature"
+		]
+	},
+	"totem_of_earth": {
+		"display_name": "Totem of Earth",
+		"texture": "res://sprites/props/totem_of_earth.png",
+		"scene": "res://scenes/props/totem_of_earth.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 1,
+		"damage": 0,
+		"armor": 0,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Give a random friendly unit +1 max health at the end of each turn.",
+		"rarity": "common",
+		"types": [
+			"totem",
+			"nature"
+		]
+	},
+	"totem_of_water": {
+		"display_name": "Totem of Water",
+		"texture": "res://sprites/props/totem_of_water.png",
+		"scene": "res://scenes/props/totem_of_water.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 1,
+		"damage": 0,
+		"armor": 0,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Restore 2 health to a random damaged friendly unit at the end of each turn.",
+		"rarity": "common",
+		"types": [
+			"totem",
+			"nature"
+		]
+	},
+	"totem_of_air": {
+		"display_name": "Totem of Air",
+		"texture": "res://sprites/props/totem_of_air.png",
+		"scene": "res://scenes/props/totem_of_air.tscn",
+		"cells": [[0, 0]],
+		"stage": 0,
+		"health": 1,
+		"damage": 0,
+		"armor": 0,
+		"damagable": true,
+		"movable": true,
+		"blocking": true,
+		"description": "Give a random friendly unit +1 speed at the end of each turn.",
+		"rarity": "common",
+		"types": [
+			"totem",
+			"nature"
 		]
 	}
 }

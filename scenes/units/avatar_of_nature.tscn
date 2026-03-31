@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://dc3rg1ddswbew"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_yrc51"]
+[ext_resource type="Script" uid="uid://sosl6es1gkrq" path="res://scripts/units/AvatarOfNature.cs" id="2_xairm"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_yrc51")]
+script = ExtResource("2_xairm")

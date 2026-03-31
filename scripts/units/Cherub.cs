@@ -7,18 +7,6 @@ using static System.Net.Mime.MediaTypeNames;
 
 public partial class Cherub : Unit
 {
-
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
-  {
-    if (targets.Count == 0) return;
-
-    Unit target = unitsGrid[targets[0].X, targets[0].Y];
-    if (target == null) return;
-
-    target.ChangeDamage(Damage);
-    target.ChangeSpeed(Damage);
-  }
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> targets = new();
@@ -41,5 +29,16 @@ public partial class Cherub : Unit
     }
 
     return targets;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    if (targets.Count == 0) return;
+
+    Unit target = unitsGrid[targets[0].X, targets[0].Y];
+    if (target == null) return;
+
+    target.ChangeDamage(Damage);
+    target.ChangeSpeed(Damage);
   }
 }

@@ -8,7 +8,7 @@ using static System.Net.Mime.MediaTypeNames;
 public partial class Warden : Unit
 {
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     if (targets.Count == 0) return;
 

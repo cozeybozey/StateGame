@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://v7tttihe4d5e"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_jiki3"]
+[ext_resource type="Script" uid="uid://dpeut6g6bvp8x" path="res://scripts/units/Shaman.cs" id="2_r82et"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_jiki3")]
+script = ExtResource("2_r82et")

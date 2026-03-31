@@ -19,7 +19,7 @@ public partial class Broodmother : Unit
     
     // Side is determined based on broodmother's position on the grid instead of its own side,
     // because broodmother could have been moved to the other side
-    List<Vector2I> possibleSpawnLocations = GlobalFunctions.GetPossibleUnitLocations(unitsGrid, terrainGrid, propsGrid, parasiteUnitInfo.OccupiedCells, 
+    List<Vector2I> possibleSpawnLocations = GlobalFunctions.GetPossibleGridEntityLocations(unitsGrid, terrainGrid, propsGrid, parasiteUnitInfo.OccupiedCells, 
       OccupiedMainCell.Y > Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5));
 
     foreach (Vector2I cell in GetSurroundingCells())
@@ -34,7 +34,7 @@ public partial class Broodmother : Unit
     return positions;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Spawn unit
     foreach (Vector2I target in targets)

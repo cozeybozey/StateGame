@@ -19,7 +19,7 @@ public partial class Gravedigger : Unit
       return;
 
     if (unit.Side == Side)
-      ChangeDamage(2);
+      ChangeDamage(1);
   }
 
   public override void _ExitTree()

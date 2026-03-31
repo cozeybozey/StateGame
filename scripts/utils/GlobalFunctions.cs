@@ -68,7 +68,7 @@ public partial class GlobalFunctions : Node
   // Type U unitsGrid because it can be of type Unit[,] or UnitInfo[,] all we do is check for null
   // Type T terrainGrid because it can be of type Terrain[,] or TerrainInfo[,] all we do is check for null and blocking
   // Type P propsGrid because it can be of type Prop[,] or PropInfo[,] all we do is check for null and blocking
-  public static List<Vector2I> GetPossibleUnitLocations<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
+  public static List<Vector2I> GetPossibleGridEntityLocations<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
   {
     int startY, endY;
     if (side)
@@ -112,9 +112,9 @@ public partial class GlobalFunctions : Node
     return possiblePositions;
   }
 
-  public static Vector2I? GetRandomUnitSpawnLocation<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
+  public static Vector2I? GetRandomGridEntitySpawnLocation<U, T, P>(U[,] unitsGrid, T[,] terrainGrid, P[,] propsGrid, List<Vector2I> occupiedCells, bool side)
   {
-    List<Vector2I> possibleLocations = GetPossibleUnitLocations(unitsGrid, terrainGrid, propsGrid, occupiedCells, side);
+    List<Vector2I> possibleLocations = GetPossibleGridEntityLocations(unitsGrid, terrainGrid, propsGrid, occupiedCells, side);
 
     if (possibleLocations.Count == 0)
       return null!;
@@ -166,7 +166,7 @@ public partial class GlobalFunctions : Node
     return true;
   }
 
-  public static bool CanSpawnProp(PropInfo prop, Vector2I targetLocation, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public static bool CanSpawnProp(PropInfo prop, Vector2I targetLocation, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
   {
     foreach (Vector2I cell in prop.OccupiedCells)
     {
@@ -178,6 +178,10 @@ public partial class GlobalFunctions : Node
 
       // Cannot place prop if other prop is already present
       if (propsGrid[checkLocation.X, checkLocation.Y] != null)
+        return false;
+
+      // Cannot place prop if prop is blocking and a unit is present
+      if (unitsGrid[checkLocation.X, checkLocation.Y] != null && prop.Blocking)
         return false;
 
       // Check if prop and terrain types are compatible
@@ -188,7 +192,7 @@ public partial class GlobalFunctions : Node
     return true;
   }
 
-  public static bool CanSpawnProp(PropInfo prop, Vector2I targetLocation, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  public static bool CanSpawnProp(PropInfo prop, Vector2I targetLocation, Unit[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
   {
     foreach (Vector2I cell in prop.OccupiedCells)
     {
@@ -200,6 +204,10 @@ public partial class GlobalFunctions : Node
 
       // Cannot place prop if other prop is already present
       if (propsGrid[checkLocation.X, checkLocation.Y] != null)
+        return false;
+
+      // Cannot place prop if prop is blocking and a unit is present
+      if (unitsGrid[checkLocation.X, checkLocation.Y] != null && prop.Blocking)
         return false;
 
       // Check if prop and terrain types are compatible

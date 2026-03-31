@@ -41,7 +41,7 @@ public partial class Archdemon : Unit
     return targets.Where(c => GlobalFunctions.IsCellInsideGrid(c)).Distinct().ToList();
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
@@ -49,8 +49,12 @@ public partial class Archdemon : Unit
       if (targetUnit != null)
         targetUnit.ChangeHealth(-Damage, this);
 
+      Prop targetProp = propsGrid[target.X, target.Y];
+      if (targetProp != null && targetProp.Damagable)
+        targetProp.ChangeHealth(-Damage, this);
+
       // Spawn fire
-      if (!GlobalFunctions.CanSpawnProp(_fireInfo, target, terrainGrid, propsGrid))
+      if (!GlobalFunctions.CanSpawnProp(_fireInfo, target, unitsGrid, terrainGrid, propsGrid))
         continue;
 
       Prop propInstance = GD.Load<PackedScene>(_fireInfo.ScenePath).Instantiate() as Prop;

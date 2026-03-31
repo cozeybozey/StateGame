@@ -109,7 +109,7 @@ public partial class GridEntity : Node2D
     return false;
   }
 
-  public virtual void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public virtual void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
   }
 

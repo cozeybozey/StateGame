@@ -7,28 +7,10 @@ public partial class Parasite : Unit
 {
   private Vector2I? _targetLocation = null;
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
-  {
-    if (targets.Count == 0)
-      return;
-
-    // Possibly move to cell
-    if (_targetLocation != null && _targetLocation != OccupiedMainCell)
-    {
-      MoveToCell(_targetLocation.Value, true);
-    }
-
-    // Attack target
-    Unit targetUnit = unitsGrid[targets[0].X, targets[0].Y];
-    if (targetUnit != null)
-      targetUnit.ChangeHealth(-Damage, this);
-    _targetLocation = null;
-  }
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Tuple<Vector2I, Vector2I>> targets = new List<Tuple<Vector2I, Vector2I>>();
-    List<Vector2I> newSurroundingCells = [new Vector2I(-1, 0), new Vector2I(0, -1), new Vector2I(1, 0), new Vector2I(1, 1)];
+    List<Vector2I> newSurroundingCells = [new Vector2I(-1, 0), new Vector2I(0, -1), new Vector2I(1, 0), new Vector2I(0, 1)];
 
     foreach (Unit unit in units)
     {
@@ -61,6 +43,24 @@ public partial class Parasite : Unit
       _targetLocation = targets[index].Item1;
       return [targets[index].Item2];
     }
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    if (targets.Count == 0)
+      return;
+
+    // Possibly move to cell
+    if (_targetLocation != null && _targetLocation != OccupiedMainCell)
+    {
+      MoveToCell(_targetLocation.Value, true);
+    }
+
+    // Attack target
+    Unit targetUnit = unitsGrid[targets[0].X, targets[0].Y];
+    if (targetUnit != null)
+      targetUnit.ChangeHealth(-Damage, this);
+    _targetLocation = null;
   }
 
   public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

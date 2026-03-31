@@ -15,14 +15,14 @@ public partial class TurretFactory : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, terrainGrid, propsGrid, turretUnitInfo.OccupiedCells, Side);
+    Vector2I? randomPos = GlobalFunctions.GetRandomGridEntitySpawnLocation(unitsGrid, terrainGrid, propsGrid, turretUnitInfo.OccupiedCells, Side);
     if (randomPos.HasValue)
       return [randomPos.Value];
     else
       return [];
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Spawn unit
     foreach (Vector2I target in targets)

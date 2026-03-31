@@ -7,23 +7,6 @@ public partial class Mover : Unit
 {
   private bool _movingRight = true;
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
-  {
-    // Buff surrounding units
-    List<Unit> buffed = new List<Unit>();
-    foreach (Vector2I cell in targets)
-    {
-      Unit unit = unitsGrid[cell.X, cell.Y];
-      if (unit == null || unit == this)
-        continue;
-      if (buffed.Contains(unit))
-        continue;
-      buffed.Add(unit);
-      unit.ChangeDamage(1);
-      unit.ChangeMaxHealth(1);
-    }
-  }
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new List<Vector2I>();
@@ -59,5 +42,22 @@ public partial class Mover : Unit
     }
 
     return result;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    // Buff surrounding units
+    List<Unit> buffed = new List<Unit>();
+    foreach (Vector2I cell in targets)
+    {
+      Unit unit = unitsGrid[cell.X, cell.Y];
+      if (unit == null || unit == this)
+        continue;
+      if (buffed.Contains(unit))
+        continue;
+      buffed.Add(unit);
+      unit.ChangeDamage(1);
+      unit.ChangeMaxHealth(1);
+    }
   }
 }

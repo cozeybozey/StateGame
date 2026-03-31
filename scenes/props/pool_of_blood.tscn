@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://vwk3he0p5im7"]
+
+[ext_resource type="PackedScene" uid="uid://clcvair7df3rq" path="res://scenes/props/prop.tscn" id="1_cbfsi"]
+[ext_resource type="Script" uid="uid://se0fxmxprnjo" path="res://scripts/props/PoolOfBlood.cs" id="2_a2nj6"]
+
+[node name="Prop" unique_id=995662800 instance=ExtResource("1_cbfsi")]
+script = ExtResource("2_a2nj6")

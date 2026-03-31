@@ -8,7 +8,40 @@ public partial class Consumer : Unit
   private bool _shouldConsume = true;  // Start with a consume turn
   private int _consumedCount = 0; // number of units consumed
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    List<Vector2I> result = new();
+
+    if (_shouldConsume)
+    {
+      // Predicate makes sure closest unit has to be friendly
+      Tuple<Unit, Vector2I>? closestAlly = GetClosestUnit(units, u => u.Side == Side);
+
+      if (closestAlly != null)
+      {
+        result.Add(closestAlly.Item1.OccupiedMainCell);
+      }
+      else
+      {
+        // No valid ally to consume — fallback to attacking frontmost enemies this turn
+        SpawnFloatingText("No ally to consume", Colors.Red);
+        int numTargets = 1 + _consumedCount;
+        List<Vector2I> enemies = FindFrontmostEnemies(unitsGrid, numTargets);
+        result.AddRange(enemies);
+      }
+    }
+    else
+    {
+      // Attack turn: target frontmost enemies. Number of targets = 1 + consumedCount
+      int numTargets = 1 + _consumedCount;
+      List<Vector2I> enemies = FindFrontmostEnemies(unitsGrid, numTargets);
+      result.AddRange(enemies);
+    }
+
+    return result;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // If no targets, ensure we will attempt to consume next turn
     if (targets == null || targets.Count == 0)
@@ -66,39 +99,6 @@ public partial class Consumer : Unit
       // After attacking, next turn we attempt to consume
       _shouldConsume = true;
     }
-  }
-
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
-  {
-    List<Vector2I> result = new();
-
-    if (_shouldConsume)
-    {
-      // Predicate makes sure closest unit has to be friendly
-      Tuple<Unit, Vector2I>? closestAlly = GetClosestUnit(units, u => u.Side == Side);
-
-      if (closestAlly != null)
-      {
-        result.Add(closestAlly.Item1.OccupiedMainCell);
-      }
-      else
-      {
-        // No valid ally to consume — fallback to attacking frontmost enemies this turn
-        SpawnFloatingText("No ally to consume", Colors.Red);
-        int numTargets = 1 + _consumedCount;
-        List<Vector2I> enemies = FindFrontmostEnemies(unitsGrid, numTargets);
-        result.AddRange(enemies);
-      }
-    }
-    else
-    {
-      // Attack turn: target frontmost enemies. Number of targets = 1 + consumedCount
-      int numTargets = 1 + _consumedCount;
-      List<Vector2I> enemies = FindFrontmostEnemies(unitsGrid, numTargets);
-      result.AddRange(enemies);
-    }
-
-    return result;
   }
 
   private List<Vector2I> FindFrontmostEnemies(Unit[,] unitsGrid, int maxTargets)

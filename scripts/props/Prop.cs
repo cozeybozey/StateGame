@@ -25,6 +25,7 @@ public partial class Prop : GridEntity
     Types = propInfo.Types;
 
     StartCell = startCell;
+    Side = startCell.Y >= Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
     StartPropInfo = propInfo;
     _placed = placed;
   }

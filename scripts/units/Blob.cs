@@ -8,7 +8,7 @@ public partial class Blob : Unit
   private Vector2I _newOccupiedMainCell;
   private List<Vector2I> _newOccupiedCells = new List<Vector2I>();
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Unit> consumedUnits = new List<Unit>();
     foreach (Vector2I target in targets)

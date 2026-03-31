@@ -13,7 +13,7 @@ public partial class Imp : Unit
     _fireInfo = GlobalConstants.PropsData["fire"];
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
@@ -30,7 +30,7 @@ public partial class Imp : Unit
       }
 
       // Spawn fire
-      if (!GlobalFunctions.CanSpawnProp(_fireInfo, target, terrainGrid, propsGrid))
+      if (!GlobalFunctions.CanSpawnProp(_fireInfo, target, unitsGrid, terrainGrid, propsGrid))
         continue;
 
       Prop propInstance = GD.Load<PackedScene>(_fireInfo.ScenePath).Instantiate() as Prop;

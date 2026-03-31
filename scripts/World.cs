@@ -233,7 +233,7 @@ public partial class World : Node2D
       if (_actingCooldown <= 0)
       {
         if (_unitToAct != null)
-          _unitToAct.Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid);
+          _unitToAct.Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
         AdvanceToNextUnit();
         _turnCooldown = _turnStartCooldown;
         _acting = false;
@@ -540,7 +540,7 @@ public partial class World : Node2D
       List<Vector2I> candidates = new();
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, props) &&
+          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), _unitsGrid, terrainGrid, props) &&
               CanPlaceBlocking(x, y))
             candidates.Add(new Vector2I(x, y));
 
@@ -558,7 +558,8 @@ public partial class World : Node2D
       List<Vector2I> candidates = new();
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, props) &&
+          // There are no units yet, so pass empty grid for units
+          if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y], terrainGrid, props) &&
               CanPlaceBlocking(x, y))
             candidates.Add(new Vector2I(x, y));
 
@@ -596,7 +597,8 @@ public partial class World : Node2D
     List<Vector2I> candidates = new();
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), terrainGrid, propsGrid) &&
+        // There are no units yet, so pass empty grid for units
+        if (GlobalFunctions.CanSpawnProp(propInfo, new Vector2I(x, y), new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y], terrainGrid, propsGrid) &&
             (extraCheck == null || extraCheck(x, y)))
           candidates.Add(new Vector2I(x, y));
 
@@ -625,7 +627,8 @@ public partial class World : Node2D
             neighbor.X >= GlobalConstants.GridSize.X ||
             neighbor.Y >= GlobalConstants.GridSize.Y) continue;
         if (cluster.Contains(neighbor)) continue;
-        if (!GlobalFunctions.CanSpawnProp(propInfo, neighbor, terrainGrid, propsGrid)) continue;
+        // There are no units yet, so pass empty grid for units
+        if (!GlobalFunctions.CanSpawnProp(propInfo, neighbor, new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y], terrainGrid, propsGrid)) continue;
         if (extraCheck != null && !extraCheck(neighbor.X, neighbor.Y)) continue;
 
         cluster.Add(neighbor);
@@ -697,13 +700,13 @@ public partial class World : Node2D
         unitInfo = affordableUnits[rng.RandiRange(0, affordableUnits.Count - 1)];
 
         // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
-        possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
+        possiblePositions = GlobalFunctions.GetPossibleGridEntityLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
       }
 
       // We failed finding a different unit
       if (nrOfTries >= 10)
       {
-        possiblePositions = GlobalFunctions.GetPossibleUnitLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
+        possiblePositions = GlobalFunctions.GetPossibleGridEntityLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
         GD.Print("Unit placement failed. Placing turret instead.");
       }
 
@@ -2231,7 +2234,7 @@ public partial class World : Node2D
       {
         removedZombies.Add(unit);
 
-        Vector2I? spawnCell = GlobalFunctions.GetRandomUnitSpawnLocation(_unitsGrid, _terrainGrid, _propsGrid, unit.OccupiedCells, unit.Side);
+        Vector2I? spawnCell = GlobalFunctions.GetRandomGridEntitySpawnLocation(_unitsGrid, _terrainGrid, _propsGrid, unit.OccupiedCells, unit.Side);
         if (spawnCell == null)
           continue;
 

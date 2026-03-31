@@ -22,6 +22,7 @@ public partial class Terrain : GridEntity
     Types = terrainInfo.Types;
 
     StartCell = startCell;
+    Side = startCell.Y >= Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
     StartTerrainInfo = terrainInfo;
     _placed = placed;
   }

@@ -18,7 +18,7 @@ public partial class Conjurer : Unit
     List<Vector2I> positions = new List<Vector2I>();
     for (int i = 0; i < 2; i++)
     {
-      Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, terrainGrid, propsGrid, impUnitInfo.OccupiedCells, Side);
+      Vector2I? randomPos = GlobalFunctions.GetRandomGridEntitySpawnLocation(unitsGrid, terrainGrid, propsGrid, impUnitInfo.OccupiedCells, Side);
       if (randomPos.HasValue)
         positions.Add(randomPos.Value);
     }
@@ -26,7 +26,7 @@ public partial class Conjurer : Unit
     return positions;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Spawn unit
     foreach (Vector2I target in targets)

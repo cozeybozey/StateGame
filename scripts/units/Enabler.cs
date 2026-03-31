@@ -7,21 +7,6 @@ public partial class Enabler : Unit
   private int _currentIndex = 0;
   private List<Unit> _units = new List<Unit>();
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
-  {
-    foreach (Vector2I target in targets)
-    {
-      Unit unit = unitsGrid[target.X, target.Y];
-
-      // Insert the unit after this unit so it immediately gets to play after this unit's turn
-      if (unit != null)
-      {
-        unit.SpawnFloatingText("Extra turn", Colors.Yellow);
-        _units.Insert(_currentIndex + 1, unit);
-      }
-    }
-  }
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Predicate makes sure closest unit has to be friendly and not another enabler
@@ -34,6 +19,21 @@ public partial class Enabler : Unit
       _currentIndex = units.IndexOf(this);
       _units = units;
       return [closest.Item2];
+    }
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    foreach (Vector2I target in targets)
+    {
+      Unit unit = unitsGrid[target.X, target.Y];
+
+      // Insert the unit after this unit so it immediately gets to play after this unit's turn
+      if (unit != null)
+      {
+        unit.SpawnFloatingText("Extra turn", Colors.Yellow);
+        _units.Insert(_currentIndex + 1, unit);
+      }
     }
   }
 }

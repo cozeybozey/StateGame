@@ -8,7 +8,7 @@ public partial class Unit : GridEntity
   public bool Stunned = false;
   public UnitInfo StartUnitInfo = null!;
 
-	public void Initialize(UnitInfo unitInfo, bool _side, Vector2I _startCell, bool placed = false)
+	public void Initialize(UnitInfo unitInfo, bool side, Vector2I startCell, bool placed = false)
 	{
     Damagable = true;
     Movable = true;
@@ -31,8 +31,8 @@ public partial class Unit : GridEntity
 		Rarity = unitInfo.Rarity;
     Types = unitInfo.Types;
     Stage = unitInfo.Stage;
-		Side = _side;
-		StartCell = _startCell;
+		Side = side;
+		StartCell = startCell;
 		StartUnitInfo = unitInfo;
     _placed = placed;
   }
@@ -106,7 +106,7 @@ public partial class Unit : GridEntity
 		return true;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
 		foreach (Vector2I target in targets)
 		{
