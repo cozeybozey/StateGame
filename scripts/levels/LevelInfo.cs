@@ -30,7 +30,7 @@ public partial class LevelInfo : RefCounted
 		bool gauntlet,
 		List<UnitInfo> rewards,
 		int coinsReward,
-		int quadrant,
+		int levelSection,
 		List<string> nextNodes,
     List<TerrainInfo[,]> terrains,
     List<PropInfo[,]> props,
@@ -46,7 +46,7 @@ public partial class LevelInfo : RefCounted
 		Gauntlet = gauntlet;
 		Rewards = rewards;
 		CoinsReward = coinsReward;
-		LevelSection = quadrant;
+		LevelSection = levelSection;
 		NextNodes = nextNodes;
     Terrains = terrains;
 		Props = props;

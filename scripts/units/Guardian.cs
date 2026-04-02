@@ -6,13 +6,11 @@ using System.Linq;
 
 public partial class Guardian : Unit
 {
-  private GlobalSignals? _globalSignals;
   private List<Unit> _unitsToAct = new();
   private List<Unit> _buffedUnits = new();
 
   protected override void Start()
   {
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _globalSignals.GridEntitySpawned += OnUnitSpawned;
     _globalSignals.GridEntityMoved += OnUnitMoved;
     _globalSignals.SizeChanged += OnUnitSizeChanged;

@@ -162,23 +162,14 @@ public partial class DecksHandler : Control
   private void AddUnitsSelectionBeforeLevel(UnitInfo[,] unitsGrid)
   {
     List<UnitInfo> units = new List<UnitInfo>();
-    Dictionary<string, int> amountPlacedPerUnit = new Dictionary<string, int>(); // TODO can remove
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         UnitInfo unitInfo = unitsGrid[x, y];
-        if (unitInfo != null)
-        {
-          if (amountPlacedPerUnit.ContainsKey(unitInfo.Id))
-            amountPlacedPerUnit[unitInfo.Id] += 1;
-          else
-          {
-            amountPlacedPerUnit[unitInfo.Id] = 1;
+        if (unitInfo != null && !units.Contains(unitInfo))
             units.Add(unitInfo);
-          }
-        }
       }
     }
 

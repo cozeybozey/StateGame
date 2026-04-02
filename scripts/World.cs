@@ -106,13 +106,17 @@ public partial class World : Node2D
 
   // Damage and healing tracking
   // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
-  private System.Collections.Generic.Dictionary<Unit, UnitActivity> _unitsActivity = new System.Collections.Generic.Dictionary<Unit, UnitActivity>(); 
+  private System.Collections.Generic.Dictionary<Unit, UnitActivity> _unitsActivity = new System.Collections.Generic.Dictionary<Unit, UnitActivity>();
   private Panel _gameStats;
   private MenuButton _statisticsButton;
   private PopupMenu _statisticsPopup;
   private VBoxContainer _damageDealtStats;
   private VBoxContainer _damageTakenStats;
   private VBoxContainer _healingDoneStats;
+
+  // Exta turn variables
+  bool _extraTurnGiven = false;
+  int _indexAfterExtraTurn = 0;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -176,6 +180,7 @@ public partial class World : Node2D
     _globalSignals.HealingReceived += OnGridEntityHealingReceived;
     _globalSignals.SideChanged += OnUnitSideChanged;
     _globalSignals.UnitRemoved += OnUnitRemoved;
+    _globalSignals.ExtraTurnGiven += OnExtraTurnGiven;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _statisticsPopup = _statisticsButton.GetPopup();
     _statisticsPopup.IdPressed += OnStatisticSelected;
@@ -224,6 +229,16 @@ public partial class World : Node2D
   // Called every frame. 'delta' is the elapsed time since the previous frame.
   public override void _Process(double delta)
   {
+    // Turn on if there are issues with player losing before all units are dead
+    //int friendlyUnitCount = 0;
+    //foreach (Unit unit in _units)
+    //{
+    //  if (unit.Side)
+    //    friendlyUnitCount++;
+    //}
+    //if (friendlyUnitCount != _playerUnitsCount)
+    //  GD.Print("hi");
+
     if (_paused)
       return;
 
@@ -339,7 +354,7 @@ public partial class World : Node2D
 
         UnitInfo enemyUnit = enemyUnits[x, y];
 
-        if (enemyUnit != null) 
+        if (enemyUnit != null)
         {
           Unit unitInstance = GD.Load<PackedScene>(enemyUnit.ScenePath).Instantiate() as Unit;
           unitInstance!.Initialize(enemyUnit, false, new Vector2I(x, y), placed: true);
@@ -354,7 +369,7 @@ public partial class World : Node2D
     {
       foreach (Vector2I cell in unit.GetOccupiedCells())
       {
-        if ((_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking) || 
+        if ((_terrainGrid[cell.X, cell.Y] != null && _terrainGrid[cell.X, cell.Y].Blocking) ||
           (_propsGrid[cell.X, cell.Y] != null && _propsGrid[cell.X, cell.Y].Blocking))
         {
           Node2D explanationMarkInstance = GD.Load<PackedScene>(_explanationMarkScenePath).Instantiate() as Node2D;
@@ -431,18 +446,21 @@ public partial class World : Node2D
   private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadRandomLevel(int difficulty, int levelSection)
   {
     // Only place a limited amount of blocking terrains and props. So there is enough room for units.
-    int expectedUnitSlots = difficulty;
-    int requiredFreeTilesPerHalf = expectedUnitSlots + 10;
+    int expectedUserUnitSlots = difficulty;
+    int requiredFreeTilesUser = expectedUserUnitSlots + 10;
+    int expectedEnemyUnitSlots = difficulty + (difficulty / 2);
+    int requiredFreeTilesEnemy = expectedEnemyUnitSlots + 10;
     int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
-    int maxBlockingPerHalf = halfTiles - requiredFreeTilesPerHalf;
+    int maxBlockingUser = halfTiles - requiredFreeTilesUser;
+    int maxBlockingEnemy = halfTiles - requiredFreeTilesEnemy;
 
-    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingPerHalf, levelSection);
-    PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingPerHalf, terrain, levelSection);
+    TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingUser, maxBlockingEnemy, levelSection);
+    PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingUser, maxBlockingEnemy, terrain, levelSection);
     UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props, levelSection);
     return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrain, props, units);
   }
 
-  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingPerHalf, int levelSection)
+  private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingUser, int maxBlockingEnemy, int levelSection)
   {
     TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     List<string> nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"]; // TODO move
@@ -472,8 +490,9 @@ public partial class World : Node2D
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         bool isTopHalf = y < midY;
-        int blockingCount = isTopHalf ? topHalfBlocking : bottomHalfBlocking;
-        if (blockingCount >= maxBlockingPerHalf) continue;
+        if ((isTopHalf && topHalfBlocking >= maxBlockingEnemy) ||
+          (!isTopHalf && bottomHalfBlocking >= maxBlockingUser))
+          continue;
 
         float mountainVal = mountainNoise.GetNoise2D(x, y);
         float waterVal = waterNoise.GetNoise2D(x, y);
@@ -496,7 +515,7 @@ public partial class World : Node2D
     return terrain;
   }
 
-  private PropInfo[,] LoadRandomLevelProps(int difficulty, int maxBlockingPerHalf, TerrainInfo[,] terrainGrid, int levelSection)
+  private PropInfo[,] LoadRandomLevelProps(int difficulty, int maxBlockingUser, int maxBlockingEnemy, TerrainInfo[,] terrainGrid, int levelSection)
   {
     PropInfo[,] props = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     List<string> movableProps = ["bush", "vase", "broken_turret", "dark_bush", "demonic_vase"];
@@ -522,8 +541,12 @@ public partial class World : Node2D
 
     bool CanPlaceBlocking(int x, int y)
     {
-      int blocking = y < midY ? topHalfBlocking : bottomHalfBlocking;
-      return blocking < maxBlockingPerHalf;
+      bool isTopHalf = y < midY;
+      if ((isTopHalf && topHalfBlocking >= maxBlockingEnemy) ||
+        (!isTopHalf && bottomHalfBlocking >= maxBlockingUser))
+        return false;
+      else
+        return true;
     }
 
     void PlaceBlocking(int x, int y)
@@ -646,7 +669,7 @@ public partial class World : Node2D
     List<string> dominantUnitTypes = ["primal", "holy", "machinery", "rotten", "demonic"]; // TODO move
     string dominantType = dominantUnitTypes[levelSection];
 
-    int budget = difficulty; // + (difficulty / 2);
+    int budget = difficulty + (difficulty / 2);
     int maxStage = GetMaxStageForDifficulty(difficulty);
 
     // Build unit pools
@@ -698,6 +721,7 @@ public partial class World : Node2D
         if (affordableUnits.Count == 0)
           continue;
         unitInfo = affordableUnits[rng.RandiRange(0, affordableUnits.Count - 1)];
+        cost = unitInfo.OccupiedCells.Count;
 
         // Get random position for the unit, ensuring it fits within the grid and doesn't overlap with existing units
         possiblePositions = GlobalFunctions.GetPossibleGridEntityLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
@@ -706,12 +730,14 @@ public partial class World : Node2D
       // We failed finding a different unit
       if (nrOfTries >= 10)
       {
+        unitInfo = GlobalConstants.UnitsData["turret"];
         possiblePositions = GlobalFunctions.GetPossibleGridEntityLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
+        cost = unitInfo.OccupiedCells.Count;
         GD.Print("Unit placement failed. Placing turret instead.");
       }
 
       Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" || 
+      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" ||
         unitInfo.Id == "bulwark" || unitInfo.Id == "berserker" || unitInfo.Id == "abomination" || unitInfo.Id == "pit_fiend" ||
         unitInfo.Id == "guardian" || unitInfo.Id == "earth_elemental")
       {
@@ -882,7 +908,7 @@ public partial class World : Node2D
     if (!_playing)
       return;
     _playing = false;
-    
+
     ShowGameStats();
 
     if (_activeLevel.Gauntlet && _activeGauntletLevelIndex + 1 < _activeLevel.Units.Count)
@@ -1120,6 +1146,14 @@ public partial class World : Node2D
         _explanationMarks[cell.X, cell.Y] = null!;
       }
     }
+  }
+
+  private void OnExtraTurnGiven(Unit originUnit, Unit targetUnit)
+  {
+    int originUnitIndex = _unitsToAct.IndexOf(originUnit);
+    targetUnit.SpawnFloatingText("Extra turn", Colors.Yellow);
+    _unitsToAct.Insert(originUnitIndex + 1, targetUnit);
+    _indexAfterExtraTurn = originUnitIndex + 1;
   }
 
   private void RemoveUnit(Unit unit)

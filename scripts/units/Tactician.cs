@@ -5,11 +5,9 @@ using System.Linq;
 
 public partial class Tactician : Unit
 {
-  private GlobalSignals? _globalSignals;
 
   protected override void Start()
   {
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _globalSignals.GridEntityMoved += OnUnitMoved;
   }
 

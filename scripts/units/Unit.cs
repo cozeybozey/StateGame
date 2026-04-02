@@ -6,6 +6,7 @@ public partial class Unit : GridEntity
 {
   public bool SwitchedSides = false;
   public bool Stunned = false;
+  public bool ExtraTurn = false;
   public UnitInfo StartUnitInfo = null!;
 
 	public void Initialize(UnitInfo unitInfo, bool side, Vector2I startCell, bool placed = false)
@@ -178,7 +179,8 @@ public partial class Unit : GridEntity
 
   public override void Remove()
   {
-    _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitRemoved, this);
+    if (!_dead && IsInstanceValid(this))
+      _globalSignals.EmitSignal(GlobalSignals.SignalName.UnitRemoved, this);
     QueueFree();
   }
 

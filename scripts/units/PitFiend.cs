@@ -5,11 +5,9 @@ using System.Drawing;
 
 public partial class PitFiend : Unit
 {
-  private GlobalSignals? _globalSignals;
 
   protected override void Start()
   {
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _globalSignals.GridEntityDied += OnUnitDied;
     _globalSignals.GridEntitySpawned += OnUnitSpawned;
   }

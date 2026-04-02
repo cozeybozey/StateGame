@@ -1013,7 +1013,7 @@
 			"primal"
 		]
 	},
-	"earth_elemantal": {
+	"earth_elemental": {
 		"display_name": "Earth Elemental",
 		"texture": "res://sprites/units/earth_elemental.png",
 		"scene": "res://scenes/units/earth_elemental.tscn",
@@ -1126,7 +1126,7 @@
 		"texture": "res://sprites/units/fire_enthusiast.png",
 		"scene": "res://scenes/units/fire_enthusiast.tscn",
 		"cells": [[0, 0]],
-		"stage": 1,
+		"stage": 3,
 		"cost": 2,
 		"description": "Deal damage to frontmost unit. +1 damage for each burning prop.",
 		"health": 8,
@@ -1145,7 +1145,7 @@
 		"texture": "res://sprites/units/dire_wolf.png",
 		"scene": "res://scenes/units/dire_wolf.tscn",
 		"cells": [[0, 0], [0, 1]],
-		"stage": 1,
+		"stage": 3,
 		"cost": 2,
 		"description": "Move existing friendly wolfs to this unit.",
 		"health": 16,

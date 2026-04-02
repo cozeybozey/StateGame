@@ -36,7 +36,7 @@ public partial class Shaman : Unit
     {
       Prop currentProp = propsGrid[target.X, target.Y];
       if (currentProp != null)
-        currentProp.Die();
+        return;
 
       PropInfo totemInfo = _totems[_rng.RandiRange(0, _totems.Count - 1)];
 

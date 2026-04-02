@@ -8,11 +8,9 @@ public partial class Archdemon : Unit
 {
   private Node _propsNode = null!;
   private PropInfo _fireInfo = null!;
-  private GlobalSignals? _globalSignals;
 
   protected override void Start()
   {
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _globalSignals.GridEntityDied += OnUnitDied;
     _globalSignals.GridEntitySpawned += OnUnitSpawned;
     _propsNode = GetTree().CurrentScene.GetNode("Props");

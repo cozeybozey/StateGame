@@ -262,6 +262,7 @@ public partial class MainMenu : Control
             { "gauntlet", level.Value.Gauntlet },
             { "rewards", rewardsList },
             { "coinsReward", level.Value.CoinsReward},
+            { "levelSection", level.Value.LevelSection},
             { "nextNodes", nextNodesList },
             { "terrains", terrainGrids },
             { "props", propGrids },
@@ -270,7 +271,16 @@ public partial class MainMenu : Control
       levelsData[level.Key] = levelData;
     }
     saveData["levels"] = levelsData;
-    //saveData["levelNodesPerLayer"] = _world.AmountOfNodesPerLayer; todo fix
+
+    var amountOfNodesPerLayerPerSection = new Godot.Collections.Array();
+    for (int layer = 0; layer < _world.AmountOfNodesPerLayerPerSection.GetLength(0); layer++)
+    {
+      var sectionArray = new Godot.Collections.Array();
+      for (int section = 0; section < _world.AmountOfNodesPerLayerPerSection.GetLength(1); section++)
+        sectionArray.Add(_world.AmountOfNodesPerLayerPerSection[layer, section]);
+      amountOfNodesPerLayerPerSection.Add(sectionArray);
+    }
+    saveData["amountOfNodesPerLayerPerSection"] = amountOfNodesPerLayerPerSection;
     saveData["coins"] = _world.Coins;
 
     // Write to file
@@ -402,14 +412,22 @@ public partial class MainMenu : Control
           gauntlet: levelData["gauntlet"].AsBool(),
           rewards: rewards,
           coinsReward: levelData["coinsReward"].AsInt32(),
-          quadrant: 0, // TODO fix
+          levelSection: levelData["levelSection"].AsInt32(),
           nextNodes: nextNodes,
           terrains: terrains,
           props: props,
           units: units
       );
     }
-    //_world.AmountOfNodesPerLayer = saveData["levelNodesPerLayer"].AsGodotArray().Select(x => x.AsInt32()).ToArray(); todo fix
+
+    var amountOfNodesPerLayerPerSection = saveData["amountOfNodesPerLayerPerSection"].AsGodotArray();
+    for (int layer = 0; layer < amountOfNodesPerLayerPerSection.Count; layer++)
+    {
+      var sectionArray = amountOfNodesPerLayerPerSection[layer].AsGodotArray();
+      for (int section = 0; section < sectionArray.Count; section++)
+        _world.AmountOfNodesPerLayerPerSection[layer, section] = sectionArray[section].AsInt32();
+    }
+
     _world.UpdateCoins(saveData["coins"].AsInt32());
     _world.LoadLevels();
 
