@@ -117,7 +117,7 @@ public partial class DecksHandler : Control
     _gridOverlay.LoadDeck(Decks[_selectedDeck]);
     _decksContainer.Hide();
     _unitsSelectionContainer.Show();
-    AddUnitsSelection(Decks[_selectedDeck]);
+    AddUnitsSelection(Decks[_selectedDeck], false);
     _processUnitChanges = true;
   }
 
@@ -128,34 +128,67 @@ public partial class DecksHandler : Control
     _unitsSelectionContainer.Hide();
   }
 
-  private void AddUnitsSelection(UnitInfo[,] unitsGrid)
+  private void AddUnitsSelection(UnitInfo[,] placedUnitsGrid, bool reloadLevel)
   {
     Dictionary<string, int> _amountPlacedPerUnit = new Dictionary<string, int>();
+    Dictionary<string, int> _amountInDeckPerUnit = new Dictionary<string, int>();
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
-        UnitInfo unitInfo = unitsGrid[x, y];
-        if (unitInfo != null)
+        UnitInfo placedUnitInfo = placedUnitsGrid[x, y];
+        if (placedUnitInfo != null)
         {
-          if (_amountPlacedPerUnit.ContainsKey(unitInfo.Id))
-            _amountPlacedPerUnit[unitInfo.Id] += 1;
+          if (_amountPlacedPerUnit.ContainsKey(placedUnitInfo.Id))
+            _amountPlacedPerUnit[placedUnitInfo.Id] += 1;
           else
-            _amountPlacedPerUnit[unitInfo.Id] = 1;
+            _amountPlacedPerUnit[placedUnitInfo.Id] = 1;
+        }
+        
+        if (!reloadLevel || !Decks.ContainsKey(_selectedDeck))
+          continue;
+        UnitInfo deckUnitInfo = Decks[_selectedDeck][x, y];
+        if (deckUnitInfo != null)
+        {
+          if (_amountInDeckPerUnit.ContainsKey(deckUnitInfo.Id))
+            _amountInDeckPerUnit[deckUnitInfo.Id] += 1;
+          else
+            _amountInDeckPerUnit[deckUnitInfo.Id] = 1;
         }
       }
     }
 
-    foreach (UnitInfo availableUnit in AvailableUnits)
+    if (reloadLevel)
     {
-      // Add initial turrent selection unit
-      UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
-      unitGui!.Info = availableUnit;
-      unitGui.Amount = AmountPerUnit[availableUnit.Id];
-      if (_amountPlacedPerUnit.ContainsKey(availableUnit.Id))
-        unitGui.Amount -= _amountPlacedPerUnit[availableUnit.Id];
-      _unitsList.AddChild(unitGui);
+      foreach (string unitId in _amountInDeckPerUnit.Keys)
+      {
+        UnitInfo unitInfo = GlobalConstants.UnitsData[unitId];
+        UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+        unitGui!.Info = unitInfo;
+
+        if (_amountInDeckPerUnit.ContainsKey(unitId))
+          unitGui.Amount = _amountInDeckPerUnit[unitId];
+
+        if (_amountPlacedPerUnit.ContainsKey(unitId))
+          unitGui.Amount -= _amountPlacedPerUnit[unitId];
+
+        _unitsList.AddChild(unitGui);
+      }
+    }
+    else
+    {
+      foreach (UnitInfo availableUnit in AvailableUnits)
+      {
+        UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+        unitGui!.Info = availableUnit;
+
+        unitGui.Amount = AmountPerUnit[availableUnit.Id];
+        if (_amountPlacedPerUnit.ContainsKey(availableUnit.Id))
+          unitGui.Amount -= _amountPlacedPerUnit[availableUnit.Id];
+
+        _unitsList.AddChild(unitGui);
+      }
     }
   }
 
@@ -191,11 +224,10 @@ public partial class DecksHandler : Control
     }
   }
 
-  public void ResetUnitsSelection()
+  public void ResetUnitsSelection(UnitInfo[,] placedUnitsGrid, bool reloadLevel)
   {
     ClearUnitsSelection();
-    if (Decks.ContainsKey(_selectedDeck))
-      AddUnitsSelection(Decks[_selectedDeck]);
+    AddUnitsSelection(placedUnitsGrid, reloadLevel);
   }
 
   public void LoadBeforeLevel()
@@ -211,10 +243,19 @@ public partial class DecksHandler : Control
 
   public void LoadAfterLevel()
   {
-    ResetUnitsSelection();
-    _gridOverlay.LoadDeck(Decks[_selectedDeck]);
+    if (Decks.ContainsKey(_selectedDeck))
+    {
+      ResetUnitsSelection(Decks[_selectedDeck], false);
+      _gridOverlay.LoadDeck(Decks[_selectedDeck]);
+    }
     _changeDeckButton.Visible = true;
     _processUnitChanges = true;
+  }
+
+  public void ReloadAfterLevel(UnitInfo[,] unitsGrid)
+  {
+    ResetUnitsSelection(unitsGrid , true);
+    _gridOverlay.LoadDeck(unitsGrid);
   }
 
   public void AddUnit(UnitInfo unitInfo)

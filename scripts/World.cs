@@ -51,6 +51,7 @@ public partial class World : Node2D
   private Terrain[,] _terrainGrid;
   private Prop[,] _propsGrid;
   private Unit? _unitToAct = null;
+  private UnitInfo[,] _playerUnitsGridBeforeLevel;
   private int _playerUnitsCount = 0;
   private int _enemyUnitsCount = 0;
   List<Vector2I> _selectedTargets;
@@ -169,6 +170,7 @@ public partial class World : Node2D
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _terrainGrid = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _propsGrid = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _playerUnitsGridBeforeLevel = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     _globalSignals.GridEntityDied += OnGridEntityDied;
     _globalSignals.GridEntityMoved += OnGridEntityMoved;
     _globalSignals.GridEntitySpawned += OnGridEntitySpawned;
@@ -307,12 +309,13 @@ public partial class World : Node2D
     _unitToAct = currentIndex + 1 < _unitsToAct.Count ? _unitsToAct[currentIndex + 1] : null;
   }
 
-  private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits)
+  private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits, bool loadBeforeLevel = true)
   {
     _worldMapButton.Visible = false;
     _startButton.Visible = true;
     _quitButton.Visible = true;
-    _decksHandler.LoadBeforeLevel();
+    if (loadBeforeLevel)
+      _decksHandler.LoadBeforeLevel();
 
     // Load terrain and props
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
@@ -386,6 +389,14 @@ public partial class World : Node2D
 
   private void StartPlaying()
   {
+    // Store current units right before the level, so we can load that again if the player loses
+    _playerUnitsGridBeforeLevel = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    foreach (Unit unit in _units)
+    {
+      if (unit.Side)
+        _playerUnitsGridBeforeLevel[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y] = unit.GetInfo();
+    }
+
     _startButton.Visible = false;
     _quitButton.Visible = false;
     _playPauseButton.Visible = true;
@@ -840,7 +851,7 @@ public partial class World : Node2D
     return mainCellsUnitGrid;
   }
 
-  private void Reset()
+  private void Reset(bool reloadLevel = false)
   {
     // Reset units
     foreach (Unit unit in _units)
@@ -892,7 +903,10 @@ public partial class World : Node2D
     _levelUnits.Clear();
     _playerSideUnitsLayer.Clear();
     _enemySideUnitsLayer.Clear();
-    _decksHandler.LoadAfterLevel();
+    if (reloadLevel)
+      _decksHandler.ReloadAfterLevel(_playerUnitsGridBeforeLevel);
+    else
+      _decksHandler.LoadAfterLevel();
     _enemyUnitsCount = 0;
 
     _gridOverlay.SetInteractionLocked(false);
@@ -997,7 +1011,6 @@ public partial class World : Node2D
     _messageResponses.AddChild(btn);
     _messagePanel.Show();
     ShowGameStats();
-    _activeGauntletLevelIndex = 0;
   }
 
   private void ShowRewards(List<UnitInfo> rewardUnits)
@@ -1488,7 +1501,8 @@ public partial class World : Node2D
 
   private void OnReturnButtonPressed()
   {
-    Reset();
+    Reset(reloadLevel: true);
+    StartLevel(_activeLevel.Terrains[_activeGauntletLevelIndex], _activeLevel.Props[_activeGauntletLevelIndex], _activeLevel.Units[_activeGauntletLevelIndex], loadBeforeLevel: false);
   }
 
   private void OnSpeedSelected(long id)
@@ -2256,7 +2270,8 @@ public partial class World : Node2D
 
   private void OnQuitButtonPressed()
   {
-    // TODO AKN implement
+    _activeGauntletLevelIndex = 0;
+    Reset();
   }
 
   private void RespawnZombies()
