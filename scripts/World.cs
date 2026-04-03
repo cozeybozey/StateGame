@@ -58,7 +58,6 @@ public partial class World : Node2D
 
   private bool _playing = false;
   private int _level = 1;
-  private int _completedLayers = 0;
   private int _completedLevels = 0;
   private int _slowDownLayer = 15;
   private int _turn = 0;
@@ -90,12 +89,14 @@ public partial class World : Node2D
   private Button _worldMapButton;
   private int _numLayers = 16;
   private int _maxNodesPerLayer = 8;
-  private int _buttonWidth = 75;
-  private int _buttonHeight = 35;
+  private int _buttonWidth = 85;
+  private int _buttonHeight = 65;
   private LevelInfo _activeLevel = null!;
   private int _activeGauntletLevelIndex = 0;
   private int _worldUiSpacing = 100;
   private bool _openedWorldOnce = false;
+  private int _maxNodesInLayer = 0;
+  List<string> _levelSections = ["Earth", "Heaven", "Future", "Graveyard", "Hell"];
 
   private Vector2 _worldCenter;
   private float _ringSpacing = 150f; // pixels between rings
@@ -977,22 +978,26 @@ public partial class World : Node2D
       _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("pressed", stylePressed);
       _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("hover", styleHover);
 
-      if (_activeLevel.NextNodes.Count > 0)
-      {
-        // Up number of units slot if the player unlocked a new layer
-        if (_activeLevel.Layer >= _completedLayers)
-        {
-          _completedLayers++;
-        }
-      }
-
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
         if (Levels.ContainsKey(nextNodeId) && !Levels[nextNodeId].Unlocked)
         {
           Levels[nextNodeId].Unlocked = true;
-          _levelButtons[nextNodeId].Disabled = false;
+          _levelButtons[nextNodeId].Visible = true;
         }
+
+        // Connect lines to next levels
+        LevelInfo nextLevel = Levels[nextNodeId];
+
+        Vector2 fromCenter = GetLevelButtonPosition(_activeLevel.Layer, _activeLevel.LayerIndex, AmountOfNodesPerLayerPerSection[_activeLevel.Layer, _activeLevel.LevelSection], _activeLevel.LevelSection);
+        Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
+
+        Line2D line = new();
+        line.Points = new Vector2[] { fromCenter, toCenter };
+        line.Width = 2.0f;
+        line.DefaultColor = new Color(1, 1, 1, 0.8f);
+        _worldUi.AddChild(line);
+        _worldUi.MoveChild(line, 0); // Make sure lines appear behind buttons
       }
     }
   }
@@ -1659,7 +1664,7 @@ public partial class World : Node2D
   void PopulateLevels()
   {
     // Layer 0: single start node
-    string startId = "start";
+    string startId = "Start";
     Levels[startId] = CreateLevelInfo(startId, 0, 0, false, 0);
     AmountOfNodesPerLayerPerSection[0, 0] = 1;
     AmountOfNodesPerLayerPerSection[0, 1] = 1;
@@ -1691,6 +1696,9 @@ public partial class World : Node2D
         else
           nodesInLayer = 1;
 
+        if (nodesInLayer > _maxNodesInLayer)
+          _maxNodesInLayer = nodesInLayer;
+
         List<LevelInfo> layerNodes = new();
 
         for (int node = 0; node < nodesInLayer; node++)
@@ -1708,72 +1716,6 @@ public partial class World : Node2D
       }
     }
   }
-
-  //void ConnectRings(List<LevelInfo> inner, List<LevelInfo> outer, bool isBoss)
-  //{
-  //  if (isBoss)
-  //  {
-  //    // All inner nodes connect to the single boss node
-  //    foreach (LevelInfo node in inner)
-  //      node.NextNodes.Add(outer[0].Id);
-  //    return;
-  //  }
-
-  //  int innerCount = inner.Count;
-  //  int outerCount = outer.Count;
-
-  //  // Map each outer node to the closest inner node(s)
-  //  for (int j = 0; j < outerCount; j++)
-  //  {
-  //    // Find the proportionally closest inner node
-  //    int closestInner = Mathf.RoundToInt((float)j / (outerCount - 1 == 0 ? 1 : outerCount - 1) * (innerCount - 1));
-  //    closestInner = Mathf.Clamp(closestInner, 0, innerCount - 1);
-
-  //    if (!inner[closestInner].NextNodes.Contains(outer[j].Id))
-  //      inner[closestInner].NextNodes.Add(outer[j].Id);
-
-  //    //// Occasionally also connect to an adjacent inner node
-  //    //if (_rng.NextDouble() < 0.4)
-  //    //{
-  //    //  int adjacentInner = closestInner + (_rng.NextDouble() < 0.5 ? -1 : 1);
-  //    //  adjacentInner = Mathf.Clamp(adjacentInner, 0, innerCount - 1);
-
-  //    //  if (adjacentInner != closestInner && !inner[adjacentInner].NextNodes.Contains(outer[j].Id))
-  //    //    inner[adjacentInner].NextNodes.Add(outer[j].Id);
-  //    //}
-  //  }
-
-  //  //// Add some extra cross-connections for variety
-  //  //for (int i = 0; i < innerCount; i++)
-  //  //{
-  //  //  if (_rng.NextDouble() < 0.4)
-  //  //  {
-  //  //    // Find the indices of nodes this inner node is already connected to
-  //  //    List<int> connectedOuterIndices = inner[i].NextNodes
-  //  //        .Select(id => outer.FindIndex(n => n.Id == id))
-  //  //        .Where(idx => idx >= 0)
-  //  //        .ToList();
-
-  //  //    if (connectedOuterIndices.Count == 0) continue;
-
-  //  //    // Only allow targets adjacent to already connected nodes
-  //  //    HashSet<int> allowedTargets = new();
-  //  //    foreach (int connected in connectedOuterIndices)
-  //  //    {
-  //  //      if (connected > 0) allowedTargets.Add(connected - 1);
-  //  //      if (connected < outerCount - 1) allowedTargets.Add(connected + 1);
-  //  //    }
-
-  //  //    // Remove already connected ones
-  //  //    allowedTargets.ExceptWith(connectedOuterIndices);
-
-  //  //    if (allowedTargets.Count == 0) continue;
-
-  //  //    int target = allowedTargets.ElementAt(_rng.Next(allowedTargets.Count));
-  //  //    inner[i].NextNodes.Add(outer[target].Id);
-  //  //  }
-  //  //}
-  //}
 
   void ConnectRings(List<LevelInfo> inner, List<LevelInfo> outer, bool isBoss)
   {
@@ -1912,7 +1854,7 @@ public partial class World : Node2D
 
       return new LevelInfo(
           id: nodeId,
-          name: "Gauntlet",
+          name: $"{_levelSections[section]}\nGauntlet {node}",
           completed: false,
           unlocked: layer == 0,
           layer: layer,
@@ -1929,10 +1871,11 @@ public partial class World : Node2D
       );
     }
 
+    string name = layer == 0 ? "Start" : $"{_levelSections[section]}\nLevel {node}";
     Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> randomLevel = LoadRandomLevel(layer + 1, section);
     return new LevelInfo(
         id: nodeId,
-        name: nodeId,
+        name: name,
         completed: false,
         unlocked: layer == 0,
         layer: layer,
@@ -1970,17 +1913,13 @@ public partial class World : Node2D
         AddLevelUi(levelNode, layers[layerIndex].Count);
         if (levelNode.Unlocked)
           unlockedLayer = true;
-      }
 
-      if (unlockedLayer && layerIndex > 0)
-      {
-        _completedLayers++;
-        if (_completedLayers < _slowDownLayer && _completedLayers % 2 == 0)
-          _gridOverlay.IncreaseUnitCount(1);
-        else if (_completedLayers % 4 == 0)
-          _gridOverlay.IncreaseUnitCount(1);
+        if (levelNode.Completed)
+          _completedLevels++;
       }
     }
+
+    _gridOverlay.IncreaseUnitCount(Mathf.FloorToInt(_completedLevels * 0.2f));
   }
 
   void AddLevelUi(LevelInfo levelNode, int nodesInLayer)
@@ -1990,7 +1929,7 @@ public partial class World : Node2D
 
     Button button = new();
     button.Text = levelNode.Name;
-    button.Disabled = !levelNode.Unlocked;
+    button.Visible = levelNode.Unlocked;
     button.CustomMinimumSize = buttonSize;
     button.Position = buttonPos - buttonSize / 2.0f; // center the button on the position
     button.Pressed += () => OnLevelSelected(levelNode);
@@ -2008,21 +1947,6 @@ public partial class World : Node2D
 
     _levelButtons[levelNode.Id] = button;
     _worldUi.AddChild(button);
-
-    Vector2 fromCenter = buttonPos;
-
-    foreach (string id in levelNode.NextNodes)
-    {
-      LevelInfo nextLevel = Levels[id];
-
-      Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
-
-      Line2D line = new();
-      line.Points = new Vector2[] { fromCenter, toCenter };
-      line.Width = 2.0f;
-      line.DefaultColor = new Color(1, 1, 1, 0.8f);
-      _worldUi.AddChild(line);
-    }
   }
 
   Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInLayer, int section)
@@ -2035,7 +1959,7 @@ public partial class World : Node2D
 
     // Shrink the cone based on how many nodes are in this layer
     float maxConeWidth = Mathf.Tau / _numLevelSections * 0.95f; // 95% of available space per branch
-    float coneWidth = Mathf.Min(maxConeWidth, nodesInLayer * 0.15f);
+    float coneWidth = Mathf.Min(maxConeWidth, _maxNodesInLayer * 0.15f);
 
     float nodeAngle;
     if (nodesInLayer <= 1)
