@@ -33,4 +33,10 @@ public partial class TurretFactory : Unit
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }
   }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Strongly prefer back rows
+    return (Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f) - pos.Y) + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
+  }
 }

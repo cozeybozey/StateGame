@@ -347,45 +347,7 @@ public partial class GridEntity : Node2D
   public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeSides = true, bool includeDiagonals = false)
   {
     List<Vector2I> occupied = GetOccupiedCells();
-    HashSet<Vector2I> surroundingCells = new();
-
-    int frontDir = Side ? -1 : 1; // front direction depends on side
-
-    foreach (Vector2I cell in occupied)
-    {
-      Vector2I front = new(cell.X, cell.Y + frontDir);
-      Vector2I back = new(cell.X, cell.Y - frontDir);
-      Vector2I left = new(cell.X - 1, cell.Y);
-      Vector2I right = new(cell.X + 1, cell.Y);
-
-      if (includeFront && GlobalFunctions.IsCellInsideGrid(front) && !occupied.Contains(front))
-        surroundingCells.Add(front);
-      if (includeBack && GlobalFunctions.IsCellInsideGrid(back) && !occupied.Contains(back))
-        surroundingCells.Add(back);
-      if (includeSides && GlobalFunctions.IsCellInsideGrid(left) && !occupied.Contains(left))
-        surroundingCells.Add(left);
-      if (includeSides && GlobalFunctions.IsCellInsideGrid(right) && !occupied.Contains(right))
-        surroundingCells.Add(right);
-
-      if (includeDiagonals)
-      {
-        Vector2I frontLeft = new(cell.X - 1, cell.Y + frontDir);
-        Vector2I frontRight = new(cell.X + 1, cell.Y + frontDir);
-        Vector2I backLeft = new(cell.X - 1, cell.Y - frontDir);
-        Vector2I backRight = new(cell.X + 1, cell.Y - frontDir);
-
-        if (includeFront && GlobalFunctions.IsCellInsideGrid(frontLeft) && !occupied.Contains(frontLeft))
-          surroundingCells.Add(frontLeft);
-        if (includeFront && GlobalFunctions.IsCellInsideGrid(frontRight) && !occupied.Contains(frontRight))
-          surroundingCells.Add(frontRight);
-        if (includeBack && GlobalFunctions.IsCellInsideGrid(backLeft) && !occupied.Contains(backLeft))
-          surroundingCells.Add(backLeft);
-        if (includeBack && GlobalFunctions.IsCellInsideGrid(backRight) && !occupied.Contains(backRight))
-          surroundingCells.Add(backRight);
-      }
-    }
-
-    return surroundingCells.ToList();
+    return GlobalFunctions.GetSurroundingCells(OccupiedMainCell, occupied, Side, includeFront, includeBack, includeSides, includeDiagonals);
   }
 
   public void MoveToCell(Vector2I newCell, bool playing)

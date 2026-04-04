@@ -85,4 +85,16 @@ public partial class Blob : Unit
 
     return newCells;
   }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    int score = 0;
+    foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false, includeDiagonals: true))
+    {
+      if (unitsGrid[cell.X, cell.Y] != null)
+        score += 5; // Favor placements that can consume more units
+    }
+
+    return score;
+  }
 }

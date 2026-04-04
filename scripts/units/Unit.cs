@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using static Godot.TextServer;
 
 public partial class Unit : GridEntity
 {
@@ -187,5 +188,17 @@ public partial class Unit : GridEntity
   public float GetHealthPercentage()
   {
     return (float)Health / MaxHealth;
+  }
+
+  public static int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    int score = 0;
+
+    // Everything but the first 3 rows return score of 3,
+    // This is to ensure tanky units are only placed in front.
+    if (pos.Y <= GlobalConstants.GridSize.Y * 0.5f - 3)
+      score += 3;
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }

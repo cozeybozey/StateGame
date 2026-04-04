@@ -24,4 +24,10 @@ public partial class Gravedigger : Unit
     if (_globalSignals != null)
       _globalSignals.GridEntityDied -= OnUnitDied;
   }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Strongly prefer back rows
+    return (Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f) - pos.Y) + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
+  }
 }

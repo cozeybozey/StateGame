@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 
 public partial class Mover : Unit
 {
@@ -59,5 +60,28 @@ public partial class Mover : Unit
       unit.ChangeDamage(1);
       unit.ChangeMaxHealth(1);
     }
+  }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    int score = 0;
+
+    // Everything but the first 3 rows return score of 3,
+    // This is to ensure tanky units are only placed in front.
+    if (pos.Y <= GlobalConstants.GridSize.Y * 0.5f - 3)
+      score += 3;
+
+    // Increase score for every unit that the mover will buff when moving from left to right
+    // Gain more score for units that are closer
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      foreach (int y in new[] { -1, 1 })
+      {
+        if (GlobalFunctions.IsCellInsideGrid(new Vector2I(pos.X, pos.Y + y)) && unitsGrid[x, pos.Y + y] != null)
+          score += GlobalConstants.GridSize.X - Mathf.Abs(pos.X - x);
+      }
+    }
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }

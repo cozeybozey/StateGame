@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using static System.Formats.Asn1.AsnWriter;
 using static System.Net.Mime.MediaTypeNames;
 
 public partial class Cherub : Unit
@@ -40,5 +41,29 @@ public partial class Cherub : Unit
 
     target.ChangeDamage(Damage);
     target.ChangeSpeed(Damage);
+  }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Prefer back rows
+    int score = Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f) - pos.Y;
+
+    // Extra score for each unit in front
+    foreach (Vector2I cell in unitInfo.OccupiedCells)
+    {
+      Vector2I newPos = pos + cell;
+      int checkY = newPos.Y + 1;
+      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(newPos.X, checkY)))
+      {
+        UnitInfo unit = unitsGrid[newPos.X, checkY];
+        if (unit != null)
+        {
+          score += 5;
+        }
+        checkY += 1;
+      }
+    }
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }

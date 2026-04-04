@@ -2,7 +2,9 @@ using Godot;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime;
 using System.Security.Principal;
+using static System.Formats.Asn1.AsnWriter;
 
 public partial class GlobalFunctions : Node
 {
@@ -130,11 +132,11 @@ public partial class GlobalFunctions : Node
     foreach (Vector2I cell in gridEntity.OccupiedCells)
     {
       Vector2I checkLocation = targetLocation + cell;
-      
+
       // Check if location is inside the grid
       if (!IsCellInsideGrid(checkLocation))
         return false;
-      
+
       // Check if there are units at the target location
       if (unitsGrid[checkLocation.X, checkLocation.Y] != null && unitsGrid[checkLocation.X, checkLocation.Y] != gridEntity)
         return false;
@@ -216,5 +218,151 @@ public partial class GlobalFunctions : Node
     }
 
     return true;
+  }
+
+  public static List<Vector2I> GetSurroundingCells(Vector2I occupiedMainCell, List<Vector2I> occupiedCells, bool side, bool includeFront = true, bool includeBack = true, bool includeLeft = true, bool includeRight = true, bool includeDiagonals = false)
+  {
+    List<Vector2I> occupied = new List<Vector2I>();
+    foreach (Vector2I relCell in occupiedCells)
+      occupied.Add(occupiedMainCell + relCell);
+
+    HashSet<Vector2I> surroundingCells = new();
+
+    int frontDir = side ? -1 : 1;
+
+    foreach (Vector2I cell in occupied)
+    {
+      Vector2I front = new(cell.X, cell.Y + frontDir);
+      Vector2I back = new(cell.X, cell.Y - frontDir);
+      Vector2I left = new(cell.X - 1, cell.Y);
+      Vector2I right = new(cell.X + 1, cell.Y);
+
+      if (includeFront && GlobalFunctions.IsCellInsideGrid(front) && !occupied.Contains(front))
+        surroundingCells.Add(front);
+      if (includeBack && GlobalFunctions.IsCellInsideGrid(back) && !occupied.Contains(back))
+        surroundingCells.Add(back);
+      if (includeLeft && GlobalFunctions.IsCellInsideGrid(left) && !occupied.Contains(left))
+        surroundingCells.Add(left);
+      if (includeRight && GlobalFunctions.IsCellInsideGrid(right) && !occupied.Contains(right))
+        surroundingCells.Add(right);
+
+      if (includeDiagonals)
+      {
+        Vector2I frontLeft = new(cell.X - 1, cell.Y + frontDir);
+        Vector2I frontRight = new(cell.X + 1, cell.Y + frontDir);
+        Vector2I backLeft = new(cell.X - 1, cell.Y - frontDir);
+        Vector2I backRight = new(cell.X + 1, cell.Y - frontDir);
+
+        if (includeFront && includeLeft && GlobalFunctions.IsCellInsideGrid(frontLeft) && !occupied.Contains(frontLeft))
+          surroundingCells.Add(frontLeft);
+        if (includeFront && includeRight && GlobalFunctions.IsCellInsideGrid(frontRight) && !occupied.Contains(frontRight))
+          surroundingCells.Add(frontRight);
+        if (includeBack && includeLeft && GlobalFunctions.IsCellInsideGrid(backLeft) && !occupied.Contains(backLeft))
+          surroundingCells.Add(backLeft);
+        if (includeBack && includeRight && GlobalFunctions.IsCellInsideGrid(backRight) && !occupied.Contains(backRight))
+          surroundingCells.Add(backRight);
+      }
+    }
+
+    return surroundingCells.ToList();
+  }
+
+  public static int StandardUnitScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    int score = 0;
+
+    // Extra score for being adjacent to a beacon of light
+    foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false))
+    {
+      if (unitsGrid[cell.X, cell.Y] != null && unitsGrid[cell.X, cell.Y].Id == "beacon_of_light")
+        score++;
+    }
+
+    // Extra score for being directly in front of a nurse
+    foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false, includeFront: false, includeBack: true, includeLeft: false, includeRight: false))
+    {
+      if (unitsGrid[cell.X, cell.Y] != null && unitsGrid[cell.X, cell.Y].Id == "nurse")
+        score++;
+    }
+
+    // Extra score for being directly to the right of a booster, but only if damage boost would even help
+    if (unitInfo.Damage > 0)
+    {
+      foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false, includeFront: false, includeBack: false, includeLeft: true, includeRight: false))
+      {
+        if (unitsGrid[cell.X, cell.Y] != null && unitsGrid[cell.X, cell.Y].Id == "booster")
+          score++;
+      }
+    }
+
+    // Extra score being behind a guardian unit
+    List<UnitInfo> countedUnits = new List<UnitInfo>();
+    foreach (Vector2I cell in unitInfo.OccupiedCells)
+    {
+      Vector2I newPos = pos + cell;
+      int checkY = newPos.Y + 1;
+      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(newPos.X, checkY)))
+      {
+        UnitInfo unit = unitsGrid[newPos.X, checkY];
+        if (unit?.Id == "guardian" && !countedUnits.Contains(unit))
+        {
+          score++;
+          countedUnits.Add(unitsGrid[newPos.X, checkY]);
+        }
+
+        checkY += 1;
+      }
+    }
+
+    countedUnits.Clear();
+    foreach (Vector2I cell in unitInfo.OccupiedCells)
+    {
+      Vector2I newPos = pos + cell;
+      int checkY = newPos.Y - 1;
+      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(newPos.X, checkY)))
+      {
+        UnitInfo unit = unitsGrid[newPos.X, checkY];
+
+        // Negative score for being in front of units that deals damage to first unit in the same column
+        if ((unit?.Id == "putrid_alchemist" || unit?.Id == "succubus") && !countedUnits.Contains(unit))
+        {
+          score--;
+          countedUnits.Add(unitsGrid[newPos.X, checkY]);
+        }
+
+        // Extra score for being in front of units that support the first unit in the same column
+        if (unitInfo.Damage > 0 && unit?.Id == "cherub" && !countedUnits.Contains(unit))
+        {
+          score++;
+          countedUnits.Add(unitsGrid[newPos.X, checkY]);
+        }
+
+        checkY += 1;
+      }
+    }
+
+    // Check if there is a warden in the same row if this unit is holy,
+    // because warden gains damage for each holy unit in the same row
+    if (unitInfo.Types.Contains("holy"))
+    {
+      countedUnits.Clear();
+      foreach (Vector2I cell in unitInfo.OccupiedCells)
+      {
+        Vector2I newPos = pos + cell;
+
+        // check all cells in this row
+        for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        {
+          UnitInfo unit = unitsGrid[x, newPos.Y];
+          if (unit != null && unit.Id == "warden")
+          {
+            score++;
+            countedUnits.Add(unit);
+          }
+        }
+      }
+    }
+
+    return score;
   }
 }

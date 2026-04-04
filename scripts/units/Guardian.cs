@@ -111,4 +111,29 @@ public partial class Guardian : Unit
       _globalSignals.SizeChanged -= OnUnitSizeChanged;
     }
   }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Strongly prefer front rows
+    int score = pos.Y;
+
+    // Bonus score for being in front of other units
+    List<UnitInfo> countedUnits = new List<UnitInfo>();
+    foreach (Vector2I cell in unitInfo.OccupiedCells)
+    {
+      Vector2I newPos = pos + cell;
+      int checkY = newPos.Y - 1;
+      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(newPos.X, checkY)))
+      {
+        if (unitsGrid[newPos.X, checkY] != null && !countedUnits.Contains(unitsGrid[newPos.X, checkY]))
+        {
+          score++;
+          countedUnits.Add(unitsGrid[newPos.X, checkY]);
+        }
+        checkY--;
+      }
+    }
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
+  }
 }

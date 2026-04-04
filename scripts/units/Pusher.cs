@@ -34,4 +34,18 @@ public partial class Pusher : Unit
       }
     }
   }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Increase score for each extra unit that can be pushed
+    int score = 0;
+
+    for (int x = 0; x < pos.X; x++)
+    {
+      if (unitsGrid[x, pos.Y] != null)
+        score += 5;
+    }    
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
+  }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Runtime;
 using System.Runtime.InteropServices.Marshalling;
 using System.Runtime.Intrinsics.X86;
@@ -716,9 +717,9 @@ public partial class World : Node2D
         // Pick pool based on probability
         double roll = rng.Randf();
         List<UnitInfo> pool;
-        if (roll < 0.60f)
+        if (roll < 0.75f)
           pool = dominantPool;
-        else if (roll < 0.85f)
+        else if (roll < 0.90f)
           pool = typelessPool;
         else
           pool = otherPool;
@@ -748,97 +749,11 @@ public partial class World : Node2D
         GD.Print("Unit placement failed. Placing turret instead.");
       }
 
-      Vector2I cellPos = possiblePositions[rng.RandiRange(0, possiblePositions.Count - 1)];
-      if (unitInfo.Id == "tank" || unitInfo.Id == "laser" || unitInfo.Id == "saboteur" || unitInfo.Id == "masochist" ||
-        unitInfo.Id == "bulwark" || unitInfo.Id == "berserker" || unitInfo.Id == "abomination" || unitInfo.Id == "pit_fiend" ||
-        unitInfo.Id == "guardian" || unitInfo.Id == "earth_elemental")
-      {
-        // Position these units in the front portion of the grid
-        List<Vector2I> frontPositions = new List<Vector2I>();
-        int maxY = 0;
-        foreach (Vector2I cell in possiblePositions)
-        {
-          if (cell.Y > maxY)
-          {
-            frontPositions.Clear();
-            maxY = cell.Y;
-            frontPositions.Add(cell);
-          }
-          else if (cell.Y == maxY)
-          {
-            frontPositions.Add(cell);
-          }
-        }
-        cellPos = frontPositions[rng.RandiRange(0, frontPositions.Count - 1)];
-      }
-      else if (unitInfo.Id == "sniper")
-      {
-        // Position these units in back portion of the grid
-        List<Vector2I> backPositions = new List<Vector2I>();
-        int minY = GlobalConstants.GridSize.Y - 1;
-        foreach (Vector2I cell in possiblePositions)
-        {
-          if (cell.Y < minY)
-          {
-            backPositions.Clear();
-            minY = cell.Y;
-            backPositions.Add(cell);
-          }
-          else if (cell.Y == minY)
-          {
-            backPositions.Add(cell);
-          }
-        }
-        cellPos = backPositions[rng.RandiRange(0, backPositions.Count - 1)];
-      }
-      else if (unitInfo.Id == "pusher")
-      {
-        // Position these units in the right portion of the grid
-        List<Vector2I> rightPositions = new List<Vector2I>();
-        int maxX = 0;
-        foreach (Vector2I cell in possiblePositions)
-        {
-          if (cell.X > maxX)
-          {
-            rightPositions.Clear();
-            maxX = cell.X;
-            rightPositions.Add(cell);
-          }
-          else if (cell.X == maxX)
-          {
-            rightPositions.Add(cell);
-          }
-        }
-        cellPos = rightPositions[rng.RandiRange(0, rightPositions.Count - 1)];
-      }
-      else if (unitInfo.Id == "booster")
-      {
-        // Position boosters next to another unit if possible
-        Vector2I adjacentCell = new Vector2I(cellPos.X, cellPos.Y);
-        foreach (Vector2I cell in possiblePositions)
-        {
-          if (cell.X + 1 < GlobalConstants.GridSize.X && unitGrid[cell.X + 1, cell.Y] != null && unitGrid[cell.X + 1, cell.Y].Damage > 0)
-          {
-            adjacentCell = cell;
-            break;
-          }
-        }
-        cellPos = adjacentCell;
-      }
-      else if (unitInfo.Id == "nurse")
-      {
-        // Position nurses behind another unit if possible
-        Vector2I behindCell = new Vector2I(cellPos.X, cellPos.Y);
-        foreach (Vector2I cell in possiblePositions)
-        {
-          if (cell.Y + 1 < GlobalConstants.GridSize.Y && unitGrid[cell.X, cell.Y + 1] != null)
-          {
-            behindCell = cell;
-            break;
-          }
-        }
-        cellPos = behindCell;
-      }
+      // Determine optimal positions for this unit and pick the semi-best one
+      Vector2I cellPos = possiblePositions
+          .OrderBy(_ => rng.Randi())
+          .OrderByDescending(p => unitInfo.ScorePlacement(p, unitInfo, unitGrid, terrainGrid, propsGrid) + rng.RandiRange(0, 5))
+          .First();
 
       foreach (Vector2I cell in unitInfo.OccupiedCells)
       {
@@ -1577,7 +1492,22 @@ public partial class World : Node2D
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
         cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity, types, stage);
+
+      // Link unit info score placement function to unit specific class function using reflection
+      string fileName = scenePath.GetFile().GetBaseName();
+      string className = ToPascalCase(fileName);
+      Type type = Type.GetType(className);
+      if (type == null) continue;
+      var method = type.GetMethod("ScorePlacement", BindingFlags.Static | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+      if (method == null) continue;
+      GlobalConstants.UnitsData[unitId].ScorePlacement = (pos, unitInfo, unitsGrid, terrainGrid, propsGrid) => (int)method.Invoke(null, new object[] { pos, unitInfo, unitsGrid, terrainGrid, propsGrid });
     }
+  }
+
+  string ToPascalCase(string snakeCase)
+  {
+    return string.Concat(snakeCase.Split('_')
+        .Select(word => char.ToUpper(word[0]) + word.Substring(1)));
   }
 
   private void ParseTerrainsJson()
@@ -1915,7 +1845,25 @@ public partial class World : Node2D
           unlockedLayer = true;
 
         if (levelNode.Completed)
+        {
+          foreach (string nextNodeId in levelNode.NextNodes)
+          {
+            // Connect lines to next levels
+            LevelInfo nextLevel = Levels[nextNodeId];
+
+            Vector2 fromCenter = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerSection[levelNode.Layer, levelNode.LevelSection], levelNode.LevelSection);
+            Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
+
+            Line2D line = new();
+            line.Points = new Vector2[] { fromCenter, toCenter };
+            line.Width = 2.0f;
+            line.DefaultColor = new Color(1, 1, 1, 0.8f);
+            _worldUi.AddChild(line);
+            _worldUi.MoveChild(line, 0); // Make sure lines appear behind buttons
+          }
+
           _completedLevels++;
+        }
       }
     }
 

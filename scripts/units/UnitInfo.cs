@@ -1,4 +1,5 @@
 using Godot;
+using System;
 using System.Collections.Generic;
 
 public partial class UnitInfo : RefCounted
@@ -20,8 +21,9 @@ public partial class UnitInfo : RefCounted
 	public string Rarity { get; set; }
 	public List<string> Types { get; set; }
 	public int Stage { get; set; }
+  public Func<Vector2I, UnitInfo, UnitInfo[,], TerrainInfo[,], PropInfo[,], int> ScorePlacement { get; set; } = (pos, unitInfo, unitsGrid, terrainGrid, propsGrid) => 0;
 
-	public UnitInfo(
+  public UnitInfo(
 		string id,
 		string name,
 		Texture2D texture,
@@ -40,7 +42,8 @@ public partial class UnitInfo : RefCounted
 		List<string> types,
 		int stage)
 	{
-		Id = id;
+
+    Id = id;
 		Name = name;
 		Texture = texture;
 		ScenePath = scenePath;
@@ -57,5 +60,5 @@ public partial class UnitInfo : RefCounted
     Rarity = rarity;
 		Types = types;
 		Stage = stage;
-	}
+  }
 }
