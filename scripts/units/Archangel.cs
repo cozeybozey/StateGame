@@ -22,7 +22,7 @@ public partial class Archangel : Unit
     if (!IsInsideTree() || gridEntity is not Unit unit || unit.Id == "archangel")
       return;
 
-    if (unit.Side != Side || unit.Health <= 0)
+    if (unit.Side != Side || unit.Health <= 0 || amount < 2)
       return;
 
     unit.ChangeHealth(Mathf.FloorToInt(amount * 0.5f), this);

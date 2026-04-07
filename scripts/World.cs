@@ -44,6 +44,7 @@ public partial class World : Node2D
   private Button _quitButton;
   private DecksHandler _decksHandler;
   private LevelInfoContainer _levelInfoContainer;
+  private Label _levelsUntilNextUnlock;
 
   private List<Unit> _units;
   private List<Unit> _unitsToAct;
@@ -72,6 +73,7 @@ public partial class World : Node2D
   private int _turnEndDamage = 1;
   private Unit _activeUnit = null!;
   private bool _paused = false;
+  private int _bossLevelsDefeated = 0;
 
   public int Coins = 0;
   private int _coinsPerWin = 20;
@@ -151,6 +153,7 @@ public partial class World : Node2D
     _quitButton = GetNode<Button>("CanvasLayer/BottomUi/QuitButton");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _levelInfoContainer = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
+    _levelsUntilNextUnlock = GetNode<Label>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo/Value");
 
     // Activity UI
     _gameStats = GetNode<Panel>("CanvasLayer/GameStats");
@@ -858,7 +861,10 @@ public partial class World : Node2D
       return;
     }
 
-    if (_activeLevel.Layer == _numLayers - 1)
+    if (_activeLevel.Boss && !_activeLevel.Completed)
+      _bossLevelsDefeated++;
+
+    if (_bossLevelsDefeated == 5)
     {
       _message.Text = "You win the demo!\nThanks for playing!";
       _messagePanel.Show();
@@ -878,6 +884,7 @@ public partial class World : Node2D
       {
         _activeLevel.Completed = true;
         _completedLevels++;
+        _levelsUntilNextUnlock.Text = (_completedLevels % 5).ToString() + "/5";
 
         // Increase max unit slots every 5 completed levels
         if (_completedLevels % 5 == 0)
@@ -1617,7 +1624,6 @@ public partial class World : Node2D
       for (int layer = 2; layer < _numLayers; layer++)
       {
         bool isBoss = layer % 15 == 0;
-        //int nodesInLayer = isBoss ? 1 : _rng.Next(1, Mathf.Min(layer, _maxNodesPerLayer) + 1);
         int nodesInLayer = 0;
         if (layer < 10)
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 2;
@@ -1723,20 +1729,31 @@ public partial class World : Node2D
     {
       string levelId;
       string nodeName;
-      if (layer + 1 == 10)
+
+      if (section == 0)
       {
-        nodeName = "Golden Turret";
-        levelId = "golden_turret";
+        nodeName = "Earth Mother";
+        levelId = "earth_mother";
       }
-      else if (layer + 1 == 20)
+      else if (section == 1)
+      {
+        nodeName = "Michael";
+        levelId = "michael";
+      }
+      else if (section == 2)
+      {
+        nodeName = "Nuke";
+        levelId = "nuke";
+      }
+      else if (section == 3)
       {
         nodeName = "Blob";
         levelId = "blob";
       }
       else
       {
-        nodeName = "Nuke";
-        levelId = "nuke";
+        nodeName = "Lucifer";
+        levelId = "lucifer";
       }
 
       Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId);

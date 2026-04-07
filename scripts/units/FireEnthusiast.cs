@@ -32,6 +32,6 @@ public partial class FireEnthusiast : Unit
       }
     }
 
-    target.ChangeHealth(-Damage - fireBonus, this);
+    target.ChangeHealth(-Damage - Mathf.FloorToInt(fireBonus * 0.25f), this);
   }
 }

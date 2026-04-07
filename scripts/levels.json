@@ -54,12 +54,20 @@
 		"id": 7,
 		"units": [
             { "x": 0, "y": 0, "name": "turret_factory"},
+            { "x": 5, "y": 0, "name": "repair_unit"},
+            { "x": 7, "y": 0, "name": "repair_unit"},
+            { "x": 9, "y": 0, "name": "repair_unit"},
+            { "x": 11, "y": 0, "name": "repair_unit"},
+            { "x": 14, "y": 0, "name": "turret_factory"},
+            { "x": 6, "y": 4, "name": "turret"},
             { "x": 7, "y": 4, "name": "turret"},
             { "x": 8, "y": 4, "name": "turret"},
             { "x": 9, "y": 4, "name": "turret"},
-            { "x": 7, "y": 5, "name": "turret"},
+            { "x": 6, "y": 5, "name": "turret"},
+            { "x": 7, "y": 5, "name": "golden_turret"},
             { "x": 8, "y": 5, "name": "golden_turret"},
             { "x": 9, "y": 5, "name": "turret"},
+            { "x": 6, "y": 6, "name": "turret"},
             { "x": 7, "y": 6, "name": "turret"},
             { "x": 8, "y": 6, "name": "turret"},
             { "x": 9, "y": 6, "name": "turret"}
@@ -124,6 +132,80 @@
             { "x": 4, "y": 7, "name": "tank"},
             { "x": 7, "y": 7, "name": "tank"},
             { "x": 10, "y": 7, "name": "tank"}
+        ]
+    },
+    "lucifer":
+    {
+        "id": 10,
+        "units": [
+            { "x": 1, "y": 0, "name": "fire_enthusiast"},
+            { "x": 6, "y": 0, "name": "blood_priest"},
+            { "x": 7, "y": 0, "name": "blood_priest"},
+            { "x": 8, "y": 0, "name": "blood_priest"},
+            { "x": 9, "y": 0, "name": "blood_priest"},
+            { "x": 14, "y": 0, "name": "fire_enthusiast"},
+            { "x": 6, "y": 1, "name": "booster"},
+            { "x": 7, "y": 1, "name": "archdemon"},
+            { "x": 6, "y": 2, "name": "booster"},
+            { "x": 3, "y": 3, "name": "conjurer"},
+            { "x": 7, "y": 3, "name": "conjurer"},
+            { "x": 11, "y": 3, "name": "conjurer"},
+            { "x": 2, "y": 5, "name": "succubus"},
+            { "x": 5, "y": 5, "name": "succubus"},
+            { "x": 6, "y": 5, "name": "succubus"},
+            { "x": 9, "y": 5, "name": "succubus"},
+            { "x": 10, "y": 5, "name": "succubus"},
+            { "x": 13, "y": 5, "name": "succubus"},
+            { "x": 3, "y": 6, "name": "pit_fiend"},
+            { "x": 7, "y": 6, "name": "pit_fiend"},
+            { "x": 11, "y": 6, "name": "pit_fiend"}
+        ]
+    },
+    "michael":
+    {
+        "id": 11,
+        "units": [
+            { "x": 1, "y": 0, "name": "priest"},
+            { "x": 2, "y": 0, "name": "templar"},
+            { "x": 6, "y": 0, "name": "cleric"},
+            { "x": 7, "y": 0, "name": "cleric"},
+            { "x": 8, "y": 0, "name": "cleric"},
+            { "x": 9, "y": 0, "name": "cleric"},
+            { "x": 14, "y": 0, "name": "templar"},
+            { "x": 15, "y": 0, "name": "priest"},
+            { "x": 7, "y": 1, "name": "archangel"},
+            { "x": 5, "y": 4, "name": "paladin"},
+            { "x": 7 , "y": 4, "name": "paladin"},
+            { "x": 9, "y": 4, "name": "paladin"},
+            { "x": 6, "y": 7, "name": "guardian"},
+            { "x": 9, "y": 7, "name": "guardian"}
+        ]
+    },
+    "earth_mother":
+    {
+        "id": 12,
+        "units": [
+            { "x": 4, "y": 0, "name": "shaman"},
+            { "x": 8, "y": 0, "name": "shaman"},
+            { "x": 12, "y": 0, "name": "shaman"},
+            { "x": 1, "y": 2, "name": "booster"},
+            { "x": 2, "y": 2, "name": "avatar_of_nature"},
+            { "x": 1, "y": 3, "name": "booster"},
+            { "x": 11, "y": 2, "name": "booster"},
+            { "x": 12, "y": 2, "name": "avatar_of_nature"},
+            { "x": 11, "y": 3, "name": "booster"},
+            { "x": 6, "y": 4, "name": "lifebinder"},
+            { "x": 7, "y": 4, "name": "lifebinder"},
+            { "x": 8, "y": 4, "name": "lifebinder"},
+            { "x": 9, "y": 4, "name": "lifebinder"},
+            { "x": 3, "y": 5, "name": "druid"},
+            { "x": 6, "y": 5, "name": "druid"},
+            { "x": 9, "y": 5, "name": "druid"},
+            { "x": 12, "y": 5, "name": "druid"},
+            { "x": 3, "y": 7, "name": "earth_elemental"},
+            { "x": 7, "y": 7, "name": "earth_elemental"},
+            { "x": 11, "y": 7, "name": "earth_elemental"}
+
         ]
     }
 }

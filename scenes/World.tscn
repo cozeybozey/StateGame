@@ -209,6 +209,17 @@ size_flags_vertical = 3
 layout_mode = 2
 text = "Start Level"
 
+[node name="UnlockInfo" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1353000164]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo" unique_id=1675157148]
+layout_mode = 2
+text = "Levels until next unlock:"
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo" unique_id=742971184]
+layout_mode = 2
+text = "0/5"
+
 [node name="DecksHandler" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=435248968]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2

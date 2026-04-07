@@ -1128,7 +1128,7 @@
 		"cells": [[0, 0]],
 		"stage": 3,
 		"cost": 2,
-		"description": "Deal damage to frontmost unit. +1 damage for each burning prop.",
+		"description": "Deal damage to frontmost unit. +1 damage for each 4 burning props.",
 		"health": 8,
 		"damage": 0,
 		"armor": 0,
