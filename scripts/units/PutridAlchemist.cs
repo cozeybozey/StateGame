@@ -34,7 +34,7 @@ public partial class PutridAlchemist : Unit
     // Find frontmost allied unit
     Unit? frontmostAlly = units
         .Where(u => u.Side == Side && u.Health < u.MaxHealth)
-        .OrderByDescending(u => Side ? u.OccupiedMainCell.Y : -u.OccupiedMainCell.Y)
+        .OrderByDescending(u => Side ? -u.OccupiedMainCell.Y : u.OccupiedMainCell.Y)
         .ThenBy(u => u.OccupiedMainCell.X)
         .FirstOrDefault();
 

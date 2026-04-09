@@ -38,7 +38,4 @@ public partial class GlobalSignals : Node
 
   [Signal]
   public delegate void UnitInfoSelectedEventHandler(UnitInfo unitInfo);
-
-  [Signal]
-  public delegate void ExtraTurnGivenEventHandler(Unit originUnit, Unit targetUnit);
 }

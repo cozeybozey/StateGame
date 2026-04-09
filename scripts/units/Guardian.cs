@@ -73,7 +73,6 @@ public partial class Guardian : Unit
   private void RemoveBuff(Unit unit)
   {
     unit.Armor -= 2;
-    _buffedUnits.Remove(unit);
   }
 
   private void ApplyBuff(List<Unit> units, Unit[,] unitsGrid)
@@ -93,6 +92,7 @@ public partial class Guardian : Unit
       if (!IsUnitBehind(unit))
         RemoveBuff(unit);
     }
+    _buffedUnits.Clear();
 
     // Add buffs to newly eligible units
     foreach (Unit unit in _unitsToAct)

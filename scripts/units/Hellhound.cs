@@ -30,7 +30,7 @@ public partial class Hellhound : Unit
     foreach (Unit enemy in enemies)
     {
       // Cells in front of the enemy (towards our side)
-      List<Vector2I> jumpCells = enemy.GetSurroundingCells(includeFront: true, includeBack: false, includeSides: false);
+      List<Vector2I> jumpCells = enemy.GetSurroundingCells(includeFront: true, includeBack: false, includeLeft: false, includeRight: false);
 
       // Check if we can land on the cells in front of this enemy
       foreach (Vector2I cell in jumpCells)

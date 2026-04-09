@@ -90,7 +90,7 @@ public partial class World : Node2D
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private int _numLayers = 16;
+  private int _numLayers = 12;
   private int _maxNodesPerLayer = 8;
   private int _buttonWidth = 85;
   private int _buttonHeight = 65;
@@ -118,10 +118,6 @@ public partial class World : Node2D
   private VBoxContainer _damageDealtStats;
   private VBoxContainer _damageTakenStats;
   private VBoxContainer _healingDoneStats;
-
-  // Exta turn variables
-  bool _extraTurnGiven = false;
-  int _indexAfterExtraTurn = 0;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
@@ -187,7 +183,6 @@ public partial class World : Node2D
     _globalSignals.HealingReceived += OnGridEntityHealingReceived;
     _globalSignals.SideChanged += OnUnitSideChanged;
     _globalSignals.UnitRemoved += OnUnitRemoved;
-    _globalSignals.ExtraTurnGiven += OnExtraTurnGiven;
     _worldMapButton.Pressed += OnWorldMapPressed;
     _statisticsPopup = _statisticsButton.GetPopup();
     _statisticsPopup.IdPressed += OnStatisticSelected;
@@ -237,14 +232,14 @@ public partial class World : Node2D
   public override void _Process(double delta)
   {
     // Turn on if there are issues with player losing before all units are dead
-    //int friendlyUnitCount = 0;
-    //foreach (Unit unit in _units)
-    //{
-    //  if (unit.Side)
-    //    friendlyUnitCount++;
-    //}
-    //if (friendlyUnitCount != _playerUnitsCount)
-    //  GD.Print("hi");
+    int friendlyUnitCount = 0;
+    foreach (Unit unit in _units)
+    {
+      if (unit.Side)
+        friendlyUnitCount++;
+    }
+    if (friendlyUnitCount != _playerUnitsCount)
+      GD.Print("hi");
 
     if (_paused)
       return;
@@ -465,6 +460,8 @@ public partial class World : Node2D
     int expectedUserUnitSlots = difficulty;
     int requiredFreeTilesUser = expectedUserUnitSlots + 10;
     int expectedEnemyUnitSlots = difficulty + (difficulty / 2);
+    if (difficulty > 3)
+      expectedEnemyUnitSlots += difficulty;  // Ramp up difficulty even more after a while.
     int requiredFreeTilesEnemy = expectedEnemyUnitSlots + 10;
     int halfTiles = GlobalConstants.GridSize.X * Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f);
     int maxBlockingUser = halfTiles - requiredFreeTilesUser;
@@ -472,7 +469,7 @@ public partial class World : Node2D
 
     TerrainInfo[,] terrain = LoadRandomLevelTerrain(difficulty, maxBlockingUser, maxBlockingEnemy, levelSection);
     PropInfo[,] props = LoadRandomLevelProps(difficulty, maxBlockingUser, maxBlockingEnemy, terrain, levelSection);
-    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props, levelSection);
+    UnitInfo[,] units = LoadRandomLevelUnits(difficulty, terrain, props, levelSection, expectedEnemyUnitSlots);
     return new Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]>(terrain, props, units);
   }
 
@@ -678,14 +675,14 @@ public partial class World : Node2D
     return cluster;
   }
 
-  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, int levelSection)
+  private UnitInfo[,] LoadRandomLevelUnits(int difficulty, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, int levelSection, int expectedEnemyUnitSlots)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     List<string> dominantUnitTypes = ["primal", "holy", "machinery", "rotten", "demonic"]; // TODO move
     string dominantType = dominantUnitTypes[levelSection];
 
-    int budget = difficulty + (difficulty / 2);
+    int budget = expectedEnemyUnitSlots;
     int maxStage = GetMaxStageForDifficulty(difficulty);
 
     // Build unit pools
@@ -1086,14 +1083,6 @@ public partial class World : Node2D
         _explanationMarks[cell.X, cell.Y] = null!;
       }
     }
-  }
-
-  private void OnExtraTurnGiven(Unit originUnit, Unit targetUnit)
-  {
-    int originUnitIndex = _unitsToAct.IndexOf(originUnit);
-    targetUnit.SpawnFloatingText("Extra turn", Colors.Yellow);
-    _unitsToAct.Insert(originUnitIndex + 1, targetUnit);
-    _indexAfterExtraTurn = originUnitIndex + 1;
   }
 
   private void RemoveUnit(Unit unit)
@@ -1623,11 +1612,11 @@ public partial class World : Node2D
       // Remaining layers expand like a cone
       for (int layer = 2; layer < _numLayers; layer++)
       {
-        bool isBoss = layer % 15 == 0;
+        bool isBoss = layer % (_numLayers - 1) == 0;
         int nodesInLayer = 0;
-        if (layer < 10)
+        if (layer < (_numLayers * 0.75f - 1))
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 2;
-        else if (layer < 15) // After a while the layers converge to one boss layer
+        else if (layer < (_numLayers - 1)) // After a while the layers converge to one boss layer
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 3;
         else
           nodesInLayer = 1;

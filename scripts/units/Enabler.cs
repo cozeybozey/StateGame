@@ -17,13 +17,15 @@ public partial class Enabler : Unit
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    foreach (Vector2I target in targets)
-    {
-      Unit unit = unitsGrid[target.X, target.Y];
+    return; // Temporarily disable, because it does not work with our current system.
 
-      // Insert the unit after this unit so it immediately gets to play after this unit's turn
-      if (unit != null)
-        _globalSignals.EmitSignal(GlobalSignals.SignalName.ExtraTurnGiven, this, unit);
-    }
+    //foreach (Vector2I target in targets)
+    //{
+    //  Unit unit = unitsGrid[target.X, target.Y];
+
+    //  // Insert the unit after this unit so it immediately gets to play after this unit's turn
+    //  if (unit != null)
+    //    _globalSignals.EmitSignal(GlobalSignals.SignalName.ExtraTurnGiven, this, unit);
+    //}
   }
 }

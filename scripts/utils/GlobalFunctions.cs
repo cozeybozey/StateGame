@@ -272,7 +272,7 @@ public partial class GlobalFunctions : Node
     int score = 0;
 
     // Extra score for being adjacent to a beacon of light
-    foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false))
+    foreach (Vector2I cell in GlobalFunctions.GetSurroundingCells(pos, unitInfo.OccupiedCells, false, includeDiagonals: true))
     {
       if (unitsGrid[cell.X, cell.Y] != null && unitsGrid[cell.X, cell.Y].Id == "beacon_of_light")
         score++;

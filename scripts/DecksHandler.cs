@@ -254,7 +254,7 @@ public partial class DecksHandler : Control
 
   public void ReloadAfterLevel(UnitInfo[,] unitsGrid)
   {
-    ResetUnitsSelection(unitsGrid , true);
+    ResetUnitsSelection(unitsGrid, true);
     _gridOverlay.LoadDeck(unitsGrid);
   }
 

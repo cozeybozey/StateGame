@@ -344,10 +344,9 @@ public partial class GridEntity : Node2D
 		return occupiedCells;
   }
 
-  public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeSides = true, bool includeDiagonals = false)
+  public List<Vector2I> GetSurroundingCells(bool includeFront = true, bool includeBack = true, bool includeLeft = true, bool includeRight = true, bool includeDiagonals = false)
   {
-    List<Vector2I> occupied = GetOccupiedCells();
-    return GlobalFunctions.GetSurroundingCells(OccupiedMainCell, occupied, Side, includeFront, includeBack, includeSides, includeDiagonals);
+    return GlobalFunctions.GetSurroundingCells(OccupiedMainCell, OccupiedCells, Side, includeFront, includeBack, includeLeft, includeRight, includeDiagonals);
   }
 
   public void MoveToCell(Vector2I newCell, bool playing)

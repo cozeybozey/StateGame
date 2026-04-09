@@ -180,7 +180,7 @@
 		"texture": "res://sprites/units/enabler.png",
 		"scene": "res://scenes/units/enabler.tscn",
 		"cells": [[0, 0], [1, 0], [1, 1]],
-		"stage": 5, 
+		"stage": 10, 
 		"cost": 2,
 		"description": "Target closest friendly unit and activate its turn. Cannot activate other Enablers",
 		"health": 10,
