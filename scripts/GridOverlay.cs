@@ -31,7 +31,10 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		Vector2I cell = GetCellUnderMouse(atPosition);
+    if (_interactionLocked)
+      return default;
+
+    Vector2I cell = GetCellUnderMouse(atPosition);
 
 		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
 			return default;
@@ -88,21 +91,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     {
 			Unit unit = _unitsGrid[dragPayload!.OriginCell!.Value.X, dragPayload!.OriginCell!.Value.Y];
 
-      // Remove unit from previous cells
-      foreach (var cell in unit.GetOccupiedCells())
-			{
-        _unitsGrid[cell.X, cell.Y] = null!;
-      }
-
       // Move unit to new cells
       unit.MoveToCell(targetCell, false);
-
-			// Assign unit to new cells
-      foreach (var cell in unit.GetOccupiedCells())
-      {
-        _unitsGrid[cell.X, cell.Y] = unit;
-      }
-
     }
     else
 		{ 
@@ -112,11 +102,6 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       Unit unit = instance as Unit;
 			unit!.Initialize(dragPayload.Unit, true, targetCell, placed:true);
       _unitsNode.AddChild(instance);
-			foreach (var cell in dragPayload.Unit.OccupiedCells)
-			{
-				_unitsGrid[targetCell.X + cell.X,targetCell.Y + cell.Y] = unit;
-      }
-
       _currentUnitSlotsCount += dragPayload.Unit.OccupiedCells.Count;
       _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
     }
@@ -167,35 +152,6 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		return true;
 	}
 
-	public Unit[,] GetUnits()
-	{
-		return _unitsGrid;
-  }
-
-	public void LoadUnits()
-	{
-		for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-		{
-			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-			{
-				Unit unit = _unitsGrid[x, y];
-				Vector2I cell = new Vector2I(x, y);
-        if (unit != null && unit.StartCell == cell)
-				{
-          UnitInfo unitInfo = _unitsGrid[x, y].GetStartInfo();
-          PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
-					Node instance = scene.Instantiate();
-					Unit newUnit = instance as Unit;
-          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y), placed: true);
-          _unitsNode.AddChild(instance);
-
-					foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
-						_unitsGrid[occupiedCell.X, occupiedCell.Y] = newUnit;
-        }
-      }
-		}
-	}
-
 	public void LoadDeck(UnitInfo[,] unitsGrid)
 	{
 		ClearUnits();
@@ -213,9 +169,6 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
           Unit newUnit = instance as Unit;
           newUnit!.Initialize(unitInfo, true, new Vector2I(x, y), placed: true);
           _unitsNode.AddChild(instance);
-
-          foreach (Vector2I occupiedCell in newUnit!.GetOccupiedCells())
-            _unitsGrid[occupiedCell.X, occupiedCell.Y] = newUnit;
           _currentUnitSlotsCount += newUnit.GetOccupiedCells().Count;
           _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
         }
@@ -237,7 +190,6 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 					unit.Remove();
 					removedUnits.Add(unit);
 				}
-				_unitsGrid[x, y] = null!;
 			}
 		}
     _currentUnitSlotsCount = 0;
@@ -251,11 +203,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
   public void OnUnitPlacedSuccessfully(DragPayload dragPayload)
   {
-		Unit unit = _unitsGrid[dragPayload.OriginCell!.Value.X, dragPayload.OriginCell!.Value.Y];
-		foreach (var cell in unit.GetOccupiedCells())
-		{
-			_unitsGrid[cell.X, cell.Y] = null!;
-		}    
+		Unit unit = _unitsGrid[dragPayload.OriginCell!.Value.X, dragPayload.OriginCell!.Value.Y];   
     unit.Remove();
     _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
@@ -267,15 +215,23 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
   }
 
-	public void SetTerrain(Terrain[,] terrainGrid)
+  public void SetUnits(Unit[,] unitsGrid)
+  {
+    _unitsGrid = unitsGrid;
+  }
+
+  public void SetTerrain(Terrain[,] terrainGrid)
 	{
-		// Shallow copy
-    _terrainGrid = (Terrain[,])terrainGrid.Clone();
+    _terrainGrid = terrainGrid;
+
+    // Shallow copy
+    //_terrainGrid = (Terrain[,])terrainGrid.Clone();
   }
 
   public void SetProps(Prop[,] propsGrid)
   {
+		_propsGrid = propsGrid;
     // Shallow copy
-    _propsGrid = (Prop[,])propsGrid.Clone();
+    //_propsGrid = (Prop[,])propsGrid.Clone();
   }
 }

@@ -226,6 +226,7 @@ public partial class World : Node2D
     );
     AmountOfNodesPerLayerPerSection = new int[_numLayers, _numLevelSections];
     GenerateWorld();
+    _gridOverlay.SetUnits(_unitsGrid);
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -770,8 +771,8 @@ public partial class World : Node2D
   private void Reset(bool reloadLevel = false)
   {
     // Reset units
-    foreach (Unit unit in _units)
-      unit.QueueFree();
+    while (_units.Count > 0)
+      _units[_units.Count - 1].Remove();
     _units.Clear();
     _unitsToAct.Clear();
 
@@ -783,6 +784,7 @@ public partial class World : Node2D
     }
     _removedUnits.Clear();
     _unitsGrid = new Unit[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
+    _gridOverlay.SetUnits(_unitsGrid);
 
     // Reset terrain
     foreach (Terrain terrain in _terrainGrid)

@@ -72,7 +72,8 @@ public partial class Guardian : Unit
 
   private void RemoveBuff(Unit unit)
   {
-    unit.Armor -= 2;
+    if (IsInstanceValid(unit))
+      unit.Armor -= 2;
   }
 
   private void ApplyBuff(List<Unit> units, Unit[,] unitsGrid)
@@ -87,18 +88,33 @@ public partial class Guardian : Unit
   private void RefreshBuffs()
   {
     // Remove buffs from units no longer behind
+    List<Unit> unitsToBeRemoved = new List<Unit>();
     foreach (Unit unit in _buffedUnits)
     {
       if (!IsUnitBehind(unit))
+      {
         RemoveBuff(unit);
+        unitsToBeRemoved.Add(unit);
+      }
     }
-    _buffedUnits.Clear();
+    foreach (Unit unit in unitsToBeRemoved)
+    {
+      _buffedUnits.Remove(unit);
+    }
 
     // Add buffs to newly eligible units
     foreach (Unit unit in _unitsToAct)
     {
       if (IsUnitBehind(unit) && !_buffedUnits.Contains(unit))
         AddBuff(unit);
+    }
+  }
+
+  public override void DeathRattle(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    foreach (Unit unit in _buffedUnits)
+    {
+      RemoveBuff(unit);
     }
   }
 
