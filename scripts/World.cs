@@ -707,7 +707,7 @@ public partial class World : Node2D
       // It is possible for a randomly chosen unit to not have any possible positions on the grid due to terrain or props/
       // If that happens it can only be because of multi celled units, because there are always enough non-blocking tiles on each level
       // Therefore we simply retry selecting random units until we find one that does have a possible location.
-      UnitInfo unitInfo = GlobalConstants.UnitsData["turret"];
+      UnitInfo unitInfo = GlobalConstants.UnitsData["archer"];
       List<Vector2I> possiblePositions = new List<Vector2I>();
       int cost = unitInfo.OccupiedCells.Count;
       int nrOfTries = 0;
@@ -744,10 +744,10 @@ public partial class World : Node2D
       // We failed finding a different unit
       if (nrOfTries >= 10)
       {
-        unitInfo = GlobalConstants.UnitsData["turret"];
+        unitInfo = GlobalConstants.UnitsData["archer"];
         possiblePositions = GlobalFunctions.GetPossibleGridEntityLocations(unitGrid, terrainGrid, propsGrid, unitInfo.OccupiedCells, false);
         cost = unitInfo.OccupiedCells.Count;
-        GD.Print("Unit placement failed. Placing turret instead.");
+        GD.Print("Unit placement failed. Placing archer instead.");
       }
 
       // Determine optimal positions for this unit and pick the semi-best one
@@ -1582,10 +1582,10 @@ public partial class World : Node2D
   int GetMaxStageForDifficulty(int difficulty)
   {
     if (difficulty < 2) return 0;
-    if (difficulty < 4) return 1;
-    if (difficulty < 6) return 2;
-    if (difficulty < 8) return 3;
-    if (difficulty < 10) return 4;
+    if (difficulty < 3) return 1;
+    if (difficulty < 4) return 2;
+    if (difficulty < 5) return 3;
+    if (difficulty < 6) return 4;
     return 5;
   }
 
@@ -1618,6 +1618,8 @@ public partial class World : Node2D
         int nodesInLayer = 0;
         if (layer < (_numLayers * 0.75f - 1))
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 2;
+        else if (layer == _numLayers - 2) // After a while the layers converge to one boss layer
+          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 2;
         else if (layer < (_numLayers - 1)) // After a while the layers converge to one boss layer
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 3;
         else

@@ -440,9 +440,7 @@ layout_mode = 2
 text = "Blocking: "
 
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Blocking" unique_id=1167541010]
-custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
-autowrap_mode = 2
 
 [node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=1352360972]
 layout_mode = 2
