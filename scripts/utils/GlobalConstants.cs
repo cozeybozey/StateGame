@@ -16,9 +16,10 @@ public static class GlobalConstants
   public static readonly Dictionary<string, HashSet<string>> PropTerrainCompatibility = new()
   {
     { "vegetation", new HashSet<string> { "vegetation" } },
-    { "burning", new HashSet<string> { "vegetation" } },
+    { "burning", new HashSet<string> { "vegetation", "flooring" } },
     { "rocky", new HashSet<string> { "vegetation", "rocky" } },
-    { "liquid", new HashSet<string> { "vegetation" } }
+    { "liquid", new HashSet<string> { "vegetation", "flooring" } },
+    { "object", new HashSet<string> { "vegetation", "flooring" } }
   };
 
 }

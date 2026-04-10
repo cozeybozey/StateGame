@@ -90,7 +90,7 @@ public partial class World : Node2D
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private int _numLayers = 12;
+  private int _numLayers = 8;
   private int _maxNodesPerLayer = 8;
   private int _buttonWidth = 85;
   private int _buttonHeight = 65;
@@ -233,14 +233,14 @@ public partial class World : Node2D
   public override void _Process(double delta)
   {
     // Turn on if there are issues with player losing before all units are dead
-    int friendlyUnitCount = 0;
-    foreach (Unit unit in _units)
-    {
-      if (unit.Side)
-        friendlyUnitCount++;
-    }
-    if (friendlyUnitCount != _playerUnitsCount)
-      GD.Print("hi");
+    //int friendlyUnitCount = 0;
+    //foreach (Unit unit in _units)
+    //{
+    //  if (unit.Side)
+    //    friendlyUnitCount++;
+    //}
+    //if (friendlyUnitCount != _playerUnitsCount)
+    //  GD.Print("hi");
 
     if (_paused)
       return;
@@ -1915,7 +1915,7 @@ public partial class World : Node2D
 
     // Shrink the cone based on how many nodes are in this layer
     float maxConeWidth = Mathf.Tau / _numLevelSections * 0.95f; // 95% of available space per branch
-    float coneWidth = Mathf.Min(maxConeWidth, _maxNodesInLayer * 0.15f);
+    float coneWidth = Mathf.Min(maxConeWidth, (nodesInLayer + 3) * 0.15f);
 
     float nodeAngle;
     if (nodesInLayer <= 1)

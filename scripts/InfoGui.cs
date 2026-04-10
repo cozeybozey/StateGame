@@ -38,27 +38,45 @@ public partial class InfoGui : VBoxContainer
     Show();
   }
 
+  private void ShowUnitInfo()
+  {
+    _unitsInfoContainer.Show();
+    _terrainsInfoContainer.Hide();
+    _propsInfoContainer.Hide();
+    _menuButton.Text = "Unit Info";
+  }
+
+  private void ShowTerrainInfo()
+  {
+    _unitsInfoContainer.Hide();
+    _terrainsInfoContainer.Show();
+    _propsInfoContainer.Hide();
+    _menuButton.Text = "Terrain Info";
+  }
+
+  private void ShowPropInfo()
+  {
+    _unitsInfoContainer.Hide();
+    _terrainsInfoContainer.Hide();
+    _propsInfoContainer.Show();
+    _menuButton.Text = "Prop Info";
+
+  }
+
   private void OnInfoTypeSelected(long id)
   {
     switch (id)
     {
       case 0:
-        _unitsInfoContainer.Show();
-        _terrainsInfoContainer.Hide();
-        _propsInfoContainer.Hide();
+        ShowUnitInfo();
         break;
       case 1:
-        _unitsInfoContainer.Hide();
-        _terrainsInfoContainer.Show();
-        _propsInfoContainer.Hide();
+        ShowTerrainInfo();
         break;
       case 2:
-        _unitsInfoContainer.Hide();
-        _terrainsInfoContainer.Hide();
-        _propsInfoContainer.Show();
+        ShowPropInfo();
         break;
     }
-    _menuButton.Text = _popupMenu.GetItemText((int)id);
   }
 
   public void Reset()
@@ -75,6 +93,15 @@ public partial class InfoGui : VBoxContainer
     _terrainsInfoContainer.SetSelectedTerrain(terrain);
     _propsInfoContainer.SetSelectedProp(prop);
     _selectedCell = cell;
+
+    // Show unit with highest priority
+    if (unit != null)
+      ShowUnitInfo();
+    else if (prop != null)
+      ShowPropInfo();
+    else
+      ShowTerrainInfo();
+
     Show();
   }
 

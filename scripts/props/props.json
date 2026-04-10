@@ -33,7 +33,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"object"
 		]
 	},
 	"broken_turret": {
@@ -51,7 +51,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"object"
 		]
 	},
 	"dark_bush": {
@@ -88,7 +88,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"object"
 		]
 	},
 
@@ -127,7 +127,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"object"
 		]
 	},
 	"gravestone": {
@@ -145,7 +145,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"object"
 		]
 	},
 	"statue": {
@@ -163,7 +163,7 @@
 		"description": "Does nothing.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"object"
 		]
 	},
 

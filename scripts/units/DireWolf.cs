@@ -22,7 +22,7 @@ public partial class DireWolf : Unit
       Unit unit = unitsGrid[target.X, target.Y];
       if (unit == null)
         continue;
-      foreach (Vector2I cell in GetSurroundingCells())
+      foreach (Vector2I cell in GetSurroundingCells(includeDiagonals: true))
       {
         if (GlobalFunctions.CanMoveToCell(unit, cell, unitsGrid, terrainGrid, propsGrid))
           unit.MoveToCell(cell, true);

@@ -22,7 +22,7 @@
 		"description": "Units can traverse this terrain. Can be burned.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"flooring"
 		]
 	},
 	"stone_floor": {
@@ -35,7 +35,7 @@
 		"description": "Units can traverse this terrain. Can be burned.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"flooring"
 		]
 	},
 	"dark_grass": {
@@ -61,7 +61,7 @@
 		"description": "Units can traverse this terrain. Can be burned.",
 		"rarity": "common",
 		"types": [
-			"vegetation"
+			"flooring"
 		]
 	},
 
@@ -101,7 +101,7 @@
 		"description": "Units cannot traverse this terrain.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"unreachable"
 		]
 	},
 	"mud": {
@@ -114,7 +114,7 @@
 		"description": "Units cannot traverse this terrain.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"unstable"
 		]
 	},
 	"lower_gray_floor_tiles": {
@@ -127,7 +127,7 @@
 		"description": "Units cannot traverse this terrain.",
 		"rarity": "common",
 		"types": [
-			"rocky"
+			"unreachable"
 		]
 	},
 
