@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bc7wft5xrtq2m"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_tfnkq"]
+[ext_resource type="Script" uid="uid://dhj18bf3a4nxf" path="res://scripts/units/Overcharger.cs" id="2_kjhbq"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_tfnkq")]
+script = ExtResource("2_kjhbq")

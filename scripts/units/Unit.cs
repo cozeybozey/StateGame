@@ -81,7 +81,49 @@ public partial class Unit : GridEntity
       return null;
   }
 
-	public UnitInfo GetInfo()
+  // Find farthest unit that obeys certain clauses. These clauses are defined by the optional predicate.
+  // Think of only finding friendly units, or only finding other units of the same type.
+  protected Tuple<Unit, Vector2I>? GetFarthestUnit(List<Unit> units, Func<Unit, bool>? predicate = null)
+  {
+    Vector2I? farthestCell = null;
+    float farthestDist = float.MinValue;
+    Unit? farthestUnit = null;
+
+    if (units == null || units.Count == 0)
+      return null;
+
+    foreach (Unit unit in units)
+    {
+      if (unit == null || unit == this)
+        continue;
+
+      // Check predicate and continue if it does not hold
+      if (predicate != null && !predicate(unit))
+        continue;
+
+      // Find the minimum distance between any pair of occupied cells
+      foreach (Vector2I myCell in GetOccupiedCells())
+      {
+        foreach (Vector2I theirCell in unit.GetOccupiedCells())
+        {
+          float dist = myCell.DistanceTo(theirCell);
+          if (dist > farthestDist)
+          {
+            farthestDist = dist;
+            farthestCell = theirCell;
+            farthestUnit = unit;
+          }
+        }
+      }
+    }
+
+    if (farthestCell.HasValue && farthestUnit != null)
+      return new Tuple<Unit, Vector2I>(farthestUnit, farthestCell.Value);
+    else
+      return null;
+  }
+
+  public UnitInfo GetInfo()
 	{
 		return new UnitInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Cost, MaxHealth, 
 			Health, Damage, Armor, Speed, StartingCooldown, Cooldown, Description, Rarity, Types, Stage);

@@ -9,35 +9,10 @@ public partial class Sniper : Unit
   {
     List<Vector2I> result = new();
 
-    float maxDistanceSq = -1f;
-    Vector2I? farthestPos = null;
+    Tuple<Unit, Vector2I>? farthestEnemy = GetFarthestUnit(units, u => u.Side != Side);
 
-    for (int x = 0; x < unitsGrid.GetLength(0); x++)
-    {
-      for (int y = 0; y < unitsGrid.GetLength(1); y++)
-      {
-        Unit unit = unitsGrid[x, y];
-
-        if (unit == null || unit == this || unit.Side == Side)
-          continue;
-
-        Vector2I otherPos = new(x, y);
-
-        int dx = otherPos.X - OccupiedMainCell.X;
-        int dy = otherPos.Y - OccupiedMainCell.Y;
-
-        float distanceSq = dx * dx + dy * dy;
-
-        if (distanceSq > maxDistanceSq)
-        {
-          maxDistanceSq = distanceSq;
-          farthestPos = otherPos;
-        }
-      }
-    }
-
-    if (farthestPos.HasValue)
-      result.Add(farthestPos.Value);
+    if (farthestEnemy != null)
+      result.Add(farthestEnemy.Item2);
 
     return result;
   }

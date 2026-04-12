@@ -59,6 +59,7 @@ public partial class World : Node2D
   List<Vector2I> _selectedTargets;
 
   private bool _playing = false;
+  private bool _gameEnd = false;
   private int _level = 1;
   private int _completedLevels = 0;
   private int _slowDownLayer = 15;
@@ -90,7 +91,7 @@ public partial class World : Node2D
   private Godot.Collections.Dictionary<string, Button> _levelButtons = new();
   private Panel _worldUi;
   private Button _worldMapButton;
-  private int _numLayers = 8;
+  private int _numLayers = 10;
   private int _maxNodesPerLayer = 8;
   private int _buttonWidth = 85;
   private int _buttonHeight = 65;
@@ -276,7 +277,7 @@ public partial class World : Node2D
         _targeting = false;
       }
     }
-    else if (_playing)
+    else if (_playing && !_gameEnd)
     {
       _turnCooldown -= delta;
       if (_turnCooldown <= 0)
@@ -770,6 +771,9 @@ public partial class World : Node2D
 
   private void Reset(bool reloadLevel = false)
   {
+    _playing = false;
+    _gameEnd = false;
+
     // Reset units
     while (_units.Count > 0)
       _units[_units.Count - 1].Remove();
@@ -837,9 +841,9 @@ public partial class World : Node2D
 
   private void Win()
   {
-    if (!_playing)
+    if (!_playing || _gameEnd)
       return;
-    _playing = false;
+    _gameEnd = true;
 
     ShowGameStats();
 
@@ -925,9 +929,9 @@ public partial class World : Node2D
 
   private void Lose()
   {
-    if (!_playing)
+    if (!_playing || _gameEnd)
       return;
-    _playing = false;
+    _gameEnd = true;
     _message.Text = "You Lose...";
 
     Button btn = new Button();
@@ -1583,9 +1587,9 @@ public partial class World : Node2D
   {
     if (difficulty < 2) return 0;
     if (difficulty < 3) return 1;
-    if (difficulty < 4) return 2;
-    if (difficulty < 5) return 3;
-    if (difficulty < 6) return 4;
+    if (difficulty < 5) return 2;
+    if (difficulty < 7) return 3;
+    if (difficulty < 9) return 4;
     return 5;
   }
 
@@ -1616,12 +1620,12 @@ public partial class World : Node2D
       {
         bool isBoss = layer % (_numLayers - 1) == 0;
         int nodesInLayer = 0;
-        if (layer < (_numLayers * 0.75f - 1))
+        if (layer == 2)
           nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 2;
-        else if (layer == _numLayers - 2) // After a while the layers converge to one boss layer
-          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 2;
+        else if (layer < (_numLayers * 0.75f - 1))
+          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] + 1;
         else if (layer < (_numLayers - 1)) // After a while the layers converge to one boss layer
-          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 3;
+          nodesInLayer = AmountOfNodesPerLayerPerSection[layer - 1, q] - 2;
         else
           nodesInLayer = 1;
 
@@ -1794,7 +1798,7 @@ public partial class World : Node2D
 
       return new LevelInfo(
           id: nodeId,
-          name: $"{_levelSections[section]}\nGauntlet {node}",
+          name: $"{_levelSections[section]}\nLayer {layer + 1}\nGauntlet {node + 1}",
           completed: false,
           unlocked: layer == 0,
           layer: layer,
@@ -1811,7 +1815,7 @@ public partial class World : Node2D
       );
     }
 
-    string name = layer == 0 ? "Start" : $"{_levelSections[section]}\nLevel {node}";
+    string name = layer == 0 ? "Start" : $"{_levelSections[section]}\nLayer {layer + 1}\nLevel {node + 1}";
     Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> randomLevel = LoadRandomLevel(layer + 1, section);
     return new LevelInfo(
         id: nodeId,
@@ -2113,7 +2117,7 @@ public partial class World : Node2D
 
   private void OnSurrenderButtonPressed()
   {
-    if (!_playing)
+    if (!_playing || _gameEnd)
       return;
     Lose();
   }

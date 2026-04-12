@@ -324,7 +324,7 @@ public partial class GlobalFunctions : Node
         UnitInfo unit = unitsGrid[newPos.X, checkY];
 
         // Negative score for being in front of units that deals damage to first unit in the same column
-        if ((unit?.Id == "putrid_alchemist" || unit?.Id == "succubus") && !countedUnits.Contains(unit))
+        if ((unit?.Id == "putrid_alchemist" || unit?.Id == "succubus" || unit?.Id == "laser") && !countedUnits.Contains(unit))
         {
           score--;
           countedUnits.Add(unitsGrid[newPos.X, checkY]);

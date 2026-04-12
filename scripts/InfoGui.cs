@@ -35,6 +35,7 @@ public partial class InfoGui : VBoxContainer
     _unitsInfoContainer.ResetSelectedUnit();
     _unitsInfoContainer.DisplayInfo(unitInfo);
     _unitsInfoContainer.ShowInfo();
+    ShowUnitInfo();
     Show();
   }
 
