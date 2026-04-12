@@ -100,7 +100,10 @@ public partial class World : Node2D
   private int _worldUiSpacing = 100;
   private bool _openedWorldOnce = false;
   private int _maxNodesInLayer = 0;
-  List<string> _levelSections = ["Earth", "Heaven", "Future", "Graveyard", "Hell"];
+  private List<string> _levelSections = ["Earth", "Heaven", "Future", "Graveyard", "Hell"];
+  private List<string> _nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"];
+  private List<string> _blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"];
+  private List<string> _blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"];
 
   private Vector2 _worldCenter;
   private float _ringSpacing = 150f; // pixels between rings
@@ -430,13 +433,18 @@ public partial class World : Node2D
       Win();
   }
 
-  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadLevel(string levelId)
+  private Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> LoadLevel(string levelId, int levelSection)
   {
     UnitInfo[,] unitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     TerrainInfo[,] terrainGrid = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     PropInfo[,] propsGrid = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     Dictionary levelData = (Dictionary)_levelsData[levelId];
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+        terrainGrid[x, y] = GlobalConstants.TerrainsData[_nonBlockingTerrains[levelSection]];
+
     Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
     foreach (Dictionary unitData in levelUnits)
     {
@@ -478,13 +486,10 @@ public partial class World : Node2D
   private TerrainInfo[,] LoadRandomLevelTerrain(int difficulty, int maxBlockingUser, int maxBlockingEnemy, int levelSection)
   {
     TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    List<string> nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"]; // TODO move
-    List<string> blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"]; // TODO move
-    List<string> blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"]; // TODO move
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        terrain[x, y] = GlobalConstants.TerrainsData[nonBlockingTerrains[levelSection]];
+        terrain[x, y] = GlobalConstants.TerrainsData[_nonBlockingTerrains[levelSection]];
 
     FastNoiseLite mountainNoise = new();
     mountainNoise.Seed = _rng.Next();
@@ -514,13 +519,13 @@ public partial class World : Node2D
 
         if (mountainVal > 0.40f)
         {
-          terrain[x, y] = GlobalConstants.TerrainsData[blockingTerrains1[levelSection]];
+          terrain[x, y] = GlobalConstants.TerrainsData[_blockingTerrains1[levelSection]];
           if (isTopHalf) topHalfBlocking++;
           else bottomHalfBlocking++;
         }
         else if (waterVal > 0.40f)
         {
-          terrain[x, y] = GlobalConstants.TerrainsData[blockingTerrains2[levelSection]];
+          terrain[x, y] = GlobalConstants.TerrainsData[_blockingTerrains2[levelSection]];
           if (isTopHalf) topHalfBlocking++;
           else bottomHalfBlocking++;
         }
@@ -1753,7 +1758,7 @@ public partial class World : Node2D
         levelId = "lucifer";
       }
 
-      Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId);
+      Tuple<TerrainInfo[,], PropInfo[,], UnitInfo[,]> level = LoadLevel(levelId, section);
       return new LevelInfo(
           id: nodeId,
           name: nodeName,
