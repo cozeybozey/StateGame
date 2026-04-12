@@ -2,12 +2,50 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 
 public partial class Mover : Unit
 {
   private bool _movingRight = true;
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    List<Vector2I> result = new List<Vector2I>();
+
+    int dir = _movingRight ? 1 : -1;
+    bool moved = false;
+
+    // Check primary direction
+    if (GlobalFunctions.CanMoveToCell(this, new Vector2I(OccupiedMainCell.X + dir, OccupiedMainCell.Y), unitsGrid, terrainGrid, propsGrid))
+    {
+      moved = true;
+      MoveToCell(OccupiedMainCell + new Vector2I(dir, 0), playing: true);
+    }
+    // Otherwise suggest opposite direction if possible (but do not change state)
+    else if (GlobalFunctions.CanMoveToCell(this, new Vector2I(OccupiedMainCell.X - dir, OccupiedMainCell.Y), unitsGrid, terrainGrid, propsGrid))
+    {
+      moved = true;
+      MoveToCell(OccupiedMainCell + new Vector2I(-dir, 0), playing: true);
+    }
+
+    if (!moved)
+      return [];
+
+    // Return surrounding cells
+    for (int x = - 1; x <= 1; x++)
+    {
+      for (int y = -1; y <= 1; y++)
+      {
+        Vector2I cell = new Vector2I(x, y);
+        if (cell != new Vector2I(0, 0) && GlobalFunctions.IsCellInsideGrid(OccupiedMainCell + cell))
+          result.Add(OccupiedMainCell + cell);
+      }
+    }
+
+    return result;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Buff surrounding units
     List<Unit> buffed = new List<Unit>();
@@ -24,56 +62,26 @@ public partial class Mover : Unit
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
   {
-    List<Vector2I> result = new List<Vector2I>();
+    int score = 0;
 
-    int dir = _movingRight ? 1 : -1;
-    bool moved = false;
+    // Everything but the first 3 rows return score of 3,
+    // This is to ensure tanky units are only placed in front.
+    if (pos.Y <= GlobalConstants.GridSize.Y * 0.5f - 3)
+      score += 3;
 
-    // Check primary direction
-    if (CanPlaceAtOffset(dir, unitsGrid))
+    // Increase score for every unit that the mover will buff when moving from left to right
+    // Gain more score for units that are closer
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
-      moved = true;
-      MoveToCell(occupiedMainCell + new Vector2I(dir, 0), playing: true);
-    }
-    // Otherwise suggest opposite direction if possible (but do not change state)
-    else if (CanPlaceAtOffset(-dir, unitsGrid))
-    {
-      moved = true;
-      MoveToCell(occupiedMainCell + new Vector2I(-dir, 0), playing: true);
-    }
-
-    if (!moved)
-      return [];
-
-    // Return surrounding cells
-    for (int x = - 1; x <= 1; x++)
-    {
-      for (int y = -1; y <= 1; y++)
+      foreach (int y in new[] { -1, 1 })
       {
-        Vector2I cell = new Vector2I(x, y);
-        if (cell != new Vector2I(0, 0) && GlobalFunctions.IsCellInsideGrid(occupiedMainCell + cell))
-          result.Add(occupiedMainCell + cell);
+        if (GlobalFunctions.IsCellInsideGrid(new Vector2I(pos.X, pos.Y + y)) && unitsGrid[x, pos.Y + y] != null)
+          score += GlobalConstants.GridSize.X - Mathf.Abs(pos.X - x);
       }
     }
 
-    return result;
-  }
-
-  private bool CanPlaceAtOffset(int xOffset, Unit[,] unitsGrid)
-  {
-    Vector2I newMain = occupiedMainCell + new Vector2I(xOffset, 0);
-    foreach (Vector2I rel in occupiedCells)
-    {
-      int nx = newMain.X + rel.X;
-      int ny = newMain.Y + rel.Y;
-      if (!GlobalFunctions.IsCellInsideGrid(new Vector2I(nx, ny)))
-        return false;
-      Unit unit = unitsGrid[nx, ny];
-      if (unit != null && unit != this)
-        return false;
-    }
-    return true;
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }

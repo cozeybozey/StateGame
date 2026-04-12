@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bwe85qf6t3yv7"]
+
+[ext_resource type="PackedScene" uid="uid://clcvair7df3rq" path="res://scenes/props/prop.tscn" id="1_tqerx"]
+[ext_resource type="Script" uid="uid://75dhomcboegm" path="res://scripts/props/TotemOfEarth.cs" id="2_56id6"]
+
+[node name="Prop" unique_id=995662800 instance=ExtResource("1_tqerx")]
+script = ExtResource("2_56id6")

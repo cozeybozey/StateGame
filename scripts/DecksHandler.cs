@@ -2,6 +2,7 @@ using Godot;
 using Godot.NativeInterop;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Security.Principal;
 
 public partial class DecksHandler : Control
 {
@@ -11,7 +12,7 @@ public partial class DecksHandler : Control
 
   private string _selectedDeck;
   private string _unitsSelectionScenePath = "res://scenes/units/unit_selection.tscn";
-  private bool _switchingDeck = false;
+  private bool _processUnitChanges = true;
 
   private GlobalSignals _globalSignals;
   private GridOverlay _gridOverlay;
@@ -45,41 +46,49 @@ public partial class DecksHandler : Control
     _unitsList = GetNode<VBoxContainer>("UnitsSelectionContainer/ScrollContainer/VBoxContainer");
     _changeDeckButton = GetNode<Button>("UnitsSelectionContainer/ChangeDeck");
 
-    _globalSignals.UnitSpawned += OnUnitSpawned;
+    _globalSignals.GridEntitySpawned += OnUnitSpawned;
     _globalSignals.UnitRemoved += OnUnitRemoved;
-    _globalSignals.UnitMoved += OnUnitMoved;
+    _globalSignals.GridEntityMoved += OnUnitMoved;
     _createDeckButton.Pressed += OnCreateDeckPressed;
     _changeDeckButton.Pressed += OnChangeDeckPressed;
     _popup.Confirmed += OnPopupConfirmed;
   }
 
-  private void OnUnitSpawned(Unit unit, bool playing)
+  private void OnUnitSpawned(GridEntity gridEntity, bool playing)
   {
+    // Do not process spawned terrain
+    if (gridEntity is not Unit unit)
+      return;
+
     // Do not process enemy units and spawned units during simulation
-    if (!unit.side || playing)
+    if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
-    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = unitInfo;
   }
 
   private void OnUnitRemoved(Unit unit)
   {
     // If units were removed due to a switch deck call,
     // then the deck itself should not be changed
-    if (!_switchingDeck)
-      Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = null!;
+    if (_processUnitChanges)
+      Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = null!;
   }
 
-  private void OnUnitMoved(Unit unit, Vector2I oldCell, bool playing)
+  private void OnUnitMoved(GridEntity gridEntity, Vector2I oldCell, bool playing)
   {
+    // Do not process spawned terrain
+    if (gridEntity is not Unit unit)
+      return;
+
     // Do not process enemy units and spawned units during simulation
-    if (!unit.side || playing)
+    if (!_processUnitChanges)
       return;
 
     UnitInfo unitInfo = unit.GetStartInfo();
     Decks[_selectedDeck][oldCell.X, oldCell.Y] = null!;
-    Decks[_selectedDeck][unit.startCell.X, unit.startCell.Y] = unitInfo;
+    Decks[_selectedDeck][unit.StartCell.X, unit.StartCell.Y] = unitInfo;
   }
 
   private void OnCreateDeckPressed()
@@ -103,13 +112,13 @@ public partial class DecksHandler : Control
 
   private void OnDeckSelected(Button button)
   {
-    _switchingDeck = true;
+    _processUnitChanges = false;
     _selectedDeck = button.Text;
     _gridOverlay.LoadDeck(Decks[_selectedDeck]);
     _decksContainer.Hide();
     _unitsSelectionContainer.Show();
-    AddUnitsSelection(Decks[_selectedDeck]);
-    _switchingDeck = false;
+    AddUnitsSelection(Decks[_selectedDeck], false);
+    _processUnitChanges = true;
   }
 
   private void OnChangeDeckPressed()
@@ -119,33 +128,90 @@ public partial class DecksHandler : Control
     _unitsSelectionContainer.Hide();
   }
 
-  private void AddUnitsSelection(UnitInfo[,] unitsGrid)
+  private void AddUnitsSelection(UnitInfo[,] placedUnitsGrid, bool reloadLevel)
   {
     Dictionary<string, int> _amountPlacedPerUnit = new Dictionary<string, int>();
+    Dictionary<string, int> _amountInDeckPerUnit = new Dictionary<string, int>();
+
+    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    {
+      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+      {
+        UnitInfo placedUnitInfo = placedUnitsGrid[x, y];
+        if (placedUnitInfo != null)
+        {
+          if (_amountPlacedPerUnit.ContainsKey(placedUnitInfo.Id))
+            _amountPlacedPerUnit[placedUnitInfo.Id] += 1;
+          else
+            _amountPlacedPerUnit[placedUnitInfo.Id] = 1;
+        }
+        
+        if (!reloadLevel || !Decks.ContainsKey(_selectedDeck))
+          continue;
+        UnitInfo deckUnitInfo = Decks[_selectedDeck][x, y];
+        if (deckUnitInfo != null)
+        {
+          if (_amountInDeckPerUnit.ContainsKey(deckUnitInfo.Id))
+            _amountInDeckPerUnit[deckUnitInfo.Id] += 1;
+          else
+            _amountInDeckPerUnit[deckUnitInfo.Id] = 1;
+        }
+      }
+    }
+
+    if (reloadLevel)
+    {
+      foreach (string unitId in _amountInDeckPerUnit.Keys)
+      {
+        UnitInfo unitInfo = GlobalConstants.UnitsData[unitId];
+        UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+        unitGui!.Info = unitInfo;
+
+        if (_amountInDeckPerUnit.ContainsKey(unitId))
+          unitGui.Amount = _amountInDeckPerUnit[unitId];
+
+        if (_amountPlacedPerUnit.ContainsKey(unitId))
+          unitGui.Amount -= _amountPlacedPerUnit[unitId];
+
+        _unitsList.AddChild(unitGui);
+      }
+    }
+    else
+    {
+      foreach (UnitInfo availableUnit in AvailableUnits)
+      {
+        UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+        unitGui!.Info = availableUnit;
+
+        unitGui.Amount = AmountPerUnit[availableUnit.Id];
+        if (_amountPlacedPerUnit.ContainsKey(availableUnit.Id))
+          unitGui.Amount -= _amountPlacedPerUnit[availableUnit.Id];
+
+        _unitsList.AddChild(unitGui);
+      }
+    }
+  }
+
+  private void AddUnitsSelectionBeforeLevel(UnitInfo[,] unitsGrid)
+  {
+    List<UnitInfo> units = new List<UnitInfo>();
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         UnitInfo unitInfo = unitsGrid[x, y];
-        if (unitInfo != null)
-        {
-          if (_amountPlacedPerUnit.ContainsKey(unitInfo.Id))
-            _amountPlacedPerUnit[unitInfo.Id] += 1;
-          else
-            _amountPlacedPerUnit[unitInfo.Id] = 1;
-        }
+        if (unitInfo != null && !units.Contains(unitInfo))
+            units.Add(unitInfo);
       }
     }
 
-    foreach (UnitInfo availableUnit in AvailableUnits)
+    foreach (UnitInfo unitInfo in units)
     {
       // Add initial turrent selection unit
       UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
-      unitGui!.Info = availableUnit;
-      unitGui.Amount = AmountPerUnit[availableUnit.Id];
-      if (_amountPlacedPerUnit.ContainsKey(availableUnit.Id))
-        unitGui.Amount -= _amountPlacedPerUnit[availableUnit.Id];
+      unitGui!.Info = unitInfo;
+      unitGui.Amount = 0;
       _unitsList.AddChild(unitGui);
     }
   }
@@ -158,11 +224,38 @@ public partial class DecksHandler : Control
     }
   }
 
-  public void ResetUnitsSelection()
+  public void ResetUnitsSelection(UnitInfo[,] placedUnitsGrid, bool reloadLevel)
   {
     ClearUnitsSelection();
+    AddUnitsSelection(placedUnitsGrid, reloadLevel);
+  }
+
+  public void LoadBeforeLevel()
+  {
+    _processUnitChanges = false;
+    _changeDeckButton.Visible = false;
+    _decksContainer.Hide();
+    _unitsSelectionContainer.Show();
+    //_gridOverlay.ClearUnits();
+    ClearUnitsSelection();
+    AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
+  }
+
+  public void LoadAfterLevel()
+  {
     if (Decks.ContainsKey(_selectedDeck))
-      AddUnitsSelection(Decks[_selectedDeck]);
+    {
+      ResetUnitsSelection(Decks[_selectedDeck], false);
+      _gridOverlay.LoadDeck(Decks[_selectedDeck]);
+    }
+    _changeDeckButton.Visible = true;
+    _processUnitChanges = true;
+  }
+
+  public void ReloadAfterLevel(UnitInfo[,] unitsGrid)
+  {
+    ResetUnitsSelection(unitsGrid, true);
+    _gridOverlay.LoadDeck(unitsGrid);
   }
 
   public void AddUnit(UnitInfo unitInfo)

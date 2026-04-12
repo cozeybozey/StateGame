@@ -20,6 +20,10 @@ config/icon="res://icon.svg"
 GlobalSignals="*uid://qp18ej2j3nf"
 GlobalFunctions="*uid://bkdmsptqrmp7a"
 
+[display]
+
+window/stretch/mode="canvas_items"
+
 [dotnet]
 
 project/assembly_name="StateGame"

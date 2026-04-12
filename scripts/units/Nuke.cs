@@ -8,8 +8,8 @@ public partial class Nuke : Unit
 
   protected override void Start()
   {
-    int ystart = (side) ? 0 : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
-    int yend = (side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : GlobalConstants.GridSize.Y;
+    int ystart = (Side) ? 0 : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
+    int yend = (Side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : GlobalConstants.GridSize.Y;
     for (int y = ystart; y < yend; y++)
     {
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
@@ -19,20 +19,20 @@ public partial class Nuke : Unit
     }
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    return _targets;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && targetUnit.side != side)
+      if (targetUnit != null && targetUnit.Side != Side)
       {
-        targetUnit.ChangeHealth(-damage, this);
+        targetUnit.ChangeHealth(-Damage, this);
       }
     }
-  }
-
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
-  {
-    return _targets;
   }
 }

@@ -2,43 +2,14 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+// TODO unit does not take into account terrain, it is disabled for now
 public partial class Chaos : Unit
 {
   protected override void Start()
   {
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
-  {
-    // Collect unique units currently on the grid (by reference)
-    List<Unit> units = new List<Unit>();
-    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-    {
-      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-      {
-        Unit unit = unitsGrid[x, y];
-        if (unit == null)
-          continue;
-        if (!units.Contains(unit))
-          units.Add(unit);
-      }
-    }
-
-    // Move each unit to its mirrored position across the horizontal center
-    foreach (Unit unit in units)
-    {
-      Vector2I oldMain = unit.occupiedMainCell;
-
-      Vector2I dimensions = GlobalFunctions.CellsToDimensions(unit.occupiedCells);
-      Vector2I relPos = GlobalFunctions.GetRelPosInCells(unit.occupiedCells, unit.occupiedCells[0]);
-      int yPosToBeMirrored = unit.occupiedMainCell.Y + (dimensions.Y - 1 - relPos.Y);
-      
-      Vector2I mirrored = new Vector2I(oldMain.X, GlobalConstants.GridSize.Y - 1 - yPosToBeMirrored);
-      unit.MoveToCell(mirrored, playing: true);
-    }
-  }
-
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new List<Vector2I>();
 
@@ -57,5 +28,21 @@ public partial class Chaos : Unit
     }
 
     return result;
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    // Move each unit to its mirrored position across the horizontal center
+    foreach (Unit unit in units)
+    {
+      Vector2I oldMain = unit.OccupiedMainCell;
+
+      Vector2I dimensions = GlobalFunctions.CellsToDimensions(unit.OccupiedCells);
+      Vector2I relPos = GlobalFunctions.GetRelPosInCells(unit.OccupiedCells, unit.OccupiedCells[0]);
+      int yPosToBeMirrored = unit.OccupiedMainCell.Y + (dimensions.Y - 1 - relPos.Y);
+
+      Vector2I mirrored = new Vector2I(oldMain.X, GlobalConstants.GridSize.Y - 1 - yPosToBeMirrored);
+      unit.MoveToCell(mirrored, playing: true);
+    }
   }
 }

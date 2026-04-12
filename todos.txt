@@ -3,3 +3,10 @@ Add unit types, allows for more deckbuilding
 Slow down unit count
 Add more units that allow for better deckbuilding
 Add terrain and interesting grids
+Add unit rotation
+Add more interesting world
+fix world script
+fix warnings
+fix naming in unit and terrain
+check placed boolean in unit
+rename damage to power

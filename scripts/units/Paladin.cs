@@ -5,17 +5,15 @@ using System.Linq;
 
 public partial class Paladin : Unit
 {
-  private GlobalSignals? _globalSignals;
 
   protected override void Start()
   {
-    _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _globalSignals.HealingReceived += OnUnitReceivedHealing;
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> result = base.GetTargets(unitsGrid, units, deadUnits);
+    List<Vector2I> result = base.GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
     if (result.Count == 0)
       return result;
     Vector2I primary = result[0];
@@ -26,7 +24,7 @@ public partial class Paladin : Unit
     if (primaryUnit != null)
     {
       // If the target unit belongs to the enemy side (not the paladin's side), prioritize lower y values
-      preferUpper = (primaryUnit.side == false);
+      preferUpper = (primaryUnit.Side == false);
     }
 
     // Build a 2x2 square that includes the primary cell and prefers the chosen vertical direction.
@@ -72,19 +70,13 @@ public partial class Paladin : Unit
     return filtered;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  private void OnUnitReceivedHealing(GridEntity gridEntity, int amount)
   {
-    // Use base damage behavior: damage each target cell
-    base.Act(targets, unitsGrid);
-  }
-
-  private void OnUnitReceivedHealing(Unit unit, int amount)
-  {
-    if (!IsInsideTree())
+    if (!IsInsideTree() || gridEntity is not Unit unit)
       return;
 
     // Gain one damage whenever an ally is healed
-    if (unit.side == side && amount > 0)
+    if (unit.Side == Side && amount > 0)
       ChangeDamage(1);
   }
 

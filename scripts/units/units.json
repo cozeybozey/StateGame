@@ -1,8 +1,8 @@
 {
-	"turret": {
-		"display_name": "Turret",
-		"texture": "res://sprites/units/blue_unit.png",
-		"scene": "res://scenes/units/turret.tscn",
+	"archer": {
+		"display_name": "Archer",
+		"texture": "res://sprites/units/archer.png",
+		"scene": "res://scenes/units/archer.tscn",
 		"cells": [[0, 0]],
 		"stage": 0,
 		"cost": 1,
@@ -13,9 +13,7 @@
 		"speed": 5,
 		"cooldown": 1,
 		"rarity": "common",
-		"types": [
-			"machinery"
-		]
+		"types": []
 	},
 	"healer": {
 		"display_name": "Healer",
@@ -41,49 +39,13 @@
 		"stage": 1,
 		"cost": 2,
 		"description": "Does nothing.",
-		"health": 20,
+		"health": 25,
 		"damage": 0,
 		"armor": 1,
 		"speed": 0,
 		"cooldown": 0,
 		"rarity": "common",
 		"types": []
-	},
-	"cluster": {
-		"display_name": "Cluster",
-		"texture": "res://sprites/units/cluster.png",
-		"scene": "res://scenes/units/cluster.tscn",
-		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]],
-		"stage": 2,
-		"cost": 2,
-		"description": "Randomly target and deal damage to 16 cells on the enemy side.",
-		"health": 15,
-		"damage": 8,
-		"armor": 0,
-		"speed": 3,
-		"cooldown": 1,
-		"rarity": "rare",
-		"types": [
-			"machinery"
-		]
-	},
-	"laser": {
-		"display_name": "Laser",
-		"texture": "res://sprites/units/laser.png",
-		"scene": "res://scenes/units/laser.tscn",
-		"cells": [[0, 0], [1, 0]],
-		"stage": 2,
-		"cost": 2,
-		"description": "Deal damage to every unit in front of this unit.",
-		"health": 10,
-		"damage": 5,
-		"armor": 0,
-		"speed": 10,
-		"cooldown": 1,
-		"rarity": "rare",
-		"types": [
-			"machinery"
-		]
 	},
 	"booster": {
 		"display_name": "Booster",
@@ -101,42 +63,6 @@
 		"rarity": "epic",
 		"types": []
 	},
-	"saboteur": {
-		"display_name": "Saboteur",
-		"texture": "res://sprites/units/saboteur.png",
-		"scene": "res://scenes/units/saboteur.tscn",
-		"cells": [[0, 0]],
-		"stage": 3,
-		"cost": 3,
-		"description": "Move towards enemy side and explode on contact. This deals high damage in the surrounding area and kills this unit.",
-		"health": 30,
-		"damage": 12,
-		"armor": 0,
-		"speed": 8,
-		"cooldown": 1,
-		"rarity": "rare",
-		"types": [
-			"brute"
-		]
-	},
-	"pusher": {
-		"display_name": "Pusher",
-		"texture": "res://sprites/units/pusher.png",
-		"scene": "res://scenes/units/pusher.tscn",
-		"cells": [[0, 0]],
-		"stage": 3, 
-		"cost": 1,
-		"description": "Push all units to the left of this unit one spot to the left.",
-		"health": 16,
-		"damage": 0,
-		"armor": 0,
-		"speed": 8,
-		"cooldown": 1,
-		"rarity": "common",
-		"types": [
-			"machinery"
-		]
-	},
 	"sniper": {
 		"display_name": "Sniper",
 		"texture": "res://sprites/units/sniper.png",
@@ -151,6 +77,22 @@
 		"speed": 1,
 		"cooldown": 1,
 		"rarity": "rare",
+		"types": []
+	},
+	"nurse": {
+		"display_name": "Nurse",
+		"texture": "res://sprites/units/nurse.png",
+		"scene": "res://scenes/units/nurse.tscn",
+		"cells": [[0, 0]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Heals unit in front.",
+		"health": 8,
+		"damage": 12,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
 		"types": []
 	},
 	"tactician": {
@@ -169,164 +111,104 @@
 		"rarity": "rare",
 		"types": []
 	},
-	"golden_turret": {
-		"display_name": "Golden Turret",
-		"texture": "res://sprites/units/golden_turret.png",
-		"scene": "res://scenes/units/golden_turret.tscn",
+	"supporter": {
+		"display_name": "Supporter",
+		"texture": "res://sprites/units/supporter.png",
+		"scene": "res://scenes/units/supporter.tscn",
 		"cells": [[0, 0]],
-		"stage": 10, 
-		"cost": 1,
-		"description": "Deal damage to frontmost unit. Damage is equal to number of active friendly machinery units.",
-		"health": 15,
-		"damage": 0,
+		"stage": 3, 
+		"cost": 2,
+		"description": "Give closest unit extra health equal to this unit's damage.",
+		"health": 7,
+		"damage": 4,
 		"armor": 0,
 		"speed": 6,
 		"cooldown": 1,
-		"rarity": "legendary",
-		"types": [
-			"machinery"
-		]
-	},
-	"masochist": {
-		"display_name": "Masochist",
-		"texture": "res://sprites/units/masochist.png",
-		"scene": "res://scenes/units/masochist.tscn",
-		"cells": [[0, 0], [0, 1]],
-		"stage": 2, 
-		"cost": 2,
-		"description": "Deal damage to frontmost unit. Gains damage equal to damage taken.",
-		"health": 20,
-		"damage": 1,
-		"armor": 0,
-		"speed": 5,
-		"cooldown": 1,
 		"rarity": "rare",
-		"types": [
-			"demonic"
-		]
+		"types": []
 	},
-	"nurse": {
-		"display_name": "Nurse",
-		"texture": "res://sprites/units/nurse.png",
-		"scene": "res://scenes/units/nurse.tscn",
+	"sergeant": {
+		"display_name": "Sergeant",
+		"texture": "res://sprites/units/sergeant.png",
+		"scene": "res://scenes/units/sergeant.tscn",
 		"cells": [[0, 0]],
-		"stage": 2, 
+		"stage": 4, 
+		"cost": 1,
+		"description": "Reduce action cooldown of the allied unit with the highest action cooldown.",
+		"health": 20,
+		"damage": 0,
+		"armor": 0,
+		"speed": 9,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": []
+	},
+	"bulwark": {
+		"display_name": "Bulwark",
+		"texture": "res://sprites/units/bulwark.png",
+		"scene": "res://scenes/units/bulwark.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 4, 
 		"cost": 2,
-		"description": "Heals unit in front.",
-		"health": 8,
-		"damage": 12,
+		"description": "Gain one armor.",
+		"health": 22,
+		"damage": 0,
 		"armor": 0,
 		"speed": 5,
-		"cooldown": 1,
+		"cooldown": 2,
 		"rarity": "common",
 		"types": []
 	},
-	"zombie": {
-		"display_name": "Zombie",
-		"texture": "res://sprites/units/zombie.png",
-		"scene": "res://scenes/units/zombie.tscn",
+	"mover": {
+		"display_name": "Mover",
+		"texture": "res://sprites/units/mover.png",
+		"scene": "res://scenes/units/mover.tscn",
 		"cells": [[0, 0]],
-		"stage": 3, 
-		"cost": 2,
-		"description": "Revives at a random location at the start of the next turn.",
-		"health": 4,
-		"damage": 2,
-		"armor": 0,
-		"speed": 2,
-		"cooldown": 1,
-		"rarity": "rare",
-		"types": [
-			"rotten"
-		]
-	},
-	"gravedigger": {
-		"display_name": "Gravedigger",
-		"texture": "res://sprites/units/gravedigger.png",
-		"scene": "res://scenes/units/gravedigger.tscn",
-		"cells": [[0, 0]],
-		"stage": 3, 
-		"cost": 2,
-		"description": "Deal damage to frontmost unit. Gain 2 damage whenever a friendly unit dies.",
-		"health": 12,
-		"damage": 2,
-		"armor": 0,
-		"speed": 3,
-		"cooldown": 1,
-		"rarity": "rare",
-		"types": [
-			"rotten"
-		]
-	},
-	"priest": {
-		"display_name": "Priest",
-		"texture": "res://sprites/units/priest.png",
-		"scene": "res://scenes/units/priest.tscn",
-		"cells": [[0, 0], [0, 1]],
 		"stage": 4, 
 		"cost": 2,
-		"description": "Revives a random friendly unit at a random location.",
-		"health": 5,
+		"description": "Move from right to left, 1 cell per turn. Give surrounding allies +1 damage and +1 health",
+		"health": 10,
 		"damage": 0,
 		"armor": 0,
 		"speed": 7,
-		"cooldown": 2,
-		"rarity": "epic",
-		"types": [
-			"holy"
-		]
-	},
-	"vampire": {
-		"display_name": "Vampire",
-		"texture": "res://sprites/units/vampire.png",
-		"scene": "res://scenes/units/vampire.tscn",
-		"cells": [[0, 0]],
-		"stage": 4, 
-		"cost": 2,
-		"description": "Deal damage to frontmost unit. Heals itself equal to damage dealt.",
-		"health": 18,
-		"damage": 3,
-		"armor": 0,
-		"speed": 4,
 		"cooldown": 1,
-		"rarity": "common",
-		"types": [
-			"demonic"
-		]
+		"rarity": "rare",
+		"types": []
 	},
-	"apocalypse": {
-		"display_name": "Apocalypse",
-		"texture": "res://sprites/units/apocalypse.png",
-		"scene": "res://scenes/units/apocalypse.tscn",
-		"cells": [[0, 0], [-1, 0], [0, -1], [0, 1], [1, 0]],
-		"stage": 4, 
+	"enabler": {
+		"display_name": "Enabler",
+		"texture": "res://sprites/units/enabler.png",
+		"scene": "res://scenes/units/enabler.tscn",
+		"cells": [[0, 0], [1, 0], [1, 1]],
+		"stage": 10, 
+		"cost": 2,
+		"description": "Target closest friendly unit and activate its turn. Cannot activate other Enablers",
+		"health": 10,
+		"damage": 0,
+		"armor": 0,
+		"speed": 1,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": []
+	},
+
+
+	"saboteur": {
+		"display_name": "Saboteur",
+		"texture": "res://sprites/units/saboteur.png",
+		"scene": "res://scenes/units/saboteur.tscn",
+		"cells": [[0, 0]],
+		"stage": 3,
 		"cost": 3,
-		"description": "Target every cell and deal damage to the units within.",
-		"health": 16,
-		"damage": 1,
+		"description": "Move towards enemy side and explode on contact. This deals high damage in the surrounding area and kills this unit.",
+		"health": 30,
+		"damage": 12,
 		"armor": 0,
-		"speed": 3,
-		"cooldown": 1,
-		"rarity": "epic",
-		"types": [
-			"machinery"
-		]
-	},
-	"cleric": {
-		"display_name": "Cleric",
-		"texture": "res://sprites/units/cleric.png",
-		"scene": "res://scenes/units/cleric.tscn",
-		"cells": [[0, 0]],
-		"stage": 4, 
-		"cost": 2,
-		"description": "Heal all units on the user side",
-		"health": 8,
-		"damage": 1,
-		"armor": 0,
-		"speed": 2,
+		"speed": 8,
 		"cooldown": 1,
 		"rarity": "rare",
 		"types": [
-			"holy"
+			"brute"
 		]
 	},
 	"berserker": {
@@ -347,6 +229,206 @@
 			"brute"
 		]
 	},
+
+
+	"turret": {
+		"display_name": "Turret",
+		"texture": "res://sprites/units/blue_unit.png",
+		"scene": "res://scenes/units/turret.tscn",
+		"cells": [[0, 0]],
+		"stage": 1,
+		"cost": 1,
+		"description": "Deal damage 3 times to frontmost unit.",
+		"health": 10,
+		"damage": 1,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"machinery"
+		]
+	},
+	"repair_unit": {
+		"display_name": "Repair Unit",
+		"texture": "res://sprites/units/repair_unit.png",
+		"scene": "res://scenes/units/repair_unit.tscn",
+		"cells": [[0, 0]],
+		"stage": 1,
+		"cost": 1,
+		"description": "Heal the lowest health machinery unit.",
+		"health": 10,
+		"damage": 8,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"machinery"
+		]
+	},
+	"charger": {
+		"display_name": "Charger",
+		"texture": "res://sprites/units/charger.png",
+		"scene": "res://scenes/units/charger.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Whenever this unit loses 15 health, deal damage to the enemy unit that is farthest away from this unit.",
+		"health": 18,
+		"damage": 5,
+		"armor": 1,
+		"speed": 0,
+		"cooldown": 0,
+		"rarity": "common",
+		"types": [
+			"machinery"
+		]
+	},
+	"overcharger": {
+		"display_name": "Overcharger",
+		"texture": "res://sprites/units/overcharger.png",
+		"scene": "res://scenes/units/overcharger.tscn",
+		"cells": [[0, 0]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Give 3 random friendly machinery units +1 damage.",
+		"health": 8,
+		"damage": 0,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"machinery"
+		]
+	},
+	"cluster": {
+		"display_name": "Cluster",
+		"texture": "res://sprites/units/cluster.png",
+		"scene": "res://scenes/units/cluster.tscn",
+		"cells": [[0, 0], [1, 0], [1, 1], [0, 1]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Randomly target and deal damage to 16 cells on the enemy side.",
+		"health": 15,
+		"damage": 8,
+		"armor": 1,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"machinery"
+		]
+	},
+	"laser": {
+		"display_name": "Laser",
+		"texture": "res://sprites/units/laser.png",
+		"scene": "res://scenes/units/laser.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Deal damage to every unit in front of this unit.",
+		"health": 10,
+		"damage": 3,
+		"armor": 0,
+		"speed": 10,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"machinery"
+		]
+	},
+	"turret_factory": {
+		"display_name": "Turret Factory",
+		"texture": "res://sprites/units/turret_factory.png",
+		"scene": "res://scenes/units/turret_factory.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Spawn one Turret at a random location",
+		"health": 15,
+		"damage": 0,
+		"armor": 1,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"machinery"
+		]
+	},
+	"pusher": {
+		"display_name": "Pusher",
+		"texture": "res://sprites/units/pusher.png",
+		"scene": "res://scenes/units/pusher.tscn",
+		"cells": [[0, 0]],
+		"stage": 3, 
+		"cost": 1,
+		"description": "Push all units to the left of this unit one spot to the left.",
+		"health": 16,
+		"damage": 0,
+		"armor": 0,
+		"speed": 8,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"machinery"
+		]
+	},
+	"bomber": {
+		"display_name": "Bomber",
+		"texture": "res://sprites/units/bomber.png",
+		"scene": "res://scenes/units/bomber.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 3, 
+		"cost": 3,
+		"description": "Deal damage to a random enemy unit and its surrounding cells.",
+		"health": 14,
+		"damage": 5,
+		"armor": 1,
+		"speed": 4,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"machinery"
+		]
+	},
+	"golden_turret": {
+		"display_name": "Golden Turret",
+		"texture": "res://sprites/units/golden_turret.png",
+		"scene": "res://scenes/units/golden_turret.tscn",
+		"cells": [[0, 0]],
+		"stage": 3, 
+		"cost": 1,
+		"description": "Deal damage to frontmost unit. Damage is equal to half the number of active friendly machinery units.",
+		"health": 15,
+		"damage": 0,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"machinery"
+		]
+	},
+	"apocalypse": {
+		"display_name": "Apocalypse",
+		"texture": "res://sprites/units/apocalypse.png",
+		"scene": "res://scenes/units/apocalypse.tscn",
+		"cells": [[0, 0], [-1, 0], [0, -1], [0, 1], [1, 0]],
+		"stage": 4, 
+		"cost": 3,
+		"description": "Target every cell and deal damage to the units within.",
+		"health": 16,
+		"damage": 1,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"machinery"
+		]
+	},
 	"nuke": {
 		"display_name": "Nuke",
 		"texture": "res://sprites/units/nuke.png",
@@ -365,124 +447,150 @@
 			"machinery"
 		]
 	},
-	"supporter": {
-		"display_name": "Supporter",
-		"texture": "res://sprites/units/supporter.png",
-		"scene": "res://scenes/units/supporter.tscn",
+
+
+	"imp": {
+		"display_name": "Imp",
+		"texture": "res://sprites/units/imp.png",
+		"scene": "res://scenes/units/imp.tscn",
 		"cells": [[0, 0]],
-		"stage": 4, 
-		"cost": 2,
-		"description": "Give closest unit extra health equal to this unit's damage.",
-		"health": 7,
-		"damage": 4,
+		"stage": 1, 
+		"cost": 1,
+		"description": "Deal damage to frontmost unit. Apply fire to the targeted cell.",
+		"health": 10,
+		"damage": 1,
 		"armor": 0,
-		"speed": 6,
+		"speed": 5,
 		"cooldown": 1,
-		"rarity": "rare",
-		"types": []
+		"rarity": "common",
+		"types": [
+			"demonic"
+		]
 	},
-	"bomber": {
-		"display_name": "Bomber",
-		"texture": "res://sprites/units/bomber.png",
-		"scene": "res://scenes/units/bomber.tscn",
-		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
-		"stage": 4, 
-		"cost": 3,
-		"description": "Deal damage to a random enemy unit and its surrounding cells.",
-		"health": 14,
-		"damage": 5,
+	"vampire": {
+		"display_name": "Vampire",
+		"texture": "res://sprites/units/vampire.png",
+		"scene": "res://scenes/units/vampire.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Heals itself equal to damage dealt.",
+		"health": 18,
+		"damage": 3,
 		"armor": 0,
 		"speed": 4,
 		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"demonic"
+		]
+	},
+	"blood_priest": {
+		"display_name": "Blood Priest",
+		"texture": "res://sprites/units/blood_priest.png",
+		"scene": "res://scenes/units/blood_priest.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to highest health ally and heal triple the amount to lowest health ally.",
+		"health": 8,
+		"damage": 3,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
 		"rarity": "rare",
 		"types": [
-			"machinery"
+			"demonic"
 		]
 	},
-	"blob": {
-		"display_name": "Blob",
-		"texture": "res://sprites/units/blob.png",
-		"scene": "res://scenes/units/blob.tscn",
-		"cells": [[0, 0]],
-		"stage": 10, 
-		"cost": 1,
-		"description": "Consume surrounding units to gain their stats and grow bigger.",
-		"health": 10,
-		"damage": 0,
-		"armor": 0,
-		"speed": 0,
-		"cooldown": 1,
-		"rarity": "legendary",
-		"types": [
-			"rotten"
-		]
-	},
-	"consumer": {
-		"display_name": "Consumer",
-		"texture": "res://sprites/units/consumer.png",
-		"scene": "res://scenes/units/consumer.tscn",
-		"cells": [[0, 0]],
-		"stage": 4, 
+	"masochist": {
+		"display_name": "Masochist",
+		"texture": "res://sprites/units/masochist.png",
+		"scene": "res://scenes/units/masochist.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 2, 
 		"cost": 2,
-		"description": "Every turn switch between moving to and consuming an allied unit and dealing damage to the enemy units. Gain +4 max health, +4 damage and 1 extra target for each unit consumed.",
-		"health": 4,
-		"damage": 2,
+		"description": "Deal damage to frontmost unit. Gains damage equal to damage taken.",
+		"health": 20,
+		"damage": 1,
 		"armor": 0,
-		"speed": 6,
+		"speed": 5,
 		"cooldown": 1,
-		"rarity": "epic",
+		"rarity": "rare",
 		"types": [
-			"rotten"
+			"demonic"
 		]
 	},
-	"sergeant": {
-		"display_name": "Sergeant",
-		"texture": "res://sprites/units/sergeant.png",
-		"scene": "res://scenes/units/sergeant.tscn",
+	"hellhound": {
+		"display_name": "Hellhound",
+		"texture": "res://sprites/units/hellhound.png",
+		"scene": "res://scenes/units/hellhound.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "If possible, jump to the cell in front of frontmost enemy unit. Deal damage to unit in front.",
+		"health": 16,
+		"damage": 7,
+		"armor": 0,
+		"speed": 8,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"demonic"
+		]
+	},
+	"succubus": {
+		"display_name": "Succubus",
+		"texture": "res://sprites/units/succubus.png",
+		"scene": "res://scenes/units/succubus.tscn",
 		"cells": [[0, 0]],
-		"stage": 5, 
-		"cost": 1,
-		"description": "Reduce action cooldown of the allied unit with the highest action cooldown.",
-		"health": 20,
+		"stage": 2, 
+		"cost": 2,
+		"description": "Stun frontmost unit in the same column for one turn.",
+		"health": 5,
 		"damage": 0,
 		"armor": 0,
 		"speed": 9,
 		"cooldown": 1,
 		"rarity": "epic",
-		"types": []
+		"types": [
+			"demonic"
+		]
 	},
-	"bulwark": {
-		"display_name": "Bulwark",
-		"texture": "res://sprites/units/bulwark.png",
-		"scene": "res://scenes/units/bulwark.tscn",
-		"cells": [[0, 0], [1, 0]],
-		"stage": 5, 
+	"pit_fiend": {
+		"display_name": "Pit Fiend",
+		"texture": "res://sprites/units/pit_fiend.png",
+		"scene": "res://scenes/units/pit_fiend.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 3, 
 		"cost": 2,
-		"description": "Gain one armor.",
-		"health": 22,
+		"description": "Deal damage to frontmost unit. Has +1 max health for each friendly demon.",
+		"health": 20,
+		"damage": 4,
+		"armor": 2,
+		"speed": 9,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"demonic"
+		]
+	},
+	"conjurer": {
+		"display_name": "Conjurer",
+		"texture": "res://sprites/units/conjurer.png",
+		"scene": "res://scenes/units/conjurer.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 3, 
+		"cost": 2,
+		"description": "Summon 2 imps at 2 random locations.",
+		"health": 8,
 		"damage": 0,
 		"armor": 0,
-		"speed": 5,
-		"cooldown": 2,
-		"rarity": "common",
-		"types": []
-	},
-	"paladin": {
-		"display_name": "Paladin",
-		"texture": "res://sprites/units/paladin.png",
-		"scene": "res://scenes/units/paladin.tscn",
-		"cells": [[0, 0] , [1, 0], [0, 1], [1, 1]],
-		"stage": 5, 
-		"cost": 3,
-		"description": "Deal damage to frontmost unit. Always deal damage in 2 by 2 grid. Gain one damage whenever a friendly unit is healed.",
-		"health": 15,
-		"damage": 2,
-		"armor": 2,
 		"speed": 3,
-		"cooldown": 1,
-		"rarity": "epic",
+		"cooldown": 2,
+		"rarity": "rare",
 		"types": [
-			"holy"
+			"demonic"
 		]
 	},
 	"betrayer": {
@@ -491,7 +599,7 @@
 		"scene": "res://scenes/units/betrayer.tscn",
 		"cells": [[0, 0]],
 		"stage": 5, 
-		"cost": 0,
+		"cost": 2,
 		"description": "Change the allegiance of a random unit for one turn.",
 		"health": 10,
 		"damage": 0,
@@ -503,44 +611,30 @@
 			"demonic"
 		]
 	},
-	"mover": {
-		"display_name": "Mover",
-		"texture": "res://sprites/units/mover.png",
-		"scene": "res://scenes/units/mover.tscn",
-		"cells": [[0, 0]],
+	"archdemon": {
+		"display_name": "Archdemon",
+		"texture": "res://sprites/units/archdemon.png",
+		"scene": "res://scenes/units/archdemon.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
 		"stage": 5, 
 		"cost": 2,
-		"description": "Move from right to left, 1 cell per turn. Give surrounding allies +1 damage and +1 health",
-		"health": 10,
-		"damage": 0,
-		"armor": 0,
-		"speed": 7,
+		"description": "Deal damage in a cross shaped pantern to 3 random enemy units. Apply fire to every targeted cell. Gain +1 damage and +1 speed for every demon that died or was summoned.",
+		"health": 16,
+		"damage": 2,
+		"armor": 1,
+		"speed": 2,
 		"cooldown": 1,
-		"rarity": "rare",
-		"types": []
-	},
-	"enabler": {
-		"display_name": "Enabler",
-		"texture": "res://sprites/units/enabler.png",
-		"scene": "res://scenes/units/enabler.tscn",
-		"cells": [[0, 0], [1, 0], [1, 1]],
-		"stage": 5, 
-		"cost": 2,
-		"description": "Target closest friendly unit and activate its turn. Cannot activate other Enablers",
-		"health": 10,
-		"damage": 0,
-		"armor": 0,
-		"speed": 1,
-		"cooldown": 1,
-		"rarity": "epic",
-		"types": []
+		"rarity": "legendary",
+		"types": [
+			"demonic"
+		]
 	},
 	"chaos": {
 		"display_name": "Chaos",
 		"texture": "res://sprites/units/chaos.png",
 		"scene": "res://scenes/units/chaos.tscn",
 		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
-		"stage": 5, 
+		"stage": 10, 
 		"cost": 2,
 		"description": "Move all units to the opposite side of the board.",
 		"health": 8,
@@ -553,24 +647,572 @@
 			"demonic"
 		]
 	},
-	"turret_factory": {
-		"display_name": "Turret Factory",
-		"texture": "res://sprites/units/turret_factory.png",
-		"scene": "res://scenes/units/turret_factory.tscn",
-		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+
+
+	"ghoul": {
+		"display_name": "Ghoul",
+		"texture": "res://sprites/units/ghoul.png",
+		"scene": "res://scenes/units/ghoul.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Deathrattle: Deal damage to fontmost unit.",
+		"health": 10,
+		"damage": 3,
+		"armor": 0,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"rotten"
+		]
+	},
+	"putrid_alchemist": {
+		"display_name": "Putrid Alchemist",
+		"texture": "res://sprites/units/putrid_alchemist.png",
+		"scene": "res://scenes/units/putrid_alchemist.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit in the same column. Heal damage dealt to frontmost allied unit.",
+		"health": 6,
+		"damage": 3,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"rotten"
+		]
+	},
+	"wraith": {
+		"display_name": "Wraith",
+		"texture": "res://sprites/units/wraith.png",
+		"scene": "res://scenes/units/wraith.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 1,
+		"description": "Deal damage to frontmost unit. Attacks against this unit have a 50% chance to miss.",
+		"health": 10,
+		"damage": 3,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"rotten"
+		]
+	},
+	"zombie": {
+		"display_name": "Zombie",
+		"texture": "res://sprites/units/zombie.png",
+		"scene": "res://scenes/units/zombie.tscn",
+		"cells": [[0, 0]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Revives at a random location at the start of the next turn.",
+		"health": 4,
+		"damage": 2,
+		"armor": 0,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"rotten"
+		]
+	},
+	"gravedigger": {
+		"display_name": "Gravedigger",
+		"texture": "res://sprites/units/gravedigger.png",
+		"scene": "res://scenes/units/gravedigger.tscn",
+		"cells": [[0, 0]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Gain 1 damage whenever a friendly unit dies.",
+		"health": 12,
+		"damage": 2,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"rotten"
+		]
+	},
+	"abomination": {
+		"display_name": "Abomination",
+		"texture": "res://sprites/units/abomination.png",
+		"scene": "res://scenes/units/abomination.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Gain 1 max health whenever a unit dies.",
+		"health": 14,
+		"damage": 2,
+		"armor": 1,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"rotten"
+		]
+	},
+	"parasite": {
+		"display_name": "Parasite",
+		"texture": "res://sprites/units/parasite.png",
+		"scene": "res://scenes/units/parasite.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 1,
+		"description": "Jump to random cell in front that is adjacent to a unit, attack that unit. Die at the end of the turn.",
+		"health": 1,
+		"damage": 3,
+		"armor": 0,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"rotten"
+		]
+	},
+	"consumer": {
+		"display_name": "Consumer",
+		"texture": "res://sprites/units/consumer.png",
+		"scene": "res://scenes/units/consumer.tscn",
+		"cells": [[0, 0]],
 		"stage": 3, 
 		"cost": 2,
-		"description": "Spawn one Turret at a random location",
-		"health": 15,
+		"description": "Every turn switch between moving to and consuming an allied unit and dealing damage to the enemy units. Gain +4 max health, +4 damage and 1 extra target for each unit consumed.",
+		"health": 4,
+		"damage": 2,
+		"armor": 0,
+		"speed": 6,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"rotten"
+		]
+	},
+	"broodmother": {
+		"display_name": "Broodmother",
+		"texture": "res://sprites/units/broodmother.png",
+		"scene": "res://scenes/units/broodmother.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Summon 4 parasites around this unit.",
+		"health": 16,
+		"damage": 2,
+		"armor": 1,
+		"speed": 3,
+		"cooldown": 2,
+		"rarity": "epic",
+		"types": [
+			"rotten"
+		]
+	},
+	"blob": {
+		"display_name": "Blob",
+		"texture": "res://sprites/units/blob.png",
+		"scene": "res://scenes/units/blob.tscn",
+		"cells": [[0, 0]],
+		"stage": 5, 
+		"cost": 1,
+		"description": "Consume surrounding units to gain their stats and grow bigger.",
+		"health": 10,
 		"damage": 0,
+		"armor": 0,
+		"speed": 0,
+		"cooldown": 1,
+		"rarity": "legendary",
+		"types": [
+			"rotten"
+		]
+	},
+	
+
+	"templar": {
+		"display_name": "Templar",
+		"texture": "res://sprites/units/templar.png",
+		"scene": "res://scenes/units/templar.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Gain 1 damage at the end of each turn.",
+		"health": 8,
+		"damage": 3,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"holy"
+		]
+	},
+	"cleric": {
+		"display_name": "Cleric",
+		"texture": "res://sprites/units/cleric.png",
+		"scene": "res://scenes/units/cleric.tscn",
+		"cells": [[0, 0]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Heal all units on the user side",
+		"health": 8,
+		"damage": 2,
+		"armor": 0,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"holy"
+		]
+	},
+	"guardian": {
+		"display_name": "Guardian",
+		"texture": "res://sprites/units/guardian.png",
+		"scene": "res://scenes/units/guardian.tscn",
+		"cells": [[0, 0], [-1, 0], [1, 0]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Units behind this unit have 2 armor.",
+		"health": 14,
+		"damage": 0,
+		"armor": 2,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"holy"
+		]
+	},
+	"beacon_of_light": {
+		"display_name": "Beacon of Light",
+		"texture": "res://sprites/units/beacon_of_light.png",
+		"scene": "res://scenes/units/beacon_of_light.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Heal all surrounding units.",
+		"health": 16,
+		"damage": 4,
 		"armor": 1,
 		"speed": 2,
 		"cooldown": 1,
 		"rarity": "rare",
 		"types": [
-			"machinery"
+			"holy"
 		]
 	},
+	"cherub": {
+		"display_name": "Cherub",
+		"texture": "res://sprites/units/cherub.png",
+		"scene": "res://scenes/units/cherub.tscn",
+		"cells": [[0, 0]],
+		"stage": 2, 
+		"cost": 2,
+		"description": "Give frontmost unit in the same row extra damage and speed equal to this unit's damage.",
+		"health": 8,
+		"damage": 1,
+		"armor": 0,
+		"speed": 2,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"holy"
+		]
+	},
+	"warden": {
+		"display_name": "Warden",
+		"texture": "res://sprites/units/warden.png",
+		"scene": "res://scenes/units/warden.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 1, 
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. Deal 1 extra damage for each friendly holy unit in the same rows as this unit.",
+		"health": 12,
+		"damage": 2,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"holy"
+		]
+	},
+	"priest": {
+		"display_name": "Priest",
+		"texture": "res://sprites/units/priest.png",
+		"scene": "res://scenes/units/priest.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 3, 
+		"cost": 2,
+		"description": "Revives a random friendly unit at a random location.",
+		"health": 5,
+		"damage": 0,
+		"armor": 0,
+		"speed": 7,
+		"cooldown": 2,
+		"rarity": "epic",
+		"types": [
+			"holy"
+		]
+	},
+	"paladin": {
+		"display_name": "Paladin",
+		"texture": "res://sprites/units/paladin.png",
+		"scene": "res://scenes/units/paladin.tscn",
+		"cells": [[0, 0] , [1, 0], [0, 1], [1, 1]],
+		"stage": 3, 
+		"cost": 3,
+		"description": "Deal damage to frontmost unit. Always deal damage in 2 by 2 grid. Gain one damage whenever a friendly unit is healed.",
+		"health": 15,
+		"damage": 2,
+		"armor": 2,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"holy"
+		]
+	},
+	"high_inquisitor": {
+		"display_name": "High Inquisitor",
+		"texture": "res://sprites/units/high_inquisitor.png",
+		"scene": "res://scenes/units/high_inquisitor.tscn",
+		"cells": [[0, 0] , [0, 1], [0, 2]],
+		"stage": 3, 
+		"cost": 3,
+		"description": "Deal damage to all targets on the same rows as this unit but on other side of the grid.",
+		"health": 15,
+		"damage": 2,
+		"armor": 1,
+		"speed": 6,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"holy"
+		]
+	},
+	"archangel": {
+		"display_name": "Archangel",
+		"texture": "res://sprites/units/archangel.png",
+		"scene": "res://scenes/units/archangel.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 5, 
+		"cost": 3,
+		"description": "Whenever a friendly unit takes damage, heal 50% of that damage back to the unit and take 50% of the damage. \n(armor is ignored for this effect, effect is also ignored for other Archangels.)",
+		"health": 20,
+		"damage": 0,
+		"armor": 2,
+		"speed": 0,
+		"cooldown": 0,
+		"rarity": "legendary",
+		"types": [
+			"holy"
+		]
+	},
+	
+
+	"wolf": {
+		"display_name": "Wolf",
+		"texture": "res://sprites/units/wolf.png",
+		"scene": "res://scenes/units/wolf.tscn",
+		"cells": [[0, 0]],
+		"stage": 1,
+		"cost": 1,
+		"description": "If possible, jump to a cell adjacent to the frontmost enemy unit. Deal damage to that unit. +1 damage for each friendly wolf.",
+		"health": 5,
+		"damage": 1,
+		"armor": 0,
+		"speed": 7,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"primal"
+		]
+	},
+	"lifebinder": {
+		"display_name": "Lifebinder",
+		"texture": "res://sprites/units/lifebinder.png",
+		"scene": "res://scenes/units/lifebinder.tscn",
+		"cells": [[0, 0]],
+		"stage": 1,
+		"cost": 1,
+		"description": "Heal 3 lowest health allied units. Starting with lowest health unit. Each subsequent unit receives 50% percent less healing.",
+		"health": 8,
+		"damage": 4,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "common",
+		"types": [
+			"primal"
+		]
+	},
+	"earth_elemental": {
+		"display_name": "Earth Elemental",
+		"texture": "res://sprites/units/earth_elemental.png",
+		"scene": "res://scenes/units/earth_elemental.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 1,
+		"cost": 2,
+		"description": "Deal damage to a random enemy unit. Spawn a rock adjacent to the targeted unit.",
+		"health": 16,
+		"damage": 4,
+		"armor": 2,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"fire_elemental": {
+		"display_name": "Fire Elemental",
+		"texture": "res://sprites/units/fire_elemental.png",
+		"scene": "res://scenes/units/fire_elemental.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Spawn fire on 4 random cells on the enemy side.",
+		"health": 18,
+		"damage": 0,
+		"armor": 1,
+		"speed": 6,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"water_elemental": {
+		"display_name": "Water Elemental",
+		"texture": "res://sprites/units/water_elemental.png",
+		"scene": "res://scenes/units/water_elemental.tscn",
+		"cells": [[0, 0], [1, 0]],
+		"stage": 1,
+		"cost": 2,
+		"description": "Deal damage to a random enemy unit. Spawn a pool of water at the targeted location.",
+		"health": 14,
+		"damage": 6,
+		"armor": 0,
+		"speed": 5,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"druid": {
+		"display_name": "Druid",
+		"texture": "res://sprites/units/druid.png",
+		"scene": "res://scenes/units/druid.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Deal damage to closest enemy unit. Gain +1 damage whenever a nature prop is spawned.",
+		"health": 8,
+		"damage": 1,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"pyromancer": {
+		"display_name": "Pyromancer",
+		"texture": "res://sprites/units/pyromancer.png",
+		"scene": "res://scenes/units/pyromancer.tscn",
+		"cells": [[0, 0]],
+		"stage": 2,
+		"cost": 2,
+		"description": "Turn all fire props into wild fire.",
+		"health": 6,
+		"damage": 0,
+		"armor": 1,
+		"speed": 4,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"shaman": {
+		"display_name": "Shaman",
+		"texture": "res://sprites/units/shaman.png",
+		"scene": "res://scenes/units/shaman.tscn",
+		"cells": [[0, 0]],
+		"stage": 3,
+		"cost": 2,
+		"description": "Summon a random totem at a random location.",
+		"health": 8,
+		"damage": 0,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"primal"
+		]
+	},
+	"fire_enthusiast": {
+		"display_name": "Fire Enthusiast",
+		"texture": "res://sprites/units/fire_enthusiast.png",
+		"scene": "res://scenes/units/fire_enthusiast.tscn",
+		"cells": [[0, 0]],
+		"stage": 3,
+		"cost": 2,
+		"description": "Deal damage to frontmost unit. +1 damage for each 4 burning props.",
+		"health": 8,
+		"damage": 0,
+		"armor": 0,
+		"speed": 4,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"primal",
+			"demonic"
+		]
+	},
+	"dire_wolf": {
+		"display_name": "Dire Wolf",
+		"texture": "res://sprites/units/dire_wolf.png",
+		"scene": "res://scenes/units/dire_wolf.tscn",
+		"cells": [[0, 0], [0, 1]],
+		"stage": 3,
+		"cost": 2,
+		"description": "Move existing friendly wolfs to this unit.",
+		"health": 16,
+		"damage": 2,
+		"armor": 0,
+		"speed": 6,
+		"cooldown": 1,
+		"rarity": "rare",
+		"types": [
+			"primal"
+		]
+	},
+	"avatar_of_nature": {
+		"display_name": "Avatar of Nature",
+		"texture": "res://sprites/units/avatar_of_nature.png",
+		"scene": "res://scenes/units/avatar_of_nature.tscn",
+		"cells": [[0, 0], [1, 0], [0, 1], [1, 1]],
+		"stage": 5,
+		"cost": 3,
+		"description": "Deal damage to frontmost unit. Target an extra enemy unit slot for each nature prop on the battlefield.",
+		"health": 17,
+		"damage": 2,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "legendary",
+		"types": [
+			"primal"
+		]
+	},
+
 
 
 	"lucifer": {
@@ -599,6 +1241,24 @@
 		"stage": 10, 
 		"cost": 2,
 		"description": "Give random friendly unit deathrattle; 'Summon a zombie'.",
+		"health": 8,
+		"damage": 0,
+		"armor": 0,
+		"speed": 3,
+		"cooldown": 1,
+		"rarity": "epic",
+		"types": [
+			"rotten"
+		]
+	},
+	"smthng": {
+		"display_name": "Cultist",
+		"texture": "res://sprites/units/cultist.png",
+		"scene": "res://scenes/units/cultist.tscn",
+		"cells": [[0, 0]],
+		"stage": 10, 
+		"cost": 2,
+		"description": "Damage frontmost unit. Lower max health with damage dealt.",
 		"health": 8,
 		"damage": 0,
 		"armor": 0,

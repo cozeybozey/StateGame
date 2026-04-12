@@ -4,27 +4,15 @@ using System.Collections.Generic;
 
 public partial class Healer : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    foreach (Vector2I target in targets)
-    {
-      Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null)
-      {
-        targetUnit.ChangeHealth(damage, this);
-      }
-    }
-  }
-
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
-  {
-    if (side)
+    if (Side)
     {
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].side == side && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].Side == Side && unitsGrid[x, y].Health < unitsGrid[x, y].MaxHealth)
             return [new Vector2I(x, y)];
         }
       }
@@ -35,12 +23,24 @@ public partial class Healer : Unit
       {
         for (int x = 0; x < GlobalConstants.GridSize.X; x++)
         {
-          if (unitsGrid[x, y] != null && unitsGrid[x, y].side == side && unitsGrid[x, y].health < unitsGrid[x, y].maxHealth)
+          if (unitsGrid[x, y] != null && unitsGrid[x, y].Side == Side && unitsGrid[x, y].Health < unitsGrid[x, y].MaxHealth)
             return [new Vector2I(x, y)];
         }
       }
     }
 
     return [];
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    foreach (Vector2I target in targets)
+    {
+      Unit targetUnit = unitsGrid[target.X, target.Y];
+      if (targetUnit != null)
+      {
+        targetUnit.ChangeHealth(Damage, this);
+      }
+    }
   }
 }

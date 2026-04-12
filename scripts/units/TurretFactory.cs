@@ -13,24 +13,30 @@ public partial class TurretFactory : Unit
     _unitsNode = GetTree().CurrentScene.GetNode("Units");
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Vector2I? randomPos = GlobalFunctions.GetRandomUnitSpawnLocation(unitsGrid, turretUnitInfo.OccupiedCells, side);
+    Vector2I? randomPos = GlobalFunctions.GetRandomGridEntitySpawnLocation(unitsGrid, terrainGrid, propsGrid, turretUnitInfo.OccupiedCells, Side);
     if (randomPos.HasValue)
       return [randomPos.Value];
     else
       return [];
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Spawn unit
     foreach (Vector2I target in targets)
     {
       Unit unitInstance = GD.Load<PackedScene>(turretUnitInfo.ScenePath).Instantiate() as Unit;
-      unitInstance!.Initialize(turretUnitInfo, side, target);
+      unitInstance!.Initialize(turretUnitInfo, Side, target);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }
-  } 
+  }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Strongly prefer back rows
+    return (Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f) - pos.Y) + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
+  }
 }

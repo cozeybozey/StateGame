@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bo3kal1funnj"]
+
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_qxtqa"]
+[ext_resource type="Script" uid="uid://8squfh2q7ggb" path="res://scripts/units/Cherub.cs" id="2_bdywr"]
+
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_qxtqa")]
+script = ExtResource("2_bdywr")

@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cbrvy8xs2qny4"]
+
+[ext_resource type="PackedScene" uid="uid://b5taemkk7es52" path="res://scenes/terrains/terrain.tscn" id="1_nrtfw"]
+[ext_resource type="Script" uid="uid://cuxnmqu3opt3e" path="res://scripts/terrains/Water.cs" id="2_pbsp5"]
+
+[node name="Terrain" unique_id=995662800 instance=ExtResource("1_nrtfw")]
+script = ExtResource("2_pbsp5")

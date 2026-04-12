@@ -5,44 +5,19 @@ using System.Linq;
 
 public partial class Sniper : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
-    float maxDistanceSq = -1f;
-    Vector2I? farthestPos = null;
+    Tuple<Unit, Vector2I>? farthestEnemy = GetFarthestUnit(units, u => u.Side != Side);
 
-    for (int x = 0; x < unitsGrid.GetLength(0); x++)
-    {
-      for (int y = 0; y < unitsGrid.GetLength(1); y++)
-      {
-        Unit unit = unitsGrid[x, y];
-
-        if (unit == null || unit == this || unit.side == side)
-          continue;
-
-        Vector2I otherPos = new(x, y);
-
-        int dx = otherPos.X - occupiedMainCell.X;
-        int dy = otherPos.Y - occupiedMainCell.Y;
-
-        float distanceSq = dx * dx + dy * dy;
-
-        if (distanceSq > maxDistanceSq)
-        {
-          maxDistanceSq = distanceSq;
-          farthestPos = otherPos;
-        }
-      }
-    }
-
-    if (farthestPos.HasValue)
-      result.Add(farthestPos.Value);
+    if (farthestEnemy != null)
+      result.Add(farthestEnemy.Item2);
 
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
@@ -50,8 +25,14 @@ public partial class Sniper : Unit
       if (targetUnit != null)
       {
         // Scale damage with distance
-        targetUnit.ChangeHealth(-damage * Mathf.FloorToInt(Mathf.Abs(target.Y - occupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - occupiedMainCell.X) * 0.25f), this);
+        targetUnit.ChangeHealth(-Damage * Mathf.FloorToInt(Mathf.Abs(target.Y - OccupiedMainCell.Y) * 0.5f + Mathf.Abs(target.X - OccupiedMainCell.X) * 0.25f), this);
       }
     }
+  }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Strongly prefer back rows
+    return (Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5f) - pos.Y) + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }

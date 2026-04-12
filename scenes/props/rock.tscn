@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bpbqnxexwlk3m"]
+
+[ext_resource type="PackedScene" uid="uid://clcvair7df3rq" path="res://scenes/props/prop.tscn" id="1_hhaaw"]
+[ext_resource type="Script" uid="uid://ws67i47jnfrg" path="res://scripts/props/Rock.cs" id="2_1i8qa"]
+
+[node name="Prop" unique_id=995662800 instance=ExtResource("1_hhaaw")]
+script = ExtResource("2_1i8qa")

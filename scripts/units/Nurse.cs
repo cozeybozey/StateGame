@@ -4,31 +4,47 @@ using System.Collections.Generic;
 
 public partial class Nurse : Unit
 {
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    Vector2I targetVector = new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y - 1);
+
+    if (!Side)
+      targetVector = new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y + 1);
+
+    if (targetVector.Y >= 0 && targetVector.Y < GlobalConstants.GridSize.Y && 
+      unitsGrid[targetVector.X, targetVector.Y] != null && 
+      unitsGrid[targetVector.X, targetVector.Y].Side == Side &&
+      unitsGrid[targetVector.X, targetVector.Y].Health < unitsGrid[targetVector.X, targetVector.Y].MaxHealth)
+        return [targetVector];
+    else
+      return [];
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
       if (targetUnit != null)
       {
-        targetUnit.ChangeHealth(damage, this);
+        targetUnit.ChangeHealth(Damage, this);
       }
     }
   }
 
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
   {
-    Vector2I targetVector = new Vector2I(occupiedMainCell.X, occupiedMainCell.Y - 1);
+    int score = 0;
 
-    if (!side)
-      targetVector = new Vector2I(occupiedMainCell.X, occupiedMainCell.Y + 1);
+    // Everything but the first 3 rows return score of 3,
+    // This is to ensure tanky units are only placed in front.
+    if (pos.Y <= GlobalConstants.GridSize.Y * 0.5f - 3)
+      score += 3;
 
-    if (targetVector.Y >= 0 && targetVector.Y < GlobalConstants.GridSize.Y && 
-      unitsGrid[targetVector.X, targetVector.Y] != null && 
-      unitsGrid[targetVector.X, targetVector.Y].side == side &&
-      unitsGrid[targetVector.X, targetVector.Y].health < unitsGrid[targetVector.X, targetVector.Y].maxHealth)
-        return [targetVector];
-    else
-      return [];
+    // Prefer being next to units that can be boosted.
+    if (GlobalFunctions.IsCellInsideGrid(new Vector2I(pos.X, pos.Y + 1)) && unitsGrid[pos.X, pos.Y + 1] != null && unitsGrid[pos.X, pos.Y + 1].Damage > 0)
+      score += 5;
+
+    return score;
   }
 }

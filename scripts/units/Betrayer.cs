@@ -6,15 +6,7 @@ public partial class Betrayer : Unit
 {
   Unit? _targetUnit = null;
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
-  {
-    if (_targetUnit != null)
-    {
-      _targetUnit.SwitchSides();
-    }
-  }
-
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Make sure unit cannot target itself
     List<Unit> availableUnits = new List<Unit>();
@@ -29,6 +21,14 @@ public partial class Betrayer : Unit
 
     _targetUnit = availableUnits[_rng.RandiRange(0, availableUnits.Count - 1)];
 
-    return [_targetUnit.occupiedMainCell];
+    return [_targetUnit.OccupiedMainCell];
+  }
+
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
+  {
+    if (_targetUnit != null)
+    {
+      _targetUnit.SwitchSides();
+    }
   }
 }

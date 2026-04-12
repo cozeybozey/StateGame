@@ -5,45 +5,47 @@ using System.Linq;
 
 public partial class Pusher : Unit
 {
-  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, List<Unit> units, List<Unit> deadUnits)
+  public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
-    for (int x = 0; x < occupiedMainCell.X; x++)
+    for (int x = 0; x < OccupiedMainCell.X; x++)
     {
-      Vector2I pos = new(x, occupiedMainCell.Y);
+      Vector2I pos = new(x, OccupiedMainCell.Y);
       result.Add(pos);
     }
     return result;
   }
 
-  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid)
+  public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Unit> movedUnits = new List<Unit>();
 
     foreach (Vector2I target in targets)
     {
       Unit targetUnit = unitsGrid[target.X, target.Y];
-      if (targetUnit != null && target.X - 1 >= 0 && !movedUnits.Contains(targetUnit))
+      if (targetUnit != null && !movedUnits.Contains(targetUnit))
       {
-        bool canMove = true;
-        foreach (Vector2I cell in targetUnit.GetOccupiedCells())
+        Vector2I targetCell = targetUnit.OccupiedMainCell + new Vector2I(-1, 0);
+        if (GlobalFunctions.CanMoveToCell(targetUnit, targetCell, unitsGrid, terrainGrid, propsGrid))
         {
-          if (cell.X - 1 >= 0 && unitsGrid[cell.X - 1, cell.Y] == targetUnit)
-            continue;
-
-          if (cell.X - 1 < 0 || unitsGrid[cell.X - 1, cell.Y] != null)
-          {
-            canMove = false;
-            break;
-          }
-        }
-
-        if (canMove)
-        {
-          targetUnit.MoveToCell(targetUnit.occupiedMainCell + new Vector2I(-1, 0), playing: true);
+          targetUnit.MoveToCell(targetCell, playing: true);
           movedUnits.Add(targetUnit);
         }
       }
     }
+  }
+
+  public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)
+  {
+    // Increase score for each extra unit that can be pushed
+    int score = 0;
+
+    for (int x = 0; x < pos.X; x++)
+    {
+      if (unitsGrid[x, pos.Y] != null)
+        score += 5;
+    }    
+
+    return score + GlobalFunctions.StandardUnitScorePlacement(pos, unitInfo, unitsGrid, terrainGrid, propsGrid);
   }
 }
