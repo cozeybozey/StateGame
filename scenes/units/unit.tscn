@@ -10,10 +10,17 @@ gradient = SubResource("Gradient_mgebg")
 width = 24
 
 [sub_resource type="Gradient" id="Gradient_44d7s"]
-colors = PackedColorArray(1, 0, 0, 1, 1, 0, 0, 1)
+colors = PackedColorArray(0.931109, 0.0004891047, 0.10878142, 1, 0.92941177, 0, 0.10980392, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_fe0lq"]
 gradient = SubResource("Gradient_44d7s")
+width = 24
+
+[sub_resource type="Gradient" id="Gradient_qgilm"]
+colors = PackedColorArray(0.909786, 0.8483286, 0.14716136, 1, 0.9098039, 0.84705883, 0.14901961, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_6e3tn"]
+gradient = SubResource("Gradient_qgilm")
 width = 24
 
 [node name="Unit" type="Node2D" unique_id=995662800]
@@ -32,3 +39,15 @@ grow_horizontal = 2
 nine_patch_stretch = true
 texture_under = SubResource("GradientTexture1D_rk2mp")
 texture_progress = SubResource("GradientTexture1D_fe0lq")
+
+[node name="Cooldown" type="TextureProgressBar" parent="." unique_id=504694097]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = -12.0
+offset_top = 15.0
+offset_right = 12.0
+offset_bottom = 18.0
+grow_horizontal = 2
+nine_patch_stretch = true
+texture_under = SubResource("GradientTexture1D_rk2mp")
+texture_progress = SubResource("GradientTexture1D_6e3tn")

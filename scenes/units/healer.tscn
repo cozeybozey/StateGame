@@ -1,36 +1,7 @@
 [gd_scene format=3 uid="uid://dsxqbjbte6l73"]
 
 [ext_resource type="Script" uid="uid://c3ltew5gecthw" path="res://scripts/units/Healer.cs" id="1_3qh7r"]
-[ext_resource type="Texture2D" uid="uid://bx1jl4kgm4b7v" path="res://sprites/units/green_unit.png" id="2_ee8q5"]
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_uelmq"]
 
-[sub_resource type="Gradient" id="Gradient_mgebg"]
-colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_rk2mp"]
-gradient = SubResource("Gradient_mgebg")
-width = 24
-
-[sub_resource type="Gradient" id="Gradient_44d7s"]
-colors = PackedColorArray(1, 0, 0, 1, 1, 0, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_fe0lq"]
-gradient = SubResource("Gradient_44d7s")
-width = 24
-
-[node name="Unit" type="Node2D" unique_id=995662800]
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_uelmq")]
 script = ExtResource("1_3qh7r")
-
-[node name="Sprite" type="Sprite2D" parent="." unique_id=387835248]
-texture = ExtResource("2_ee8q5")
-
-[node name="Health" type="TextureProgressBar" parent="." unique_id=1791189684]
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = -12.0
-offset_top = -18.0
-offset_right = 12.0
-offset_bottom = -15.0
-grow_horizontal = 2
-nine_patch_stretch = true
-texture_under = SubResource("GradientTexture1D_rk2mp")
-texture_progress = SubResource("GradientTexture1D_fe0lq")

@@ -12,10 +12,10 @@ public partial class PitFiend : Unit
     _globalSignals.GridEntitySpawned += OnUnitSpawned;
   }
 
-  public override void GameStart(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units)
+  public override void GameStart()
   {
     int extraMaxHealth = 0;
-    foreach (Unit unit in units)
+    foreach (Unit unit in _units)
     {
       if (unit.Side == Side && unit.Types.Contains("demonic") && unit != this)
         extraMaxHealth++;

@@ -12,11 +12,6 @@ public partial class Archangel : Unit
     _globalSignals.DamageTaken += OnUnitDamageTaken;
   }
 
-  public override bool CanAct()
-  {
-    return false;
-  }
-
   private void OnUnitDamageTaken(GridEntity gridEntity, int amount)
   {
     if (!IsInsideTree() || gridEntity is not Unit unit || unit.Id == "archangel")

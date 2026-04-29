@@ -55,6 +55,7 @@ public partial class Priest : Unit
       // Spawn unit
       Unit unitInstance = GD.Load<PackedScene>(_unitToBeRevived.ScenePath).Instantiate() as Unit;
       unitInstance!.Initialize(_unitToBeRevived.GetStartInfo(), _unitToBeRevived.Side, target);
+      unitInstance!.SetPlayData(unitsGrid, terrainGrid, propsGrid, units, deadUnits, _activeUnitsLayer, _targetedCellsLayer);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Revived", Colors.Green);
     }

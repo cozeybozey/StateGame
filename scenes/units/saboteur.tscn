@@ -1,36 +1,7 @@
 [gd_scene format=3 uid="uid://ctfo8wi58pwah"]
 
+[ext_resource type="PackedScene" uid="uid://ccm6660k6ob5t" path="res://scenes/units/unit.tscn" id="1_ms6wp"]
 [ext_resource type="Script" uid="uid://bx3d066ict5yh" path="res://scripts/units/Saboteur.cs" id="1_okj06"]
-[ext_resource type="Texture2D" uid="uid://dogjkppj3cxaw" path="res://sprites/units/saboteur.png" id="2_s6n5o"]
 
-[sub_resource type="Gradient" id="Gradient_mgebg"]
-colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_rk2mp"]
-gradient = SubResource("Gradient_mgebg")
-width = 24
-
-[sub_resource type="Gradient" id="Gradient_44d7s"]
-colors = PackedColorArray(1, 0, 0, 1, 1, 0, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_fe0lq"]
-gradient = SubResource("Gradient_44d7s")
-width = 24
-
-[node name="Unit" type="Node2D" unique_id=995662800]
+[node name="Unit" unique_id=995662800 instance=ExtResource("1_ms6wp")]
 script = ExtResource("1_okj06")
-
-[node name="Sprite" type="Sprite2D" parent="." unique_id=387835248]
-texture = ExtResource("2_s6n5o")
-
-[node name="Health" type="TextureProgressBar" parent="." unique_id=1791189684]
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = -12.0
-offset_top = -18.0
-offset_right = 12.0
-offset_bottom = -15.0
-grow_horizontal = 2
-nine_patch_stretch = true
-texture_under = SubResource("GradientTexture1D_rk2mp")
-texture_progress = SubResource("GradientTexture1D_fe0lq")

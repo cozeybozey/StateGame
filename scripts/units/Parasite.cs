@@ -61,11 +61,7 @@ public partial class Parasite : Unit
     if (targetUnit != null)
       targetUnit.ChangeHealth(-Damage, this);
     _targetLocation = null;
-  }
 
-  public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
-  {
-    base.TurnEnd(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
     SpawnFloatingText("Died", Colors.Red);
     Die();
   }

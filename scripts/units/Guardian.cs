@@ -6,7 +6,6 @@ using System.Linq;
 
 public partial class Guardian : Unit
 {
-  private List<Unit> _unitsToAct = new();
   private List<Unit> _buffedUnits = new();
 
   protected override void Start()
@@ -17,16 +16,9 @@ public partial class Guardian : Unit
     _globalSignals.SideChanged += OnUnitSideChanged;
   }
 
-  public override bool CanAct()
+  public override void GameStart()
   {
-    return false;
-  }
-
-
-  public override void GameStart(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units)
-  {
-    ApplyBuff(units, unitsGrid);
-    _unitsToAct = units;
+    ApplyBuff(_units, _unitsGrid);
   }
 
   private void OnUnitSpawned(GridEntity gridEntity, bool playing)
@@ -103,7 +95,7 @@ public partial class Guardian : Unit
     }
 
     // Add buffs to newly eligible units
-    foreach (Unit unit in _unitsToAct)
+    foreach (Unit unit in _units)
     {
       if (IsUnitBehind(unit) && !_buffedUnits.Contains(unit))
         AddBuff(unit);

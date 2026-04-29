@@ -29,6 +29,7 @@ public partial class TurretFactory : Unit
     {
       Unit unitInstance = GD.Load<PackedScene>(turretUnitInfo.ScenePath).Instantiate() as Unit;
       unitInstance!.Initialize(turretUnitInfo, Side, target);
+      unitInstance!.SetPlayData(unitsGrid, terrainGrid, propsGrid, units, deadUnits, _activeUnitsLayer, _targetedCellsLayer);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }

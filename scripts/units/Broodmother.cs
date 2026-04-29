@@ -41,6 +41,7 @@ public partial class Broodmother : Unit
     {
       Unit unitInstance = GD.Load<PackedScene>(parasiteUnitInfo.ScenePath).Instantiate() as Unit;
       unitInstance!.Initialize(parasiteUnitInfo, Side, target);
+      unitInstance!.SetPlayData(unitsGrid, terrainGrid, propsGrid, units, deadUnits, _activeUnitsLayer, _targetedCellsLayer);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }

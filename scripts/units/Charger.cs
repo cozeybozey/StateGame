@@ -5,12 +5,6 @@ using System.Collections.Generic;
 public partial class Charger : Unit
 {
   private int _damageTaken = 0;
-  private List<Unit> _unitsToAct = new List<Unit>();
-
-  public override void GameStart(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units)
-  {
-    _unitsToAct = units;
-  }
 
   public override int ChangeHealth(int amount, GridEntity? unit)
   {
@@ -19,16 +13,11 @@ public partial class Charger : Unit
     if (_damageTaken >= 15)
     {
       _damageTaken = 0;
-      Tuple<Unit, Vector2I>? farthestEnemy = GetFarthestUnit(_unitsToAct, u => u.Side != Side);
+      Tuple<Unit, Vector2I>? farthestEnemy = GetFarthestUnit(_units, u => u.Side != Side);
       if (farthestEnemy != null)
         farthestEnemy.Item1.ChangeHealth(-Damage, this);
     }
     return effectiveAmount;
-  }
-
-  public override bool CanAct()
-  {
-    return false;
   }
 
   public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)

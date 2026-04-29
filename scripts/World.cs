@@ -66,13 +66,8 @@ public partial class World : Node2D
   private int _turn = 0;
   private double _turnStartCooldown = 1.0f;
   private double _turnCooldown = 1.0f;
-  private bool _acting = false;
-  private double _actingCooldown = 0.5f;
-  private double _actingStartCooldown = 0.5f;
-  private bool _targeting = false;
   private double _speed = 1.0f;
   private int _turnEndDamage = 1;
-  private Unit _activeUnit = null!;
   private bool _paused = false;
   private int _bossLevelsDefeated = 0;
 
@@ -249,69 +244,23 @@ public partial class World : Node2D
     if (_paused)
       return;
 
-    if (_acting)
-    {
-      _actingCooldown -= delta;
-      if (_actingCooldown <= 0)
-      {
-        if (_unitToAct != null)
-          _unitToAct.Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
-        AdvanceToNextUnit();
-        _turnCooldown = _turnStartCooldown;
-        _acting = false;
-        _actingCooldown = _actingStartCooldown;
-      }
-    }
-    else if (_targeting)
-    {
-      _actingCooldown -= delta;
-      if (_actingCooldown <= 0)
-      {
-        if (_unitToAct != null)
-        {
-          _selectedTargets = _unitToAct.GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct, _removedUnits);
-          _targetedCellsLayer.ShowCells(_selectedTargets);
-          _acting = true;
-          if (_selectedTargets.Count > 0)
-            _actingCooldown = _actingStartCooldown;
-          else
-            _actingCooldown = 0; // If there are no targets, skip directly to acting phase
-        }
-        _targeting = false;
-      }
-    }
-    else if (_playing && !_gameEnd)
+    if (_playing && !_gameEnd)
     {
       _turnCooldown -= delta;
       if (_turnCooldown <= 0)
       {
-        if (_unitToAct == null)
-          TurnEnd();
-
         _activeUnitLayer.Clear();
-        _activeUnit = null!;
         _targetedCellsLayer.Clear();
-        if (_unitToAct != null && _unitToAct.CanAct())
+        foreach (Unit unit in _units)
         {
-          // Show overlay on selected cells
-          _activeUnitLayer.ShowCells(_unitToAct.GetOccupiedCells());
-          _activeUnit = _unitToAct;
-          _targeting = true;
+          _unitToAct = unit;
+          unit.PlayTurn();
         }
-        else
-          AdvanceToNextUnit();
+        _unitToAct = null;
+        TurnEnd();
+        _turnCooldown = _turnStartCooldown;
       }
     }
-  }
-
-  // After a unit acts, find the next one
-  private void AdvanceToNextUnit()
-  {
-    if (_unitToAct == null)
-      return;
-
-    int currentIndex = _unitsToAct.IndexOf(_unitToAct);
-    _unitToAct = currentIndex + 1 < _unitsToAct.Count ? _unitsToAct[currentIndex + 1] : null;
   }
 
   private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits, bool loadBeforeLevel = true)
@@ -420,7 +369,10 @@ public partial class World : Node2D
     // Copy units to create a list of units that are going to act this turn
     _unitsToAct = [.. _units];
     foreach (Unit unit in _unitsToAct)
-      unit.GameStart(_unitsGrid, _terrainGrid, _propsGrid, _unitsToAct);
+    {
+      unit.SetPlayData(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits, _activeUnitLayer, _targetedCellsLayer);
+      unit.GameStart();
+    }
     _playing = true;
 
     // Set unit to act to first unit
@@ -1059,9 +1011,6 @@ public partial class World : Node2D
     gridEntity.DeathRattle(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     if (gridEntity is Unit unit)
     {
-      if (unit == _unitToAct)
-        AdvanceToNextUnit();
-
       RemoveUnit(unit);
       _removedUnits.Add(unit);
 
@@ -1143,11 +1092,6 @@ public partial class World : Node2D
         _selectedCellsLayer.ShowCells(unit.GetOccupiedCells());
         _infoGui.SetSelectedInfo(unit, _terrainGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], 
           _propsGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], unit.OccupiedMainCell);
-      }
-      if (_activeUnit == unit)
-      {
-        _activeUnitLayer.Clear();
-        _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
 
       List<Vector2I> removedCells = new List<Vector2I>();
@@ -1296,11 +1240,6 @@ public partial class World : Node2D
         _selectedCellsLayer.ShowCells(unit.GetOccupiedCells());
         _infoGui.SetSelectedInfo(unit, _terrainGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y],
           _propsGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], unit.OccupiedMainCell);
-      }
-      if (_activeUnit == unit)
-      {
-        _activeUnitLayer.Clear();
-        _activeUnitLayer.ShowCells(unit.GetOccupiedCells());
       }
 
       // Update unit side layers
@@ -1460,7 +1399,10 @@ public partial class World : Node2D
     }
     _speedButton.Text = "Speed: " + _speedPopup.GetItemText((int)id);
     _turnStartCooldown = 1.0f / _speed;
-    _actingStartCooldown = 0.5f / _speed;
+    foreach (Unit unit in _units)
+    {
+      unit.ActingStartCooldown = 0.1f / _speed;
+    }
   }
 
   private void ParseUnitsJson()
@@ -2111,11 +2053,15 @@ public partial class World : Node2D
     if (_paused)
     {
       _paused = false;
+      foreach (Unit unit in _units)
+        unit.Paused = false;
       _playPauseButton.Text = "Pause";
     }
     else
     {
       _paused = true;
+      foreach (Unit unit in _units)
+        unit.Paused = true;
       _playPauseButton.Text = "Play";
     }
   }
@@ -2180,6 +2126,7 @@ public partial class World : Node2D
 
         Unit unitInstance = GD.Load<PackedScene>(unit.ScenePath).Instantiate() as Unit;
         unitInstance!.Initialize(unit.GetStartInfo(), unit.Side, spawnCell.Value);
+        unitInstance!.SetPlayData(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits, _activeUnitLayer, _targetedCellsLayer);
         _unitsNode.AddChild(unitInstance);
         unitInstance.SpawnFloatingText("Revived", Colors.Green);
       }
@@ -2196,10 +2143,8 @@ public partial class World : Node2D
   private void SortUnits(List<Unit> units)
   {
     int currentIndex = 0;
-    if (_unitToAct != null)
+    if (_unitToAct != null && units.Contains(_unitToAct))
       currentIndex = units.IndexOf(_unitToAct);
-    if (_targeting || _acting)
-      currentIndex++;  // Increase current index by one to ensure the unit that is acting now is not resorted
 
     // Sort units by speed, then by position for consistent turn order
     List<Unit> sorted = units
@@ -2220,7 +2165,7 @@ public partial class World : Node2D
   {
     _turn += 1;
     _turnCounter.Text = _turn.ToString();
-    if (_turn > 10)
+    if (_turn > 50)
     {
       // Apply end of turn damage to all units
       int index = 0;
@@ -2246,8 +2191,11 @@ public partial class World : Node2D
 
     // Call turn end function of every prop
     // Use shallow copy to prevent spawned props having their turn end called as well
-    foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
-      prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+    if (_turn % 5 == 0) // Only call every 5 turns
+    {
+      foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
+        prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+    }
 
     SortUnits(_units);
     _unitsToAct = [.. _units];  // Reset units to act to level units list

@@ -33,6 +33,7 @@ public partial class Conjurer : Unit
     {
       Unit unitInstance = GD.Load<PackedScene>(impUnitInfo.ScenePath).Instantiate() as Unit;
       unitInstance!.Initialize(impUnitInfo, Side, target);
+      unitInstance!.SetPlayData(unitsGrid, terrainGrid, propsGrid, units, deadUnits, _activeUnitsLayer, _targetedCellsLayer);
       _unitsNode.AddChild(unitInstance);
       unitInstance.SpawnFloatingText("Created", Colors.Green);
     }

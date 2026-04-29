@@ -74,26 +74,26 @@ public partial class GridEntity : Node2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
-    if (!Damagable)
-      return;
-
-		if (_affected)
-		{
-			_damageIndicatorTime -= delta;
-			if (_damageIndicatorTime <= 0)
-			{
-        ModulateSprite(new Color(1, 1, 1, 1));
-				_damageIndicatorTime = _damageIndicatorDuration;
-				if (_floatingTextQueue.Count > 0)
-				{
-					Tuple<string, Color> floatingTextInfo = _floatingTextQueue.Dequeue();
-					SpawnFloatingText(floatingTextInfo.Item1, floatingTextInfo.Item2);
-				}
-				else
-				{
-					_affected = false;
-					if (_dead)
-						QueueFree();
+    if (Damagable)
+    {
+      if (_affected)
+      {
+        _damageIndicatorTime -= delta;
+        if (_damageIndicatorTime <= 0)
+        {
+          ModulateSprite(new Color(1, 1, 1, 1));
+          _damageIndicatorTime = _damageIndicatorDuration;
+          if (_floatingTextQueue.Count > 0)
+          {
+            Tuple<string, Color> floatingTextInfo = _floatingTextQueue.Dequeue();
+            SpawnFloatingText(floatingTextInfo.Item1, floatingTextInfo.Item2);
+          }
+          else
+          {
+            _affected = false;
+            if (_dead)
+              QueueFree();
+          }
         }
       }
     }
@@ -118,7 +118,7 @@ public partial class GridEntity : Node2D
     return [];
   }
 
-  public virtual void GameStart(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units)
+  public virtual void GameStart()
   {
   }
 
@@ -130,7 +130,7 @@ public partial class GridEntity : Node2D
   {
   }
 
-  public void Die()
+  public virtual void Die()
 	{
     _dead = true;
     _globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntityDied, this);

@@ -10,7 +10,28 @@ public partial class Unit : GridEntity
   public bool ExtraTurn = false;
   public UnitInfo StartUnitInfo = null!;
 
-	public void Initialize(UnitInfo unitInfo, bool side, Vector2I startCell, bool placed = false)
+  // Turn processing variables
+  public double ActingCooldown = 0.1f;
+  public double ActingStartCooldown = 0.1f;
+  public bool Paused = false;
+  private int _turn = 0;
+  private bool _acting = false;
+  private bool _targeting = false;
+
+  protected List<Unit> _units;
+  protected List<Unit> _removedUnits;
+  protected Unit[,] _unitsGrid;
+  protected Terrain[,] _terrainGrid;
+  protected Prop[,] _propsGrid;
+  protected List<Vector2I> _selectedTargets;
+  protected List<Vector2I> _activeUnitCells;
+
+  protected OverlayLayer _activeUnitsLayer;
+  protected OverlayLayer _targetedCellsLayer;
+
+  private TextureProgressBar _cooldownBar;
+
+  public void Initialize(UnitInfo unitInfo, bool side, Vector2I startCell, bool placed = false)
 	{
     Damagable = true;
     Movable = true;
@@ -37,6 +58,75 @@ public partial class Unit : GridEntity
 		StartCell = startCell;
 		StartUnitInfo = unitInfo;
     _placed = placed;
+
+    // TODO FIX
+    _cooldownBar = GetNode<TextureProgressBar>("Cooldown");
+    StartingCooldown *= 5;
+    Cooldown *= 5;
+    _cooldownBar.MaxValue = StartingCooldown;
+  }
+
+  public void SetPlayData(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> removedUnits, OverlayLayer activeUnitsLayer, OverlayLayer targetedCellsLayer)
+  {
+    _unitsGrid = unitsGrid;
+    _terrainGrid = terrainGrid;
+    _propsGrid = propsGrid;
+    _units = units;
+    _removedUnits = removedUnits;
+    _activeUnitsLayer = activeUnitsLayer;
+    _targetedCellsLayer = targetedCellsLayer;
+  }
+
+  public override void _Process(double delta)
+  {
+    // Process getting damaged
+    base._Process(delta);
+
+    if (Paused || _dead)
+      return;
+
+    if (_acting)
+    {
+      ActingCooldown -= delta;
+      if (ActingCooldown <= 0)
+      {
+        Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+        // Reset units side to original side after acting
+        if (SwitchedSides)
+          SwitchSides();
+        _acting = false;
+        ActingCooldown = ActingStartCooldown;
+        //_targetedCellsLayer.RemoveCells(_selectedTargets);
+        //_activeUnitsLayer.RemoveCells(_activeUnitCells);
+        _cooldownBar.Value = StartingCooldown - Cooldown;
+      }
+    }
+    else if (_targeting)
+    {
+      ActingCooldown -= delta;
+      if (ActingCooldown <= 0)
+      {
+        _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+        //_targetedCellsLayer.AddCells(_selectedTargets);
+        _acting = true;
+        if (_selectedTargets.Count > 0)
+          ActingCooldown = ActingStartCooldown;
+        else
+          ActingCooldown = 0; // If there are no targets, skip directly to acting phase
+        _targeting = false;
+      }
+    }
+  }
+
+  public void PlayTurn()
+  {
+    if (CanAct())
+    {
+      // Show overlay on selected cells
+      _activeUnitCells = GetOccupiedCells();
+      //_activeUnitsLayer.AddCells(_activeUnitCells);
+      _targeting = true;
+    }
   }
 
   // Find closest unit that obeys certain clauses. These clauses are defined by the optional predicate.
@@ -136,18 +226,20 @@ public partial class Unit : GridEntity
 
   public override bool CanAct()
 	{
+    Cooldown -= 1;
+    _cooldownBar.Value = StartingCooldown - Cooldown;
+    if (Cooldown > 0)
+      return false;
+    Cooldown = StartingCooldown;
+    
     if (Stunned)
     {
       SpawnFloatingText("Stunned", Colors.Red);
+      Stunned = false;
       return false;
     }
-
-    Cooldown -= 1;
-    if (Cooldown > 0)
-      return false;
-
-    Cooldown = StartingCooldown;
-		return true;
+    
+    return true;
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
@@ -198,12 +290,13 @@ public partial class Unit : GridEntity
 
   public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    // Reset units side to original side upon turn end
-    if (SwitchedSides)
-      SwitchSides();
+    _turn++;    
+  }
 
-    // Unstun the unit upon turn end
-    Stunned = false;
+  public override void Die()
+  {
+    base.Die();
+    _cooldownBar.Visible = false;
   }
 
   public void SwitchSides()
