@@ -55,9 +55,15 @@ public partial class Hellhound : Unit
     if (_targetLocation == null || targets.Count == 0)
       return;
 
-    // Jump to the landing cell
-    if (_targetLocation.Value != OccupiedMainCell)
-      MoveToCell(_targetLocation.Value, true);
+    // Jump to the landing cell. If another unit took it during the wind-up, pick a new spot and target now.
+    if (_targetLocation.Value != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
+    {
+      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
+      if (_targetLocation == null || targets.Count == 0)
+        return;
+      if (_targetLocation.Value != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
+        return;
+    }
 
     // Deal damage to the enemy in front
     Unit enemy = unitsGrid[targets[0].X, targets[0].Y];

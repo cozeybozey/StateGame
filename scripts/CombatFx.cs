@@ -1,0 +1,165 @@
+using Godot;
+using System.Collections.Generic;
+using System.Linq;
+
+// Draws short-lived combat visuals: telegraph lines (unit is about to act),
+// strike lines (unit acts) and fading highlights on the targeted cells.
+// Everything is drawn procedurally with Line2D / Polygon2D and tweens.
+public partial class CombatFx : Node2D
+{
+  public static CombatFx? Instance { get; private set; }
+
+  // Real-time multiplier for fx durations. World sets it from the game speed (1 / sqrt(speed), clamped to 0.2..1.4).
+  public float TimeScale = 1.0f;
+
+  // Above this many targets, draw a single line to the centroid instead of one per cell.
+  private const int MaxIndividualLines = 3;
+
+  private static readonly Color PlayerColor = new Color(0.35f, 0.75f, 1.0f);
+  private static readonly Color EnemyColor = new Color(1.0f, 0.4f, 0.3f);
+  private static readonly Color SupportColor = new Color(0.4f, 1.0f, 0.45f);
+  private static readonly Color NeutralColor = new Color(0.95f, 0.95f, 0.95f);
+
+  public override void _EnterTree()
+  {
+    Instance = this;
+    ZIndex = 50;
+  }
+
+  public override void _ExitTree()
+  {
+    if (Instance == this)
+      Instance = null;
+  }
+
+  // Color of an action depends on who it hits: own side = support (green),
+  // other side = attacker's side color, empty cells only = neutral.
+  public static Color GetActionColor(Unit source, List<Vector2I> targets, Unit[,] unitsGrid)
+  {
+    bool hitsEnemy = false;
+    bool hitsFriend = false;
+    foreach (Vector2I cell in targets)
+    {
+      if (!GlobalFunctions.IsCellInsideGrid(cell))
+        continue;
+      Unit target = unitsGrid[cell.X, cell.Y];
+      if (target == null || target == source)
+        continue;
+      if (target.Side == source.Side)
+        hitsFriend = true;
+      else
+        hitsEnemy = true;
+    }
+
+    if (hitsEnemy)
+      return source.Side ? PlayerColor : EnemyColor;
+    if (hitsFriend)
+      return SupportColor;
+    return NeutralColor;
+  }
+
+  public static Vector2 CellCenter(Vector2I cell)
+  {
+    return GlobalFunctions.CellToGlobalPosition(cell, 1, 1, Vector2I.Zero);
+  }
+
+  // Thin, dim preview while the unit winds up. Returned node is removed by the caller via ClearTelegraph,
+  // or fades by itself after `lifetime` seconds as a fallback.
+  public Node2D ShowTelegraph(Unit source, List<Vector2I> targets, Color color, float lifetime)
+  {
+    return SpawnEffect(source, targets, color, lineWidth: 1.5f, lineAlpha: 0.45f, cellAlpha: 0.12f, holdTime: lifetime, fadeTime: 0.05f);
+  }
+
+  public void ShowStrike(Unit source, List<Vector2I> targets, Color color)
+  {
+    SpawnEffect(source, targets, color, lineWidth: 3.0f, lineAlpha: 0.95f, cellAlpha: 0.35f, holdTime: 0.12f, fadeTime: 0.3f);
+  }
+
+  public void ClearTelegraph(Node2D? telegraph)
+  {
+    if (telegraph != null && IsInstanceValid(telegraph))
+      telegraph.QueueFree();
+  }
+
+  private Node2D SpawnEffect(Unit source, List<Vector2I> targets, Color color, float lineWidth, float lineAlpha, float cellAlpha, float holdTime, float fadeTime)
+  {
+    Node2D root = new Node2D();
+    AddChild(root);
+
+    List<Vector2I> ownCells = source.GetOccupiedCells();
+    List<Vector2I> otherCells = targets.Where(c => !ownCells.Contains(c) && GlobalFunctions.IsCellInsideGrid(c)).Distinct().ToList();
+
+    // Cell highlights (also for self-targets, so self-buffs are visible)
+    foreach (Vector2I cell in targets.Distinct())
+    {
+      if (!GlobalFunctions.IsCellInsideGrid(cell))
+        continue;
+      Vector2 c = CellCenter(cell);
+      float h = GlobalConstants.TileSize * 0.5f - 1;
+      Polygon2D rect = new Polygon2D
+      {
+        Polygon = [c + new Vector2(-h, -h), c + new Vector2(h, -h), c + new Vector2(h, h), c + new Vector2(-h, h)],
+        Color = new Color(color, cellAlpha)
+      };
+      root.AddChild(rect);
+    }
+
+    // Lines from the source to its targets
+    Vector2 from = source.GlobalPosition;
+    List<Vector2> ends = new();
+    if (otherCells.Count > MaxIndividualLines)
+    {
+      Vector2 centroid = Vector2.Zero;
+      foreach (Vector2I cell in otherCells)
+        centroid += CellCenter(cell);
+      ends.Add(centroid / otherCells.Count);
+    }
+    else
+    {
+      foreach (Vector2I cell in otherCells)
+        ends.Add(CellCenter(cell));
+    }
+
+    foreach (Vector2 to in ends)
+    {
+      Line2D line = new Line2D
+      {
+        Width = lineWidth,
+        DefaultColor = new Color(color, lineAlpha),
+        BeginCapMode = Line2D.LineCapMode.Round,
+        EndCapMode = Line2D.LineCapMode.Round,
+      };
+      line.AddPoint(from);
+      line.AddPoint(to);
+      root.AddChild(line);
+
+      // Small dot at the impact end so direction is readable
+      Polygon2D dot = new Polygon2D { Polygon = Circle(to, lineWidth * 1.4f), Color = new Color(color, lineAlpha) };
+      root.AddChild(dot);
+    }
+
+    Tween tween = root.CreateTween();
+    tween.TweenInterval(Mathf.Max(0.02f, holdTime * TimeScale));
+    tween.TweenProperty(root, "modulate:a", 0.0f, Mathf.Max(0.03f, fadeTime * TimeScale));
+    tween.TweenCallback(Callable.From(root.QueueFree));
+
+    return root;
+  }
+
+  private static Vector2[] Circle(Vector2 center, float radius, int segments = 10)
+  {
+    Vector2[] points = new Vector2[segments];
+    for (int i = 0; i < segments; i++)
+    {
+      float a = Mathf.Tau * i / segments;
+      points[i] = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+    }
+    return points;
+  }
+
+  public void ClearAll()
+  {
+    foreach (Node child in GetChildren())
+      child.QueueFree();
+  }
+}

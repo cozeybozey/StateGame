@@ -15,8 +15,6 @@ public partial class UnitInfo : RefCounted
 	public int Damage { get; set; }
 	public int Armor { get; set; }
 	public int Speed { get; set; }
-	public int StartCooldown { get; set; }
-	public int Cooldown { get; set; }
 	public string Description { get; set; }
 	public string Rarity { get; set; }
 	public List<string> Types { get; set; }
@@ -35,8 +33,6 @@ public partial class UnitInfo : RefCounted
 		int damage,
 		int armor,
 		int speed,
-		int startCooldown,
-		int cooldown,
 		string description,
 		string rarity,
 		List<string> types,
@@ -54,8 +50,6 @@ public partial class UnitInfo : RefCounted
 		Damage = damage;
 		Armor = armor;
 		Speed = speed;
-		StartCooldown = startCooldown;
-		Cooldown = cooldown;
 		Description = description;
     Rarity = rarity;
 		Types = types;

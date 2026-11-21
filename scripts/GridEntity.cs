@@ -10,8 +10,6 @@ public partial class GridEntity : Node2D
   public virtual int Health { get; set; } = 10;
   public virtual int Damage { get; set; } = 1;
   public virtual int Armor { get; set; } = 0;
-  public virtual int StartingCooldown { get; set; } = 1;
-  public virtual int Cooldown { get; set; } = 1;
   public virtual int Speed { get; set; } = 1;
 
   // Info
@@ -309,31 +307,6 @@ public partial class GridEntity : Node2D
     _globalSignals.EmitSignal(GlobalSignals.SignalName.SpeedChanged, this);
   }
 
-  public virtual void ChangeCooldown(int amount)
-  {
-    if (_dead)
-      return;
-
-    Cooldown += amount;
-
-    string text = $"+{amount} Cooldown";
-    Color color = Colors.Red;
-    if (amount < 0)
-    {
-      text = $"{amount} Cooldown";
-      color = Colors.Yellow;
-    }
-
-    if (_affected)
-      _floatingTextQueue.Enqueue(new Tuple<string, Color>(text, color));
-    else
-    {
-      _affected = true;
-      ModulateSprite(new Color(1, 1, 1, 0.5f));
-      SpawnFloatingText(text, color);
-    }
-  }
-
 	public List<Vector2I> GetOccupiedCells()
 	{
 		List<Vector2I> occupiedCells = new List<Vector2I>();
@@ -379,5 +352,50 @@ public partial class GridEntity : Node2D
   public void ModulateSprite(Color color)
   {
     _sprite.Modulate = color;
+  }
+
+  // ---- Procedural combat motion (sprite tweens) ----
+  private Tween? _spriteTween = null;
+
+  protected static float FxTimeScale()
+  {
+    return CombatFx.Instance?.TimeScale ?? 1.0f;
+  }
+
+  // Kill any running sprite motion so lunges / reactions never stack and always return to rest
+  protected Tween RestartSpriteTween()
+  {
+    if (_spriteTween != null && _spriteTween.IsValid())
+      _spriteTween.Kill();
+    _sprite.Scale = Vector2.One;
+    _spriteTween = CreateTween();
+    return _spriteTween;
+  }
+
+  // Knock the sprite away from the attacker and back
+  public void PlayHitReaction(Vector2 fromPosition)
+  {
+    if (_dead || _sprite == null)
+      return;
+    Vector2 dir = (GlobalPosition - fromPosition).Normalized();
+    if (dir == Vector2.Zero)
+      dir = Vector2.Up;
+    float t = FxTimeScale();
+    Tween tween = RestartSpriteTween();
+    tween.TweenProperty(_sprite, "position", dir * 4.0f, 0.04f * t);
+    tween.TweenProperty(_sprite, "position", -dir * 1.5f, 0.06f * t);
+    tween.TweenProperty(_sprite, "position", Vector2.Zero, 0.08f * t);
+  }
+
+  // Small "pop" for buffs / heals
+  public void PlaySupportReaction()
+  {
+    if (_dead || _sprite == null)
+      return;
+    float t = FxTimeScale();
+    Tween tween = RestartSpriteTween();
+    _sprite.Position = Vector2.Zero;
+    tween.TweenProperty(_sprite, "scale", new Vector2(1.2f, 1.2f), 0.06f * t);
+    tween.TweenProperty(_sprite, "scale", Vector2.One, 0.14f * t);
   }
 }

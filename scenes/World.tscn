@@ -375,7 +375,7 @@ layout_mode = 2
 
 [node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=616350665]
 layout_mode = 2
-text = "Cooldown: "
+text = "Acts every: "
 
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=828379318]
 layout_mode = 2

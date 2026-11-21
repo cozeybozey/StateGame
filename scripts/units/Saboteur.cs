@@ -47,16 +47,16 @@ public partial class Saboteur : Unit
   {
     if (targets.Count == 0)
     {
-      if (Side)
-      {
-        MoveToCell(new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y - 1), playing:true);
-      }
-      else
-      {
-        MoveToCell(new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y + 1), playing:true);
-      }
+      // Walk forward. If the cell got taken during the wind-up, explode instead (what it does when blocked).
+      Vector2I forward = new Vector2I(OccupiedMainCell.X, OccupiedMainCell.Y + (Side ? -1 : 1));
+      if (TryMoveToCell(forward))
+        return;
+      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
+      if (targets.Count == 0)
+        return;
     }
-    else
+
+    if (targets.Count > 0)
     {
       foreach (Vector2I target in targets)
       {

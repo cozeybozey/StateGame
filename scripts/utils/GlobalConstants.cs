@@ -6,6 +6,13 @@ public static class GlobalConstants
   // Tile size in pixels
   public const int TileSize = 32;
 
+  // Combat simulation runs in fixed ticks so it is deterministic and independent of frame rate.
+  public const int TicksPerSecond = 20;             // At 1x game speed
+  public const int TicksPerTurn = 20;               // A "turn" (turn counter, props, end-of-turn damage) is 1 second at 1x
+  public const int ActionBarSize = 1000;            // A unit's action bar fills by its Speed every tick; full = act.
+                                                    // Speed 10 = 100 ticks = acts every 5 seconds at 1x
+  public const int TelegraphTicks = 6;              // Wind-up between targeting and acting (0.3s at 1x)
+
   // Grid dimensions (columns x rows)
   public static readonly Vector2I GridSize = new Vector2I(16, 16);
   public static readonly Vector2I GridStartPosEnemy = new Vector2I(1, 1); // Starting position of the grid in tile coordinates

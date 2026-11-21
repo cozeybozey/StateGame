@@ -11,12 +11,10 @@ public partial class Unit : GridEntity
   public UnitInfo StartUnitInfo = null!;
 
   // Turn processing variables
-  public double ActingCooldown = 0.1f;
-  public double ActingStartCooldown = 0.1f;
-  public bool Paused = false;
   private int _turn = 0;
-  private bool _acting = false;
-  private bool _targeting = false;
+  private int _telegraphTicksLeft = 0;  // > 0 while winding up an action
+  private Node2D? _telegraph = null;
+  private Color _actionColor = Colors.White;
 
   protected List<Unit> _units;
   protected List<Unit> _removedUnits;
@@ -29,7 +27,8 @@ public partial class Unit : GridEntity
   protected OverlayLayer _activeUnitsLayer;
   protected OverlayLayer _targetedCellsLayer;
 
-  private TextureProgressBar _cooldownBar;
+  private TextureProgressBar _actionBar;
+  public int ActionProgress = 0;
 
   public void Initialize(UnitInfo unitInfo, bool side, Vector2I startCell, bool placed = false)
 	{
@@ -45,8 +44,6 @@ public partial class Unit : GridEntity
 		Damage = unitInfo.Damage;
 		Armor = unitInfo.Armor;
 		Speed = unitInfo.Speed;
-    StartingCooldown = unitInfo.StartCooldown;
-		Cooldown = unitInfo.Cooldown;
 		OccupiedCells = unitInfo.OccupiedCells;
 		Texture = unitInfo.Texture;
 		Cost = unitInfo.Cost;
@@ -59,11 +56,105 @@ public partial class Unit : GridEntity
 		StartUnitInfo = unitInfo;
     _placed = placed;
 
-    // TODO FIX
-    _cooldownBar = GetNode<TextureProgressBar>("Cooldown");
-    StartingCooldown *= 5;
-    Cooldown *= 5;
-    _cooldownBar.MaxValue = StartingCooldown;
+    // Action bar (the "Cooldown" node in the scene): fills by Speed every tick, the unit acts when it is full.
+    // Every unit, also ones spawned mid-battle, starts with an empty bar.
+    _actionBar = GetNode<TextureProgressBar>("Cooldown");
+    _actionBar.MaxValue = GlobalConstants.ActionBarSize;
+    ResetActionBar();
+  }
+
+  public bool IsTelegraphing => _telegraphTicksLeft > 0;
+
+  // Move only if the destination is still free. Targets are picked when the wind-up starts, so another
+  // unit may have moved into the cell in the meantime (two units can never share a cell).
+  protected bool TryMoveToCell(Vector2I cell)
+  {
+    if (!GlobalFunctions.CanMoveToCell(this, cell, _unitsGrid, _terrainGrid, _propsGrid))
+      return false;
+    MoveToCell(cell, true);
+    return true;
+  }
+
+  public void ResetActionBar()
+  {
+    _telegraphTicksLeft = 0;
+    ActionProgress = 0;
+    if (_actionBar != null)
+      _actionBar.Value = 0;
+  }
+
+  // Number of ticks from now until this unit's k-th next action (k = 1 is the next one), assuming its speed stays the same.
+  // Mirrors SimTick: the bar gains Speed per tick and the unit acts on the tick it reaches a multiple of ActionBarSize.
+  public int TicksUntilAction(int k)
+  {
+    if (Speed <= 0)
+      return int.MaxValue;
+    long needed = (long)k * GlobalConstants.ActionBarSize - ActionProgress;
+    if (needed <= 0)
+      return 1;
+    return (int)((needed + Speed - 1) / Speed);
+  }
+
+  // Fill (or drain) the action bar, e.g. "this ally acts sooner". Amount is in action bar points.
+  public void ChangeActionProgress(int amount, string text)
+  {
+    if (_dead)
+      return;
+    ActionProgress = Mathf.Clamp(ActionProgress + amount, 0, GlobalConstants.ActionBarSize);
+    if (_actionBar != null)
+      _actionBar.Value = ActionProgress;
+    SpawnFloatingText(text, amount >= 0 ? Colors.Yellow : Colors.Red);
+  }
+
+  // Small number in the unit's top-left corner showing its place in the turn order (placement phase only)
+  private Label? _turnOrderLabel = null;
+
+  public void ShowTurnOrder(int? order)
+  {
+    if (order == null)
+    {
+      if (_turnOrderLabel != null)
+        _turnOrderLabel.Visible = false;
+      return;
+    }
+
+    if (_turnOrderLabel == null)
+    {
+      _turnOrderLabel = new Label
+      {
+        ZIndex = 20,
+        MouseFilter = Control.MouseFilterEnum.Ignore,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+        CustomMinimumSize = new Vector2(14, 14),
+      };
+      _turnOrderLabel.AddThemeFontSizeOverride("font_size", 11);
+      _turnOrderLabel.AddThemeColorOverride("font_color", Colors.White);
+      AddChild(_turnOrderLabel);
+    }
+
+    // Solid badge in the side's color (blue = player, red = enemy) so the number reads on any tile
+    StyleBoxFlat badge = new StyleBoxFlat
+    {
+      BgColor = Side ? new Color(0.15f, 0.45f, 0.85f) : new Color(0.8f, 0.2f, 0.15f),
+      BorderColor = new Color(0, 0, 0, 0.9f),
+      ContentMarginLeft = 3,
+      ContentMarginRight = 3,
+      ContentMarginTop = 0,
+      ContentMarginBottom = 0,
+    };
+    badge.SetBorderWidthAll(1);
+    badge.SetCornerRadiusAll(7);
+    _turnOrderLabel.AddThemeStyleboxOverride("normal", badge);
+    _turnOrderLabel.Text = order.Value.ToString();
+    _turnOrderLabel.Size = Vector2.Zero; // Shrink to fit the new text
+    _turnOrderLabel.Size = _turnOrderLabel.GetCombinedMinimumSize();
+
+    // Center the badge on the top-left corner of the unit's bounding box (GlobalPosition is the box center)
+    Vector2I dims = GlobalFunctions.CellsToDimensions(OccupiedCells);
+    Vector2 corner = new Vector2(-dims.X * GlobalConstants.TileSize * 0.5f + 3, -dims.Y * GlobalConstants.TileSize * 0.5f + 3);
+    _turnOrderLabel.Position = corner - _turnOrderLabel.Size / 2;
+    _turnOrderLabel.Visible = true;
   }
 
   public void SetPlayData(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> removedUnits, OverlayLayer activeUnitsLayer, OverlayLayer targetedCellsLayer)
@@ -77,56 +168,127 @@ public partial class Unit : GridEntity
     _targetedCellsLayer = targetedCellsLayer;
   }
 
-  public override void _Process(double delta)
+  // Called by World once per simulation tick
+  public void SimTick()
   {
-    // Process getting damaged
-    base._Process(delta);
-
-    if (Paused || _dead)
+    if (_dead)
       return;
 
-    if (_acting)
+    // The bar keeps filling while winding up, so a unit's action rate is exactly its speed.
+    // Capped at two full bars so a unit can never bank many actions.
+    ActionProgress = Mathf.Min(ActionProgress + Mathf.Max(0, Speed), 2 * GlobalConstants.ActionBarSize);
+
+    if (_telegraphTicksLeft > 0)
     {
-      ActingCooldown -= delta;
-      if (ActingCooldown <= 0)
-      {
-        Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
-        // Reset units side to original side after acting
-        if (SwitchedSides)
-          SwitchSides();
-        _acting = false;
-        ActingCooldown = ActingStartCooldown;
-        //_targetedCellsLayer.RemoveCells(_selectedTargets);
-        //_activeUnitsLayer.RemoveCells(_activeUnitCells);
-        _cooldownBar.Value = StartingCooldown - Cooldown;
-      }
+      _telegraphTicksLeft--;
+      if (_telegraphTicksLeft == 0)
+        Strike();
     }
-    else if (_targeting)
-    {
-      ActingCooldown -= delta;
-      if (ActingCooldown <= 0)
-      {
-        _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
-        //_targetedCellsLayer.AddCells(_selectedTargets);
-        _acting = true;
-        if (_selectedTargets.Count > 0)
-          ActingCooldown = ActingStartCooldown;
-        else
-          ActingCooldown = 0; // If there are no targets, skip directly to acting phase
-        _targeting = false;
-      }
-    }
+    else if (CanAct())
+      BeginAction();
+
+    if (_actionBar != null && IsInstanceValid(_actionBar))
+      _actionBar.Value = ActionProgress;
   }
 
-  public void PlayTurn()
+  // Pick targets and show a telegraph; the actual action happens TelegraphTicks later
+  private void BeginAction()
   {
-    if (CanAct())
+    _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+    PulseActionBar();
+
+    if (_selectedTargets.Count == 0)
     {
-      // Show overlay on selected cells
-      _activeUnitCells = GetOccupiedCells();
-      //_activeUnitsLayer.AddCells(_activeUnitCells);
-      _targeting = true;
+      // Nothing to telegraph, act immediately
+      Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+      AfterAct();
+      return;
     }
+
+    _actionColor = CombatFx.GetActionColor(this, _selectedTargets, _unitsGrid);
+    _telegraph = CombatFx.Instance?.ShowTelegraph(this, _selectedTargets, _actionColor,
+      (float)GlobalConstants.TelegraphTicks / GlobalConstants.TicksPerSecond + 0.2f);
+    _telegraphTicksLeft = GlobalConstants.TelegraphTicks;
+  }
+
+  private void Strike()
+  {
+    CombatFx? fx = CombatFx.Instance;
+    fx?.ClearTelegraph(_telegraph);
+    _telegraph = null;
+
+    // Collect target units before acting, so reactions also play on units that die from this action
+    List<Unit> targetUnits = new();
+    foreach (Vector2I cell in _selectedTargets)
+    {
+      if (!GlobalFunctions.IsCellInsideGrid(cell))
+        continue;
+      Unit target = _unitsGrid[cell.X, cell.Y];
+      if (target != null && target != this && !targetUnits.Contains(target))
+        targetUnits.Add(target);
+    }
+
+    fx?.ShowStrike(this, _selectedTargets, _actionColor);
+    PlayLunge(_selectedTargets);
+
+    Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+
+    foreach (Unit target in targetUnits)
+    {
+      if (!IsInstanceValid(target))
+        continue;
+      if (target.Side == Side)
+        target.PlaySupportReaction();
+      else
+        target.PlayHitReaction(GlobalPosition);
+    }
+
+    AfterAct();
+  }
+
+  private void AfterAct()
+  {
+    // Reset units side to original side after acting
+    if (SwitchedSides)
+      SwitchSides();
+  }
+
+  private void PlayLunge(List<Vector2I> targets)
+  {
+    List<Vector2I> ownCells = GetOccupiedCells();
+    Vector2? targetPos = null;
+    foreach (Vector2I cell in targets)
+    {
+      if (!ownCells.Contains(cell))
+      {
+        targetPos = CombatFx.CellCenter(cell);
+        break;
+      }
+    }
+    if (targetPos == null)
+    {
+      PlaySupportReaction();  // Self-targeted: small pulse instead of a lunge
+      return;
+    }
+
+    Vector2 dir = (targetPos.Value - GlobalPosition).Normalized();
+    float t = FxTimeScale();
+    Tween tween = RestartSpriteTween();
+    tween.TweenProperty(_sprite, "position", dir * 7.0f, 0.06f * t).SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
+    tween.TweenProperty(_sprite, "position", Vector2.Zero, 0.14f * t).SetEase(Tween.EaseType.InOut).SetTrans(Tween.TransitionType.Quad);
+  }
+
+  private void PulseActionBar()
+  {
+    if (_actionBar == null || !IsInstanceValid(_actionBar))
+      return;
+    float t = FxTimeScale();
+    _actionBar.PivotOffset = _actionBar.Size / 2;
+    Tween tween = _actionBar.CreateTween();
+    tween.TweenProperty(_actionBar, "modulate", new Color(2.5f, 2.5f, 2.5f), 0.04f * t);
+    tween.Parallel().TweenProperty(_actionBar, "scale", new Vector2(1.15f, 2.2f), 0.04f * t);
+    tween.TweenProperty(_actionBar, "modulate", Colors.White, 0.2f * t);
+    tween.Parallel().TweenProperty(_actionBar, "scale", Vector2.One, 0.2f * t);
   }
 
   // Find closest unit that obeys certain clauses. These clauses are defined by the optional predicate.
@@ -216,7 +378,7 @@ public partial class Unit : GridEntity
   public UnitInfo GetInfo()
 	{
 		return new UnitInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Cost, MaxHealth, 
-			Health, Damage, Armor, Speed, StartingCooldown, Cooldown, Description, Rarity, Types, Stage);
+			Health, Damage, Armor, Speed, Description, Rarity, Types, Stage);
 	}
 
   public UnitInfo GetStartInfo()
@@ -226,12 +388,11 @@ public partial class Unit : GridEntity
 
   public override bool CanAct()
 	{
-    Cooldown -= 1;
-    _cooldownBar.Value = StartingCooldown - Cooldown;
-    if (Cooldown > 0)
+    // Act when the action bar is full; the overflow carries over so the action rate matches Speed exactly
+    if (ActionProgress < GlobalConstants.ActionBarSize)
       return false;
-    Cooldown = StartingCooldown;
-    
+    ActionProgress -= GlobalConstants.ActionBarSize;
+
     if (Stunned)
     {
       SpawnFloatingText("Stunned", Colors.Red);
@@ -296,7 +457,10 @@ public partial class Unit : GridEntity
   public override void Die()
   {
     base.Die();
-    _cooldownBar.Visible = false;
+    _actionBar.Visible = false;
+    _telegraphTicksLeft = 0;
+    CombatFx.Instance?.ClearTelegraph(_telegraph);
+    _telegraph = null;
   }
 
   public void SwitchSides()

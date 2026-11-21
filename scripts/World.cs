@@ -64,8 +64,11 @@ public partial class World : Node2D
   private int _completedLevels = 0;
   private int _slowDownLayer = 15;
   private int _turn = 0;
-  private double _turnStartCooldown = 1.0f;
-  private double _turnCooldown = 1.0f;
+  private bool _turnOrderDirty = false;
+  private double _tickAccumulator = 0;
+  private int _tick = 0;
+  private CombatFx _combatFx = null!;
+  private TurnTimeline _turnTimeline = null!;
   private double _speed = 1.0f;
   private int _turnEndDamage = 1;
   private bool _paused = false;
@@ -138,6 +141,10 @@ public partial class World : Node2D
     _selectedCellsLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
     _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
     _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
+    _combatFx = new CombatFx { Name = "CombatFx" };
+    AddChild(_combatFx);
+    _turnTimeline = new TurnTimeline { Name = "TurnTimeline" };
+    AddChild(_turnTimeline);
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
@@ -241,26 +248,78 @@ public partial class World : Node2D
     //if (friendlyUnitCount != _playerUnitsCount)
     //  GD.Print("hi");
 
+    if (!_playing && _turnOrderDirty)
+      UpdateTurnOrderPreview();
+
+    _turnTimeline.SetData(_units, _unitsGrid);
+    _turnTimeline.Visible = _units.Count > 0;
+
     if (_paused)
       return;
 
     if (_playing && !_gameEnd)
     {
-      _turnCooldown -= delta;
-      if (_turnCooldown <= 0)
+      // Fixed-step simulation: run as many ticks as real time (scaled by game speed) allows.
+      // Cap per frame so a hitch doesn't make the board jump.
+      _tickAccumulator += delta * _speed;
+      double tickDuration = 1.0 / GlobalConstants.TicksPerSecond;
+      int ticksThisFrame = 0;
+      while (_tickAccumulator >= tickDuration && ticksThisFrame < 32 && _playing && !_gameEnd)
       {
-        _activeUnitLayer.Clear();
-        _targetedCellsLayer.Clear();
-        foreach (Unit unit in _units)
-        {
-          _unitToAct = unit;
-          unit.PlayTurn();
-        }
-        _unitToAct = null;
-        TurnEnd();
-        _turnCooldown = _turnStartCooldown;
+        _tickAccumulator -= tickDuration;
+        ticksThisFrame++;
+        SimTick();
       }
+      if (ticksThisFrame == 32)
+        _tickAccumulator = 0;
     }
+  }
+
+  // While placing units (deck screen or before a level), show the turn order:
+  // a number per unit showing the order of first actions.
+  // Uses the same prediction as the timeline, which mirrors the simulation.
+  private void UpdateTurnOrderPreview()
+  {
+    _turnOrderDirty = false;
+    _units.RemoveAll(u => !IsInstanceValid(u));
+    _unitToAct = null;
+    SortUnits(_units);
+    foreach (Unit unit in _units)
+      unit.ResetActionBar();
+
+    // Number = place of the unit's first action (all bars start empty, so this is who opens the battle)
+    List<TurnTimeline.PredictedAction> firstActions = TurnTimeline.Predict(_units, _units.Count * 2);
+    int order = 1;
+    HashSet<Unit> numbered = new();
+    foreach (TurnTimeline.PredictedAction action in firstActions)
+    {
+      if (numbered.Add(action.Unit))
+        action.Unit.ShowTurnOrder(order++);
+    }
+    foreach (Unit unit in _units)
+    {
+      if (!numbered.Contains(unit))
+        unit.ShowTurnOrder(null);  // Never acts (speed 0)
+    }
+  }
+
+  private void SimTick()
+  {
+    // Copy, because units can die or spawn while acting
+    foreach (Unit unit in _units.ToList())
+    {
+      if (!IsInstanceValid(unit) || !_units.Contains(unit))
+        continue;
+      _unitToAct = unit;
+      unit.SimTick();
+      if (_gameEnd)
+        break;
+    }
+    _unitToAct = null;
+
+    _tick++;
+    if (_tick % GlobalConstants.TicksPerTurn == 0 && !_gameEnd)
+      TurnEnd();
   }
 
   private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits, bool loadBeforeLevel = true)
@@ -373,6 +432,18 @@ public partial class World : Node2D
       unit.SetPlayData(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits, _activeUnitLayer, _targetedCellsLayer);
       unit.GameStart();
     }
+
+    // Everyone starts with an empty action bar; units filling up on the same tick go leftmost, then frontmost first
+    _unitToAct = null;
+    SortUnits(_units);
+    foreach (Unit unit in _units)
+    {
+      unit.ResetActionBar();
+      unit.ShowTurnOrder(null);
+    }
+    _turnOrderDirty = false;
+    _tick = 0;
+    _tickAccumulator = 0;
     _playing = true;
 
     // Set unit to act to first unit
@@ -771,7 +842,9 @@ public partial class World : Node2D
     _unitToAct = null;
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
-    _turnCooldown = _turnStartCooldown;
+    _tick = 0;
+    _tickAccumulator = 0;
+    _combatFx.ClearAll();
     ClearMessagePanel();
     _messagePanel.Hide();
     ResetGameStats();
@@ -1069,6 +1142,8 @@ public partial class World : Node2D
 
     _units.Remove(unit);
     _unitsToAct.Remove(unit);
+    if (!_playing)
+      _turnOrderDirty = true;
 
     foreach (Vector2I cell in unit.GetOccupiedCells())
     {
@@ -1086,6 +1161,9 @@ public partial class World : Node2D
   {
     if (gridEntity is Unit unit)
     {
+      if (!_playing)
+        _turnOrderDirty = true;
+
       if (_infoGui.GetSelectedUnit() == unit)
       {
         _selectedCellsLayer.Clear();
@@ -1137,7 +1215,10 @@ public partial class World : Node2D
       if (_playing)
         SortUnits(_unitsToAct);
       else
+      {
         SortUnits(_units);
+        _turnOrderDirty = true;
+      }
     }
     else if (gridEntity is Terrain terrain)
     {
@@ -1208,7 +1289,10 @@ public partial class World : Node2D
       if (_playing)
         SortUnits(_unitsToAct);
       else
+      {
         SortUnits(_units);
+        _turnOrderDirty = true;
+      }
     }
     else if (gridEntity is Terrain terrain)
     {
@@ -1267,7 +1351,10 @@ public partial class World : Node2D
       if (_playing)
         SortUnits(_unitsToAct);
       else
+      {
         SortUnits(_units);
+        _turnOrderDirty = true;
+      }
     }
     else if (gridEntity is Terrain terrain)
     {
@@ -1302,7 +1389,10 @@ public partial class World : Node2D
       if (_playing)
         SortUnits(_unitsToAct);
       else
+      {
         SortUnits(_units);
+        _turnOrderDirty = true;
+      }
     }
   }
 
@@ -1398,11 +1488,8 @@ public partial class World : Node2D
         break;
     }
     _speedButton.Text = "Speed: " + _speedPopup.GetItemText((int)id);
-    _turnStartCooldown = 1.0f / _speed;
-    foreach (Unit unit in _units)
-    {
-      unit.ActingStartCooldown = 0.1f / _speed;
-    }
+    // Visual effects shrink with game speed, but not fully, so they stay visible at high speeds
+    _combatFx.TimeScale = (float)Mathf.Clamp(1.0 / Mathf.Sqrt(_speed), 0.2, 1.4);
   }
 
   private void ParseUnitsJson()
@@ -1424,7 +1511,6 @@ public partial class World : Node2D
       int damage = (int)unitData["damage"];
       int armor = (int)unitData["armor"];
       int speed = (int)unitData["speed"];
-      int cooldown = (int)unitData["cooldown"];
       string description = (string)unitData["description"];
       string rarity = (string)unitData["rarity"];
       List<string> types = unitData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
@@ -1440,7 +1526,7 @@ public partial class World : Node2D
       }
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
-        cost, health, health, damage, armor, speed, cooldown, cooldown, description, rarity, types, stage);
+        cost, health, health, damage, armor, speed, description, rarity, types, stage);
 
       // Link unit info score placement function to unit specific class function using reflection
       string fileName = scenePath.GetFile().GetBaseName();
@@ -2053,15 +2139,11 @@ public partial class World : Node2D
     if (_paused)
     {
       _paused = false;
-      foreach (Unit unit in _units)
-        unit.Paused = false;
       _playPauseButton.Text = "Pause";
     }
     else
     {
       _paused = true;
-      foreach (Unit unit in _units)
-        unit.Paused = true;
       _playPauseButton.Text = "Play";
     }
   }
@@ -2146,11 +2228,10 @@ public partial class World : Node2D
     if (_unitToAct != null && units.Contains(_unitToAct))
       currentIndex = units.IndexOf(_unitToAct);
 
-    // Sort units by speed, then by position for consistent turn order
+    // Turn order for units that act on the same tick: leftmost first, then frontmost
     List<Unit> sorted = units
     .Skip(currentIndex)  // Skip units that have already played their turn
-    .OrderByDescending(u => u.Speed)  // Speed first
-    .ThenBy(u => u.GlobalPosition.X)  // Leftmost first
+    .OrderBy(u => u.GlobalPosition.X)  // Leftmost first
     .ThenBy(u =>
         u.Side
             ? u.OccupiedMainCell.Y  // Player: lower Y first
@@ -2178,7 +2259,6 @@ public partial class World : Node2D
           index += 1;
       }
       _turnEndDamage += 1;  // Increase end of turn damage for next turn
-      _turnCooldown = _turnStartCooldown;
     }
 
     // Possibly respawn zombies

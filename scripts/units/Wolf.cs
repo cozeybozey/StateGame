@@ -12,10 +12,15 @@ public partial class Wolf : Unit
     if (targets.Count == 0)
       return;
 
-    // Possibly move to cell
-    if (_targetLocation != null && _targetLocation != OccupiedMainCell)
+    // Possibly move to cell. If another unit took it during the wind-up, pick a new spot and target now.
+    if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
     {
-      MoveToCell(_targetLocation.Value, true);
+      _targetLocation = null;
+      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
+      if (targets.Count == 0)
+        return;
+      if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
+        return;
     }
 
     // Attack target

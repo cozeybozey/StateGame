@@ -5,23 +5,29 @@ using System.Linq;
 
 public partial class Sergeant : Unit
 {
+  // How much of an ally's action bar the Sergeant fills per action (1/4 of a full bar)
+  private const int ActionBarBoost = GlobalConstants.ActionBarSize / 4;
+
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> result = new();
 
+    // Target the ally with the most ticks until its next action (TicksUntilAction, which accounts for speed).
+    // Units that never act (speed 0) are skipped.
     Unit? targetAlly = null;
-    int bestCooldown = int.MinValue;
+    int longestWait = int.MinValue;
 
     for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
     {
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       {
         Unit unit = unitsGrid[x, y];
-        if (unit != null && unit.Side == Side && unit != this)
+        if (unit != null && unit.Side == Side && unit != this && unit.Speed > 0)
         {
-          if (unit.Cooldown > bestCooldown)
+          int wait = unit.TicksUntilAction(1);
+          if (wait > longestWait)
           {
-            bestCooldown = unit.Cooldown;
+            longestWait = wait;
             targetAlly = unit;
           }
         }
@@ -44,7 +50,7 @@ public partial class Sergeant : Unit
     if (ally == null || ally.Side != Side)
       return;
 
-    // Reduce the ally's cooldown by 1 (i.e. bring them closer to being able to act)
-    ally.ChangeCooldown(-1);
+    // Fill part of the ally's action bar so it acts sooner
+    ally.ChangeActionProgress(ActionBarBoost, "Hastened");
   }
 }

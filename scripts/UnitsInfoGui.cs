@@ -49,7 +49,13 @@ public partial class UnitsInfoGui : VBoxContainer
     _damage.Text = unitInfo.Damage.ToString();
     _armor.Text = unitInfo.Armor.ToString();
     _speed.Text = unitInfo.Speed.ToString();
-    _cooldown.Text = unitInfo.Cooldown.ToString() + '/' + unitInfo.StartCooldown.ToString();
+    // Time between actions at 1x speed, plus how full the action bar is for a unit on the board
+    string interval = unitInfo.Speed > 0
+      ? $"{(float)GlobalConstants.ActionBarSize / unitInfo.Speed / GlobalConstants.TicksPerSecond:0.0}s"
+      : "never";
+    if (SelectedUnit != null && IsInstanceValid(SelectedUnit))
+      interval += $" ({100 * SelectedUnit.ActionProgress / GlobalConstants.ActionBarSize}%)";
+    _cooldown.Text = interval;
     _unitSlots.Text = unitInfo.OccupiedCells.Count.ToString();
     _description.Text = unitInfo.Description.ToString();
 
