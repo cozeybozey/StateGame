@@ -67,6 +67,7 @@ public partial class World : Node2D
   private bool _turnOrderDirty = false;
   private double _tickAccumulator = 0;
   private int _tick = 0;
+  private List<Unit> _actionQueue = new();  // Units that became ready on the same tick, acting one by one
   private CombatFx _combatFx = null!;
   private TurnTimeline _turnTimeline = null!;
   private double _speed = 1.0f;
@@ -251,7 +252,7 @@ public partial class World : Node2D
     if (!_playing && _turnOrderDirty)
       UpdateTurnOrderPreview();
 
-    _turnTimeline.SetData(_units, _unitsGrid);
+    _turnTimeline.SetData(_units, _unitsGrid, _actionQueue);
     _turnTimeline.Visible = _units.Count > 0;
 
     if (_paused)
@@ -303,17 +304,45 @@ public partial class World : Node2D
     }
   }
 
+  // One simulation tick. Normally every action bar fills and wind-ups count down.
+  // When two or more units become ready on the same tick, they go into _actionQueue and the battle
+  // freezes: only the front unit of the queue winds up and strikes, one unit after another in turn
+  // order, while all other bars, wind-ups and the turn clock wait. The queue tick does not count as
+  // simulation time, so every unit keeps exactly its own speed.
   private void SimTick()
   {
-    // Copy, because units can die or spawn while acting
-    foreach (Unit unit in _units.ToList())
+    if (_actionQueue.Count > 0)
     {
-      if (!IsInstanceValid(unit) || !_units.Contains(unit))
+      ProcessActionQueue();
+      return;
+    }
+
+    // Copy, because units can die or spawn while acting
+    List<Unit> units = _units.ToList();
+    foreach (Unit unit in units)
+    {
+      if (!IsUnitActive(unit))
         continue;
       _unitToAct = unit;
-      unit.SimTick();
+      unit.FillActionBar();
+      unit.AdvanceTelegraph();
       if (_gameEnd)
         break;
+    }
+
+    if (!_gameEnd)
+    {
+      List<Unit> ready = units.Where(u => IsUnitActive(u) && u.IsReady).ToList();
+      if (ready.Count == 1)
+      {
+        _unitToAct = ready[0];
+        ready[0].TryStartAction();
+      }
+      else if (ready.Count > 1)
+      {
+        _actionQueue.AddRange(ready);
+        ProcessActionQueue();
+      }
     }
     _unitToAct = null;
 
@@ -321,6 +350,45 @@ public partial class World : Node2D
     if (_tick % GlobalConstants.TicksPerTurn == 0 && !_gameEnd)
       TurnEnd();
   }
+
+  // Advance the front unit of the queue by one step: start its action, or count down its wind-up.
+  // Units that act without a wind-up (no targets, or stunned) are handled right away so they add no delay.
+  private void ProcessActionQueue()
+  {
+    while (_actionQueue.Count > 0 && !_gameEnd)
+    {
+      Unit unit = _actionQueue[0];
+      if (!IsUnitActive(unit))
+      {
+        _actionQueue.RemoveAt(0);
+        continue;
+      }
+
+      _unitToAct = unit;
+      bool wasTelegraphing = unit.IsTelegraphing;
+      if (wasTelegraphing)
+        unit.AdvanceTelegraph();
+      else
+        unit.TryStartAction();
+
+      // Still winding up: continue with this unit next tick
+      if (unit.IsTelegraphing && IsUnitActive(unit))
+        break;
+      _actionQueue.RemoveAt(0);
+
+      // After a strike, the next unit starts on the next tick, so strikes never land together
+      if (wasTelegraphing)
+        break;
+    }
+    _unitToAct = null;
+  }
+
+  private bool IsUnitActive(Unit unit)
+  {
+    return IsInstanceValid(unit) && _units.Contains(unit) && unit.Health > 0;
+  }
+
+  public IReadOnlyList<Unit> ActionQueue => _actionQueue;
 
   private void StartLevel(TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid, UnitInfo[,] enemyUnits, bool loadBeforeLevel = true)
   {
@@ -443,6 +511,7 @@ public partial class World : Node2D
     }
     _turnOrderDirty = false;
     _tick = 0;
+    _actionQueue.Clear();
     _tickAccumulator = 0;
     _playing = true;
 
@@ -843,6 +912,7 @@ public partial class World : Node2D
     _turn = 0;
     _turnCounter.Text = _turn.ToString();
     _tick = 0;
+    _actionQueue.Clear();
     _tickAccumulator = 0;
     _combatFx.ClearAll();
     ClearMessagePanel();

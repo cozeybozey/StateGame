@@ -18,6 +18,7 @@ public partial class TurnTimeline : Node2D
 
   private List<Unit> _units = new();
   private Unit[,]? _unitsGrid = null;
+  private IReadOnlyList<Unit>? _actionQueue = null;
   private List<PredictedAction> _actions = new();
   private int _hoveredSlot = -1;
   private Unit? _hoveredUnit = null;
@@ -30,22 +31,39 @@ public partial class TurnTimeline : Node2D
     ZIndex = 40;
   }
 
-  public void SetData(List<Unit> units, Unit[,] unitsGrid)
+  public void SetData(List<Unit> units, Unit[,] unitsGrid, IReadOnlyList<Unit> actionQueue)
   {
     _units = units;
     _unitsGrid = unitsGrid;
+    _actionQueue = actionQueue;
   }
 
   // Predict the next `count` actions. `units` must be in turn order (World.SortUnits): units that fill
   // their bar on the same tick act in list order, which is exactly what the simulation does.
-  public static List<PredictedAction> Predict(List<Unit> units, int count)
+  // `queue` is World's same-tick action queue: those units act first, in queue order. A queued unit that
+  // has not started yet still holds the full bar for that action, so its regular prediction starts one action later.
+  public static List<PredictedAction> Predict(List<Unit> units, int count, IReadOnlyList<Unit>? queue = null)
   {
     List<PredictedAction> result = new();
     List<Unit> alive = units.Where(u => u != null && GodotObject.IsInstanceValid(u) && u.Health > 0).ToList();
+    HashSet<Unit> queuedNotStarted = new();
 
+    if (queue != null)
+    {
+      foreach (Unit unit in queue)
+      {
+        if (!alive.Contains(unit))
+          continue;
+        result.Add(new PredictedAction { Unit = unit, Tick = 0, InProgress = unit.IsTelegraphing });
+        if (!unit.IsTelegraphing)
+          queuedNotStarted.Add(unit);
+      }
+    }
+
+    // Units winding up outside the queue strike next (they wait while the queue runs)
     foreach (Unit unit in alive)
     {
-      if (unit.IsTelegraphing)
+      if (unit.IsTelegraphing && (queue == null || !queue.Contains(unit)))
         result.Add(new PredictedAction { Unit = unit, Tick = 0, InProgress = true });
     }
 
@@ -56,7 +74,8 @@ public partial class TurnTimeline : Node2D
       Unit unit = alive[i];
       if (unit.Speed <= 0)
         continue;
-      for (int k = 1; k <= count; k++)
+      int firstK = queuedNotStarted.Contains(unit) ? 2 : 1;
+      for (int k = firstK; k < firstK + count; k++)
       {
         int tick = unit.TicksUntilAction(k);
         upcoming.Add((new PredictedAction { Unit = unit, Tick = tick, InProgress = false }, i));
@@ -72,7 +91,7 @@ public partial class TurnTimeline : Node2D
     if (!Visible)
       return;
 
-    _actions = Predict(_units, SlotCount);
+    _actions = Predict(_units, SlotCount, _actionQueue);
 
     // Hover detection (world coordinates, same space as the board)
     Vector2 mouse = GetGlobalMousePosition();
@@ -131,11 +150,9 @@ public partial class TurnTimeline : Node2D
     // Outline the hovered unit on the board
     if (_hoveredUnit != null && IsInstanceValid(_hoveredUnit))
     {
-      foreach (Vector2I cell in _hoveredUnit.GetOccupiedCells())
-      {
-        Rect2 cellRect = new Rect2(cell * GlobalConstants.TileSize, new Vector2(GlobalConstants.TileSize, GlobalConstants.TileSize));
-        DrawRect(cellRect.Grow(-1), Colors.White, false, 2f);
-      }
+      Vector2 tileSize = new Vector2(GlobalConstants.TileSize, GlobalConstants.TileSize);
+      foreach (var edge in OverlayLayer.GetOutlineEdges(_hoveredUnit.GetOccupiedCells(), CombatFx.CellCenter, tileSize))
+        DrawLine(edge.Item1, edge.Item2, Colors.White, 2f);
     }
   }
 }

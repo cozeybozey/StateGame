@@ -63,16 +63,16 @@ public partial class CombatFx : Node2D
     return GlobalFunctions.CellToGlobalPosition(cell, 1, 1, Vector2I.Zero);
   }
 
-  // Thin, dim preview while the unit winds up. Returned node is removed by the caller via ClearTelegraph,
-  // or fades by itself after `lifetime` seconds as a fallback.
-  public Node2D ShowTelegraph(Unit source, List<Vector2I> targets, Color color, float lifetime)
+  // Thin, dim preview while the unit winds up. It stays until the caller removes it with ClearTelegraph
+  // (on strike or death), because a wind-up pauses while the same-tick queue is running.
+  public Node2D ShowTelegraph(Unit source, List<Vector2I> targets, Color color, Unit[,]? unitsGrid)
   {
-    return SpawnEffect(source, targets, color, lineWidth: 1.5f, lineAlpha: 0.45f, cellAlpha: 0.12f, holdTime: lifetime, fadeTime: 0.05f);
+    return SpawnEffect(source, targets, color, unitsGrid, lineWidth: 1.5f, lineAlpha: 0.45f, cellAlpha: 0.12f, holdTime: null, fadeTime: 0f);
   }
 
-  public void ShowStrike(Unit source, List<Vector2I> targets, Color color)
+  public void ShowStrike(Unit source, List<Vector2I> targets, Color color, Unit[,]? unitsGrid)
   {
-    SpawnEffect(source, targets, color, lineWidth: 3.0f, lineAlpha: 0.95f, cellAlpha: 0.35f, holdTime: 0.12f, fadeTime: 0.3f);
+    SpawnEffect(source, targets, color, unitsGrid, lineWidth: 3.0f, lineAlpha: 0.95f, cellAlpha: 0.35f, holdTime: 0.12f, fadeTime: 0.3f);
   }
 
   public void ClearTelegraph(Node2D? telegraph)
@@ -81,7 +81,8 @@ public partial class CombatFx : Node2D
       telegraph.QueueFree();
   }
 
-  private Node2D SpawnEffect(Unit source, List<Vector2I> targets, Color color, float lineWidth, float lineAlpha, float cellAlpha, float holdTime, float fadeTime)
+  // holdTime null = the effect stays until it is freed by the caller
+  private Node2D SpawnEffect(Unit source, List<Vector2I> targets, Color color, Unit[,]? unitsGrid, float lineWidth, float lineAlpha, float cellAlpha, float? holdTime, float fadeTime)
   {
     Node2D root = new Node2D();
     AddChild(root);
@@ -89,19 +90,38 @@ public partial class CombatFx : Node2D
     List<Vector2I> ownCells = source.GetOccupiedCells();
     List<Vector2I> otherCells = targets.Where(c => !ownCells.Contains(c) && GlobalFunctions.IsCellInsideGrid(c)).Distinct().ToList();
 
-    // Cell highlights (also for self-targets, so self-buffs are visible)
-    foreach (Vector2I cell in targets.Distinct())
+    // Highlight every targeted cell, grown to the whole unit standing on it (also for self-targets, so
+    // self-buffs are visible): a fill per cell plus one outline around the outer edges of each group.
+    HashSet<Vector2I> highlightCells = new();
+    foreach (Vector2I cell in targets)
     {
       if (!GlobalFunctions.IsCellInsideGrid(cell))
         continue;
+      highlightCells.Add(cell);
+      Unit? unit = unitsGrid?[cell.X, cell.Y];
+      if (unit != null && IsInstanceValid(unit))
+        highlightCells.UnionWith(unit.GetOccupiedCells().Where(GlobalFunctions.IsCellInsideGrid));
+    }
+
+    float half = GlobalConstants.TileSize * 0.5f;
+    foreach (Vector2I cell in highlightCells)
+    {
       Vector2 c = CellCenter(cell);
-      float h = GlobalConstants.TileSize * 0.5f - 1;
       Polygon2D rect = new Polygon2D
       {
-        Polygon = [c + new Vector2(-h, -h), c + new Vector2(h, -h), c + new Vector2(h, h), c + new Vector2(-h, h)],
+        Polygon = [c + new Vector2(-half, -half), c + new Vector2(half, -half), c + new Vector2(half, half), c + new Vector2(-half, half)],
         Color = new Color(color, cellAlpha)
       };
       root.AddChild(rect);
+    }
+
+    Vector2 tileSize = new Vector2(GlobalConstants.TileSize, GlobalConstants.TileSize);
+    foreach (var edge in OverlayLayer.GetOutlineEdges(highlightCells, CellCenter, tileSize))
+    {
+      Line2D outline = new Line2D { Width = lineWidth * 0.75f, DefaultColor = new Color(color, lineAlpha) };
+      outline.AddPoint(edge.Item1);
+      outline.AddPoint(edge.Item2);
+      root.AddChild(outline);
     }
 
     // Lines from the source to its targets
@@ -138,8 +158,11 @@ public partial class CombatFx : Node2D
       root.AddChild(dot);
     }
 
+    if (holdTime == null)
+      return root;
+
     Tween tween = root.CreateTween();
-    tween.TweenInterval(Mathf.Max(0.02f, holdTime * TimeScale));
+    tween.TweenInterval(Mathf.Max(0.02f, holdTime.Value * TimeScale));
     tween.TweenProperty(root, "modulate:a", 0.0f, Mathf.Max(0.03f, fadeTime * TimeScale));
     tween.TweenCallback(Callable.From(root.QueueFree));
 

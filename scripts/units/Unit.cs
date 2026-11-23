@@ -168,25 +168,42 @@ public partial class Unit : GridEntity
     _targetedCellsLayer = targetedCellsLayer;
   }
 
-  // Called by World once per simulation tick
-  public void SimTick()
+  // World drives a unit each simulation tick with FillActionBar and AdvanceTelegraph, then starts
+  // actions of ready units with TryStartAction (see World.SimTick for the same-tick queue).
+
+  // The bar keeps filling while winding up, so a unit's action rate is exactly its speed.
+  // Capped at two full bars so a unit can never bank many actions.
+  public void FillActionBar()
   {
     if (_dead)
       return;
-
-    // The bar keeps filling while winding up, so a unit's action rate is exactly its speed.
-    // Capped at two full bars so a unit can never bank many actions.
     ActionProgress = Mathf.Min(ActionProgress + Mathf.Max(0, Speed), 2 * GlobalConstants.ActionBarSize);
+    UpdateActionBar();
+  }
 
-    if (_telegraphTicksLeft > 0)
-    {
-      _telegraphTicksLeft--;
-      if (_telegraphTicksLeft == 0)
-        Strike();
-    }
-    else if (CanAct())
+  // Count down the wind-up and strike when it reaches zero
+  public void AdvanceTelegraph()
+  {
+    if (_dead || _telegraphTicksLeft <= 0)
+      return;
+    _telegraphTicksLeft--;
+    if (_telegraphTicksLeft == 0)
+      Strike();
+  }
+
+  public bool IsReady => !_dead && _telegraphTicksLeft <= 0 && Speed > 0 && ActionProgress >= GlobalConstants.ActionBarSize;
+
+  // Spend a full bar and start the action (a wind-up, or an immediate action when there are no targets).
+  // A stunned unit spends the bar without acting.
+  public void TryStartAction()
+  {
+    if (!_dead && CanAct())
       BeginAction();
+    UpdateActionBar();
+  }
 
+  private void UpdateActionBar()
+  {
     if (_actionBar != null && IsInstanceValid(_actionBar))
       _actionBar.Value = ActionProgress;
   }
@@ -206,8 +223,7 @@ public partial class Unit : GridEntity
     }
 
     _actionColor = CombatFx.GetActionColor(this, _selectedTargets, _unitsGrid);
-    _telegraph = CombatFx.Instance?.ShowTelegraph(this, _selectedTargets, _actionColor,
-      (float)GlobalConstants.TelegraphTicks / GlobalConstants.TicksPerSecond + 0.2f);
+    _telegraph = CombatFx.Instance?.ShowTelegraph(this, _selectedTargets, _actionColor, _unitsGrid);
     _telegraphTicksLeft = GlobalConstants.TelegraphTicks;
   }
 
@@ -228,7 +244,7 @@ public partial class Unit : GridEntity
         targetUnits.Add(target);
     }
 
-    fx?.ShowStrike(this, _selectedTargets, _actionColor);
+    fx?.ShowStrike(this, _selectedTargets, _actionColor, _unitsGrid);
     PlayLunge(_selectedTargets);
 
     Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
