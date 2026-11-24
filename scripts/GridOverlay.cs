@@ -7,7 +7,8 @@ using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
-	public int MaxUnitSlots = 15;
+	private const int BaseUnitSlots = 15;
+	public int MaxUnitSlots = BaseUnitSlots;
 
 	private TileMapLayer _backgroundLayer = null!;
 	private Label _unitsCounter = null!;
@@ -195,9 +196,9 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
   }
 
-	public void IncreaseUnitCount(int amount)
+	public void SetExtraUnitSlots(int amount)
 	{
-		MaxUnitSlots += amount;
+		MaxUnitSlots = BaseUnitSlots + amount;
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
   }
 

@@ -23,7 +23,7 @@ public partial class Guardian : Unit
 
   private void OnUnitSpawned(GridEntity gridEntity, bool playing)
   {
-    if (!playing || gridEntity is not Unit unit) return;
+    if (!IsActive || !playing || gridEntity is not Unit unit) return;
     if (IsUnitBehind(unit))
       AddBuff(unit);
   }
@@ -77,8 +77,14 @@ public partial class Guardian : Unit
     }
   }
 
+  // A dead unit stays in the tree until its last floating text is gone, and units on the deck screen are in no battle
+  private bool IsActive => !_dead && _units != null;
+
   private void RefreshBuffs()
   {
+    if (!IsActive)
+      return;
+
     // Remove buffs from units no longer behind
     List<Unit> unitsToBeRemoved = new List<Unit>();
     foreach (Unit unit in _buffedUnits)
@@ -108,6 +114,7 @@ public partial class Guardian : Unit
     {
       RemoveBuff(unit);
     }
+    _buffedUnits.Clear();
   }
 
   public override void _ExitTree()
@@ -117,6 +124,7 @@ public partial class Guardian : Unit
       _globalSignals.GridEntitySpawned -= OnUnitSpawned;
       _globalSignals.GridEntityMoved -= OnUnitMoved;
       _globalSignals.SizeChanged -= OnUnitSizeChanged;
+      _globalSignals.SideChanged -= OnUnitSideChanged;
     }
   }
 

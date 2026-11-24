@@ -15,6 +15,9 @@
 [ext_resource type="Script" uid="uid://dngmuh4qb5wn1" path="res://scripts/PropsInfoGui.cs" id="9_nrtoj"]
 [ext_resource type="Script" path="res://scripts/BoardFrame.cs" id="board_frame"]
 [ext_resource type="Script" path="res://scripts/UnitOutlines.cs" id="unit_outlines"]
+[ext_resource type="Script" path="res://scripts/world/WorldMap.cs" id="world_map"]
+[ext_resource type="Script" path="res://scripts/world/MessagePopup.cs" id="message_popup"]
+[ext_resource type="Script" path="res://scripts/world/BattleStats.cs" id="battle_stats"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -734,21 +737,6 @@ offset_right = 1132.0
 offset_bottom = 632.0
 theme_override_constants/separation = 14
 
-[node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 6
-
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/LevelCounter"]
-layout_mode = 2
-theme_type_variation = &"MutedLabel"
-text = "Level"
-
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/LevelCounter"]
-layout_mode = 2
-theme_type_variation = &"ValueLabel"
-text = "1"
-
 [node name="UnitCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
 theme_override_constants/separation = 6
@@ -877,6 +865,7 @@ vertical_scroll_mode = 3
 [node name="WorldUi" type="Panel" parent="CanvasLayer/ScrollContainer"]
 layout_mode = 2
 theme_override_styles/panel = SubResource("EmptyBox")
+script = ExtResource("world_map")
 
 [node name="Dimmer" type="ColorRect" parent="CanvasLayer"]
 offset_left = 0.0
@@ -899,6 +888,7 @@ theme_override_constants/separation = 10
 visible = false
 layout_mode = 2
 theme_type_variation = &"ModalPanel"
+script = ExtResource("message_popup")
 
 [node name="MessageContainer" type="VBoxContainer" parent="CanvasLayer/Results/MessagePanel"]
 layout_mode = 2
@@ -918,6 +908,7 @@ theme_override_constants/separation = 10
 [node name="GameStats" type="PanelContainer" parent="CanvasLayer/Results"]
 visible = false
 layout_mode = 2
+script = ExtResource("battle_stats")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Results/GameStats"]
 layout_mode = 2

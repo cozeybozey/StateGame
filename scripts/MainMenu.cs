@@ -192,7 +192,7 @@ public partial class MainMenu : Control
 
     // Save levels
     var levelsData = new Godot.Collections.Dictionary();
-    foreach (var level in _world.Levels)
+    foreach (var level in _world.Map.Levels)
     {
       var unitGrids = new Godot.Collections.Array();
       var terrainGrids = new Godot.Collections.Array();
@@ -279,11 +279,11 @@ public partial class MainMenu : Control
     saveData["levels"] = levelsData;
 
     var amountOfNodesPerLayerPerSection = new Godot.Collections.Array();
-    for (int layer = 0; layer < _world.AmountOfNodesPerLayerPerSection.GetLength(0); layer++)
+    for (int layer = 0; layer < _world.Map.NodesPerLayer.GetLength(0); layer++)
     {
       var sectionArray = new Godot.Collections.Array();
-      for (int section = 0; section < _world.AmountOfNodesPerLayerPerSection.GetLength(1); section++)
-        sectionArray.Add(_world.AmountOfNodesPerLayerPerSection[layer, section]);
+      for (int section = 0; section < _world.Map.NodesPerLayer.GetLength(1); section++)
+        sectionArray.Add(_world.Map.NodesPerLayer[layer, section]);
       amountOfNodesPerLayerPerSection.Add(sectionArray);
     }
     saveData["amountOfNodesPerLayerPerSection"] = amountOfNodesPerLayerPerSection;
@@ -344,7 +344,7 @@ public partial class MainMenu : Control
 
     // Load levels
     var levelsData = saveData["levels"].AsGodotDictionary();
-    _world.Levels.Clear();
+    _world.Map.Levels.Clear();
 
     foreach (var levelKey in levelsData.Keys)
     {
@@ -407,7 +407,7 @@ public partial class MainMenu : Control
         props.Add(grid);
       }
 
-      _world.Levels[levelId] = new LevelInfo(
+      _world.Map.Levels[levelId] = new LevelInfo(
           id: levelId,
           name: levelData["name"].AsString(),
           completed: levelData["completed"].AsBool(),
@@ -431,7 +431,7 @@ public partial class MainMenu : Control
     {
       var sectionArray = amountOfNodesPerLayerPerSection[layer].AsGodotArray();
       for (int section = 0; section < sectionArray.Count; section++)
-        _world.AmountOfNodesPerLayerPerSection[layer, section] = sectionArray[section].AsInt32();
+        _world.Map.NodesPerLayer[layer, section] = sectionArray[section].AsInt32();
     }
 
     _world.UpdateCoins(saveData["coins"].AsInt32());
