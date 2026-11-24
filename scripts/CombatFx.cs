@@ -11,14 +11,15 @@ public partial class CombatFx : Node2D
 
   // Real-time multiplier for fx durations. World sets it from the game speed (1 / sqrt(speed), clamped to 0.2..1.4).
   public float TimeScale = 1.0f;
+  public float GameSpeed = 1.0f;
 
   // Above this many targets, draw a single line to the centroid instead of one per cell.
   private const int MaxIndividualLines = 3;
 
-  private static readonly Color PlayerColor = new Color(0.35f, 0.75f, 1.0f);
-  private static readonly Color EnemyColor = new Color(1.0f, 0.4f, 0.3f);
-  private static readonly Color SupportColor = new Color(0.4f, 1.0f, 0.45f);
-  private static readonly Color NeutralColor = new Color(0.95f, 0.95f, 0.95f);
+  private static readonly Color PlayerColor = GamePalette.Player.Lightened(0.25f);
+  private static readonly Color EnemyColor = GamePalette.Enemy;
+  private static readonly Color SupportColor = GamePalette.Support;
+  private static readonly Color NeutralColor = GamePalette.Neutral;
 
   public override void _EnterTree()
   {
@@ -73,6 +74,20 @@ public partial class CombatFx : Node2D
   public void ShowStrike(Unit source, List<Vector2I> targets, Color color, Unit[,]? unitsGrid)
   {
     SpawnEffect(source, targets, color, unitsGrid, lineWidth: 3.0f, lineAlpha: 0.95f, cellAlpha: 0.35f, holdTime: 0.12f, fadeTime: 0.3f);
+  }
+
+  // Copy of a dying entity's sprite that shrinks and fades while moving by `drift`
+  public void ShowDeath(Sprite2D sprite, Vector2 visualOffset, Vector2 drift)
+  {
+    Sprite2D ghost = new Sprite2D { Texture = sprite.Texture, Scale = sprite.Scale };
+    AddChild(ghost);
+    ghost.GlobalPosition = sprite.GlobalPosition + visualOffset;
+    Tween tween = ghost.CreateTween().SetParallel();
+    tween.TweenProperty(ghost, "scale", sprite.Scale * 0.3f, 0.35f * TimeScale).SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Back);
+    tween.TweenProperty(ghost, "modulate", new Color(1.6f, 0.5f, 0.4f, 0.0f), 0.35f * TimeScale);
+    if (drift != Vector2.Zero)
+      tween.TweenProperty(ghost, "global_position", ghost.GlobalPosition + drift, 0.2f * TimeScale).SetEase(Tween.EaseType.In).SetTrans(Tween.TransitionType.Quad);
+    tween.Chain().TweenCallback(Callable.From(ghost.QueueFree));
   }
 
   public void ClearTelegraph(Node2D? telegraph)

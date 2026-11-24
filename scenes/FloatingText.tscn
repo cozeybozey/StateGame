@@ -3,6 +3,14 @@
 [ext_resource type="Script" uid="uid://fbmgojrslv63" path="res://scripts/utils/FloatingText.cs" id="1_iwtc3"]
 
 [node name="FloatingText" type="Label" unique_id=250399791]
+z_index = 60
 offset_right = 40.0
-offset_bottom = 23.0
+offset_bottom = 20.0
+mouse_filter = 2
+theme_type_variation = &"ValueLabel"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.04, 0.045, 0.07, 0.9)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
 script = ExtResource("1_iwtc3")

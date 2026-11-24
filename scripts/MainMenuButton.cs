@@ -3,12 +3,12 @@ using System;
 
 public partial class MainMenuButton : Button
 {
-  private Panel _mainMenu;
+  private PanelContainer _mainMenu;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    _mainMenu = GetTree().CurrentScene.GetNode<Panel>("CanvasLayer/Menus/MainMenu");
+    _mainMenu = GetTree().CurrentScene.GetNode<PanelContainer>("CanvasLayer/Menus/MainMenu");
     Pressed += OnButtonPressed;
   }
 

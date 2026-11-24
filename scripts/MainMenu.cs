@@ -6,43 +6,45 @@ using System.Text.RegularExpressions;
 
 public partial class MainMenu : Control
 {
-  private Panel _mainMenuPanel;
+  private PanelContainer _mainMenuPanel;
   private Button _optionsButton;
   private Button _saveGameButton;
   private Button _loadGameButton;
   private Button _quitGameButton;
   private Button _closeButton;
 
-  private Panel _saveGamePanel;
+  private PanelContainer _saveGamePanel;
   private LineEdit _saveName;
   private Button _confirmSaveButton;
   private Button _cancelSaveButton;
 
-  private Panel _saveGamesPanel;
+  private PanelContainer _saveGamesPanel;
   private VBoxContainer _saveGames;
   private Label _saveGamesLabel;
   private Button _cancelSaveGamesButton;
 
+  private ColorRect _dimmer;
   private DecksHandler _decksHandler;
   private World _world;
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    _mainMenuPanel = GetNode<Panel>("MainMenu");
+    _dimmer = GetNode<ColorRect>("Dimmer");
+    _mainMenuPanel = GetNode<PanelContainer>("MainMenu");
     _optionsButton = GetNode<Button>("MainMenu/Buttons/OptionsButton");
     _saveGameButton = GetNode<Button>("MainMenu/Buttons/SaveGameButton");
     _loadGameButton = GetNode<Button>("MainMenu/Buttons/LoadGameButton");
     _quitGameButton = GetNode<Button>("MainMenu/Buttons/QuitGameButton");
     _closeButton = GetNode<Button>("MainMenu/Buttons/CloseButton");
 
-    _saveGamePanel = GetNode<Panel>("SaveGamePanel");
+    _saveGamePanel = GetNode<PanelContainer>("SaveGamePanel");
     _saveName = GetNode<LineEdit>("SaveGamePanel/VBoxContainer/SaveName");
     _confirmSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Confirm");
     _cancelSaveButton = GetNode<Button>("SaveGamePanel/VBoxContainer/Buttons/Cancel");
 
-    _saveGamesPanel = GetNode<Panel>("SaveGamesPanel");
-    _saveGames = GetNode<VBoxContainer>("SaveGamesPanel/VBoxContainer/SaveGames");
+    _saveGamesPanel = GetNode<PanelContainer>("SaveGamesPanel");
+    _saveGames = GetNode<VBoxContainer>("SaveGamesPanel/VBoxContainer/ScrollContainer/SaveGames");
     _saveGamesLabel = GetNode<Label>("SaveGamesPanel/VBoxContainer/Label");
     _cancelSaveGamesButton = GetNode<Button>("SaveGamesPanel/VBoxContainer/Cancel");
 
@@ -63,6 +65,7 @@ public partial class MainMenu : Control
   // Called every frame. 'delta' is the elapsed time since the previous frame.
   public override void _Process(double delta)
   {
+    _dimmer.Visible = _mainMenuPanel.Visible || _saveGamesPanel.Visible || _saveGamePanel.Visible;
   }
 
   private void OnOptionsButtonPressed()
@@ -78,12 +81,14 @@ public partial class MainMenu : Control
     _saveGamesPanel.Show();
     Button button = new();
     button.Text = "New save...";
+    button.CustomMinimumSize = new Vector2(0, 36);
     button.Pressed += () => OnNewSaveGameButtonPressed();
     _saveGames.AddChild(button);
   }
 
   private void OnNewSaveGameButtonPressed()
   {
+    _saveGamesPanel.Hide();
     _saveGamePanel.Show();
     _saveName.GrabFocus();
   }
@@ -120,6 +125,7 @@ public partial class MainMenu : Control
         string captured = fileName;
         Button button = new();
         button.Text = fileName.Replace(".json", "");
+        button.CustomMinimumSize = new Vector2(0, 36);
         button.Pressed += () => OnSaveFileSelected(captured, forSaving);
         _saveGames.AddChild(button);
       }

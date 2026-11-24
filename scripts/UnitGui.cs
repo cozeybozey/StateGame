@@ -25,24 +25,16 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 
     _sprite.Texture = Info.Texture;
 		_nameText.Text = Info.Name;
-		_amountText.Text = Amount.ToString();
+    _nameText.AddThemeColorOverride("font_color", GamePalette.Rarity(Info.Rarity));
+    MouseEntered += QueueRedraw;
+    MouseExited += QueueRedraw;
+    ShowAmount();
 	}
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
 		if (!Draggable || Amount <= 0)
 			return default;
-
-		if (_sprite != null)
-		{
-			var preview = new TextureRect();
-			preview.Texture = _sprite.Texture;
-			preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
-			preview.CustomMinimumSize = new Vector2(32, 32);
-			preview.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-
-			SetDragPreview(preview);
-		}
 
 		return new DragPayload(Info, this, null);
 	}
@@ -62,9 +54,23 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
     UpdateAmount(Amount - 1);
 	}
 
+  // Rows you can drag from fade out once none are left to place
+  private void ShowAmount()
+  {
+    _amountText.Text = $"x{Amount}";
+    Modulate = Draggable && Amount <= 0 ? new Color(1, 1, 1, 0.55f) : Colors.White;
+  }
+
+  public override void _Draw()
+  {
+    Rect2 row = new Rect2(Vector2.Zero, Size);
+    if (row.HasPoint(GetLocalMousePosition()))
+      DrawStyleBox(GamePalette.Box(GamePalette.PanelLight, GamePalette.Border), row);
+  }
+
 	public void UpdateAmount(int newAmount)
 	{
 		Amount = newAmount;
-		_amountText.Text = Amount.ToString();
+    ShowAmount();
   }
 }

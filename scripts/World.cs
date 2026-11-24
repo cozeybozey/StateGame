@@ -22,16 +22,16 @@ public partial class World : Node2D
   private Label _levelCounter;
   private Label _turnCounter;
   private Label _coinsCounter;
-  private Panel _messagePanel;
-  private RichTextLabel _message;
+  private PanelContainer _messagePanel;
+  private ColorRect _dimmer;
+  private Label _message;
   private HBoxContainer _messageResponses;
   private GridOverlay _gridOverlay;
   private GlobalSignals _globalSignals;
   private Node _unitsNode;
   private Node _terrainNode;
   private Node _propsNode;
-  private OverlayLayer _playerSideUnitsLayer;
-  private OverlayLayer _enemySideUnitsLayer;
+  private UnitOutlines _unitOutlines;
   private OverlayLayer _selectedCellsLayer;
   private OverlayLayer _activeUnitLayer;
   private OverlayLayer _targetedCellsLayer;
@@ -92,9 +92,11 @@ public partial class World : Node2D
   private Button _worldMapButton;
   private int _numLayers = 10;
   private int _maxNodesPerLayer = 8;
-  private int _buttonWidth = 85;
-  private int _buttonHeight = 65;
+  private int _buttonWidth = 84;
+  private int _buttonHeight = 48;
   private LevelInfo _activeLevel = null!;
+  private LevelInfo? _selectedLevel = null;
+  private List<Label> _sectionLabels = new();
   private int _activeGauntletLevelIndex = 0;
   private int _worldUiSpacing = 100;
   private bool _openedWorldOnce = false;
@@ -115,7 +117,7 @@ public partial class World : Node2D
   // Damage and healing tracking
   // Specifically use use C# dict so unit reference does not dissapear when it gets queue freed
   private System.Collections.Generic.Dictionary<Unit, UnitActivity> _unitsActivity = new System.Collections.Generic.Dictionary<Unit, UnitActivity>();
-  private Panel _gameStats;
+  private PanelContainer _gameStats;
   private MenuButton _statisticsButton;
   private PopupMenu _statisticsPopup;
   private VBoxContainer _damageDealtStats;
@@ -129,16 +131,16 @@ public partial class World : Node2D
     _levelCounter = GetNode<Label>("CanvasLayer/BottomUi/LevelCounter/Counter");
     _turnCounter = GetNode<Label>("CanvasLayer/BottomUi/TurnCounter/Counter");
     _coinsCounter = GetNode<Label>("CanvasLayer/BottomUi/CoinsCounter/Counter");
-    _messagePanel = GetNode<Panel>("CanvasLayer/MessagePanel");
-    _message = _messagePanel.GetNode<RichTextLabel>("MessageContainer/Message");
+    _messagePanel = GetNode<PanelContainer>("CanvasLayer/Results/MessagePanel");
+    _dimmer = GetNode<ColorRect>("CanvasLayer/Dimmer");
+    _message = _messagePanel.GetNode<Label>("MessageContainer/Message");
     _messageResponses = _messagePanel.GetNode<HBoxContainer>("MessageContainer/Responses");
     _gridOverlay = GetNode<GridOverlay>("GridOverlay");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
     _unitsNode = GetNode("Units");
     _terrainNode = GetNode("Terrain");
     _propsNode = GetNode("Props");
-    _playerSideUnitsLayer = GetNode<OverlayLayer>("PlayerSideUnitsLayer");
-    _enemySideUnitsLayer = GetNode<OverlayLayer>("EnemySideUnitsLayer");
+    _unitOutlines = GetNode<UnitOutlines>("UnitOutlines");
     _selectedCellsLayer = GetNode<OverlayLayer>("SelectedUnitLayer");
     _activeUnitLayer = GetNode<OverlayLayer>("ActiveUnitLayer");
     _targetedCellsLayer = GetNode<OverlayLayer>("TargetedCellsLayer");
@@ -146,6 +148,7 @@ public partial class World : Node2D
     AddChild(_combatFx);
     _turnTimeline = new TurnTimeline { Name = "TurnTimeline" };
     AddChild(_turnTimeline);
+    AddChild(new UnitDragPreview { Name = "UnitDragPreview" });
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
     _worldMapButton = GetNode<Button>("CanvasLayer/BottomUi/WorldMapButton");
@@ -156,16 +159,15 @@ public partial class World : Node2D
     _quitButton = GetNode<Button>("CanvasLayer/BottomUi/QuitButton");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _levelInfoContainer = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
-    _levelsUntilNextUnlock = GetNode<Label>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo/Value");
+    _levelsUntilNextUnlock = GetNode<Label>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/UnlockInfo/Value");
 
     // Activity UI
-    _gameStats = GetNode<Panel>("CanvasLayer/GameStats");
-    _statisticsButton = GetNode<MenuButton>("CanvasLayer/GameStats/VBoxContainer/StatisticsButton");
-    _damageDealtStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/DamageDealt/VBoxContainer");
-    _damageTakenStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/DamageTaken/VBoxContainer");
-    _healingDoneStats = GetNode<VBoxContainer>("CanvasLayer/GameStats/VBoxContainer/HealingDone/VBoxContainer");
+    _gameStats = GetNode<PanelContainer>("CanvasLayer/Results/GameStats");
+    _statisticsButton = GetNode<MenuButton>("CanvasLayer/Results/GameStats/VBoxContainer/Header/StatisticsButton");
+    _damageDealtStats = GetNode<VBoxContainer>("CanvasLayer/Results/GameStats/VBoxContainer/DamageDealt/VBoxContainer");
+    _damageTakenStats = GetNode<VBoxContainer>("CanvasLayer/Results/GameStats/VBoxContainer/DamageTaken/VBoxContainer");
+    _healingDoneStats = GetNode<VBoxContainer>("CanvasLayer/Results/GameStats/VBoxContainer/HealingDone/VBoxContainer");
 
-    _canvasLayer.Offset = new Vector2I(GlobalConstants.TileSize, GlobalConstants.TileSize);
     _speedPopup = _speedButton.GetPopup();
     _speedPopup.IdPressed += OnSpeedSelected;
     _playPauseButton.Pressed += OnPlayPauseButtonPressed;
@@ -188,25 +190,14 @@ public partial class World : Node2D
     _globalSignals.DamageTaken += OnGridEntityDamageTaken;
     _globalSignals.HealingDone += OnGridEntityHealingDone;
     _globalSignals.HealingReceived += OnGridEntityHealingReceived;
-    _globalSignals.SideChanged += OnUnitSideChanged;
     _globalSignals.UnitRemoved += OnUnitRemoved;
     _worldMapButton.Pressed += OnWorldMapPressed;
+    _worldUi.Draw += DrawWorldMap;
+    _worldUi.GuiInput += OnWorldMapInput;
     _statisticsPopup = _statisticsButton.GetPopup();
     _statisticsPopup.IdPressed += OnStatisticSelected;
     _levelInfoContainer.StartLevelPressed += OnStartLevelPressed;
-    _playerSideUnitsLayer.OutlineColor = Colors.Green;
-    _playerSideUnitsLayer.OutlineCells = false;
-    _playerSideUnitsLayer.HighlightCells = true;
-    _playerSideUnitsLayer.HighlightColor = new Color(0, 1, 0, 0.15f);
-    _playerSideUnitsLayer.LineWidth = 2f;
-    _enemySideUnitsLayer.OutlineColor = Colors.Red;
-    _enemySideUnitsLayer.OutlineCells = false;
-    _enemySideUnitsLayer.HighlightCells = true;
-    _enemySideUnitsLayer.HighlightColor = new Color(1, 0, 0, 0.15f);
-    _enemySideUnitsLayer.LineWidth = 2f;
-    _selectedCellsLayer.OutlineColor = Colors.Blue;
-    _selectedCellsLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
-    _selectedCellsLayer.OutlineColor = Colors.Blue;
+    _selectedCellsLayer.OutlineColor = GamePalette.Gold;
     _selectedCellsLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
     _activeUnitLayer.OutlineColor = Colors.Yellow;
     _activeUnitLayer.HighlightColor = new Color(1, 1, 1, 0.15f);
@@ -253,7 +244,10 @@ public partial class World : Node2D
       UpdateTurnOrderPreview();
 
     _turnTimeline.SetData(_units, _unitsGrid, _actionQueue);
-    _turnTimeline.Visible = _units.Count > 0;
+    _turnTimeline.Visible = _units.Count > 0 && !_worldUi.GetParent<ScrollContainer>().Visible;
+    _unitOutlines.SetData(_units);
+    _unitOutlines.Visible = _playing;
+    _dimmer.Visible = _messagePanel.Visible || _gameStats.Visible;
 
     if (_paused)
       return;
@@ -483,15 +477,6 @@ public partial class World : Node2D
     _playPauseButton.Visible = true;
     _surrenderButton.Visible = true;
     _gridOverlay.SetInteractionLocked(true);
-
-    // Show units side
-    foreach (Unit unit in _units)
-    {
-      if (unit.Side)
-        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-      else
-        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
-    }
 
     // Copy units to create a list of units that are going to act this turn
     _unitsToAct = [.. _units];
@@ -923,8 +908,6 @@ public partial class World : Node2D
     _targetedCellsLayer.Clear();
     _turnEndDamage = 1;
     _levelUnits.Clear();
-    _playerSideUnitsLayer.Clear();
-    _enemySideUnitsLayer.Clear();
     if (reloadLevel)
       _decksHandler.ReloadAfterLevel(_playerUnitsGridBeforeLevel);
     else
@@ -944,6 +927,8 @@ public partial class World : Node2D
     if (!_playing || _gameEnd)
       return;
     _gameEnd = true;
+    _playPauseButton.Visible = false;
+    _surrenderButton.Visible = false;
 
     ShowGameStats();
 
@@ -953,11 +938,7 @@ public partial class World : Node2D
       string levelText = levelsLeft > 1 ? "levels" : "level";
       _message.Text = $"You won level {_activeGauntletLevelIndex + 1} of the gauntlet.\n{levelsLeft} more {levelText} to go.";
       _activeGauntletLevelIndex++;
-      Button btn = new Button();
-      btn.Text = "Next level";
-      btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-      btn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-      btn.CustomMinimumSize = new Vector2I(150, 50);
+      Button btn = UiHelpers.MakeButton("Next level", primary: true);
       btn.Pressed += OnNextGauntletLevelButtonPressed;
       _messageResponses.AddChild(btn);
       _messagePanel.Show();
@@ -975,7 +956,7 @@ public partial class World : Node2D
     }
 
     _activeGauntletLevelIndex = 0;
-    _message.Text = "You Win!\nChoose your reward:";
+    _message.Text = "Victory! Choose your reward";
     _level += 1;
     ShowRewards(_activeLevel.Rewards);
     _messagePanel.Show();
@@ -994,14 +975,7 @@ public partial class World : Node2D
           _gridOverlay.IncreaseUnitCount(1);
       }
 
-      // Set button to green to indicate it has been completed
-      Color color = Colors.LightGreen;
-      StyleBoxFlat style = GetRewardButtonStyle(color);
-      StyleBoxFlat stylePressed = GetRewardButtonStyle(color.Darkened(0.2f));
-      StyleBoxFlat styleHover = GetRewardButtonStyle(color.Lightened(0.2f));
-      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("normal", style);
-      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("pressed", stylePressed);
-      _levelButtons[_activeLevel.Id].AddThemeStyleboxOverride("hover", styleHover);
+      StyleLevelButton(_activeLevel);
 
       foreach (string nextNodeId in _activeLevel.NextNodes)
       {
@@ -1011,19 +985,9 @@ public partial class World : Node2D
           _levelButtons[nextNodeId].Visible = true;
         }
 
-        // Connect lines to next levels
-        LevelInfo nextLevel = Levels[nextNodeId];
-
-        Vector2 fromCenter = GetLevelButtonPosition(_activeLevel.Layer, _activeLevel.LayerIndex, AmountOfNodesPerLayerPerSection[_activeLevel.Layer, _activeLevel.LevelSection], _activeLevel.LevelSection);
-        Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
-
-        Line2D line = new();
-        line.Points = new Vector2[] { fromCenter, toCenter };
-        line.Width = 2.0f;
-        line.DefaultColor = new Color(1, 1, 1, 0.8f);
-        _worldUi.AddChild(line);
-        _worldUi.MoveChild(line, 0); // Make sure lines appear behind buttons
+        AddLevelConnection(_activeLevel, Levels[nextNodeId]);
       }
+      PlaceSectionLabels();
     }
   }
 
@@ -1032,11 +996,11 @@ public partial class World : Node2D
     if (!_playing || _gameEnd)
       return;
     _gameEnd = true;
-    _message.Text = "You Lose...";
+    _playPauseButton.Visible = false;
+    _surrenderButton.Visible = false;
+    _message.Text = "Defeat";
 
-    Button btn = new Button();
-    btn.Text = "Return";
-    btn.SizeFlagsVertical = SizeFlags.ExpandFill;
+    Button btn = UiHelpers.MakeButton("Try again", primary: true);
     btn.Pressed += () => OnReturnButtonPressed();
     _messageResponses.AddChild(btn);
     _messagePanel.Show();
@@ -1067,14 +1031,18 @@ public partial class World : Node2D
 
     VBoxContainer vbox = new();
     vbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-    vbox.SizeFlagsVertical = SizeFlags.ExpandFill;
+    vbox.AddThemeConstantOverride("separation", 12);
     _messageResponses.AddChild(vbox);
 
     HBoxContainer hbox = new();
-    hbox.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-    hbox.SizeFlagsVertical = SizeFlags.ExpandFill;
     hbox.Alignment = BoxContainer.AlignmentMode.Center;
+    hbox.AddThemeConstantOverride("separation", 10);
     vbox.AddChild(hbox);
+
+    // Confirming only makes sense once a reward is picked
+    Button confirmBtn = UiHelpers.MakeButton("Take reward", primary: true);
+    confirmBtn.Disabled = true;
+    confirmBtn.Pressed += OnConfirmRewardPressed;
 
     List<Button> rewardButtons = new();
 
@@ -1084,69 +1052,31 @@ public partial class World : Node2D
       btn.Text = unitInfo.Name;
       btn.Icon = unitInfo.Texture;
       btn.IconAlignment = HorizontalAlignment.Center;
-      btn.VerticalIconAlignment = VerticalAlignment.Bottom;
+      btn.VerticalIconAlignment = VerticalAlignment.Top;
       btn.ExpandIcon = true;
-      btn.SizeFlagsVertical = SizeFlags.ExpandFill;
+      btn.ClipText = true;
+      btn.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+      btn.TooltipText = unitInfo.Description;
+      btn.CustomMinimumSize = new Vector2(132, 108);
+      btn.AddThemeConstantOverride("icon_max_width", 64);
 
-      Color rarityColor = GetRarityColor(unitInfo.Rarity);
-      btn.AddThemeStyleboxOverride("normal", GetRewardButtonStyle(rarityColor));
-      btn.AddThemeStyleboxOverride("pressed", GetRewardButtonStyle(rarityColor.Darkened(0.2f)));
-      btn.AddThemeStyleboxOverride("hover", GetRewardButtonStyle(rarityColor.Lightened(0.2f)));
+      Color rarityColor = GamePalette.Rarity(unitInfo.Rarity);
+      btn.AddThemeColorOverride("font_color", rarityColor);
+      btn.AddThemeStyleboxOverride("normal", GamePalette.Box(GamePalette.PanelLight, new Color(rarityColor, 0.6f), 2, 8, 10, 10));
+      btn.AddThemeStyleboxOverride("hover", GamePalette.Box(GamePalette.PanelLight.Lightened(0.1f), rarityColor, 2, 8, 10, 10));
+      btn.AddThemeStyleboxOverride("pressed", GamePalette.Box(GamePalette.Panel, rarityColor, 2, 8, 10, 10));
 
-      btn.Pressed += () => OnRewardButtonSelected(unitInfo, btn, rewardButtons);
+      btn.Pressed += () =>
+      {
+        OnRewardButtonSelected(unitInfo, btn, rewardButtons);
+        confirmBtn.Disabled = false;
+      };
 
       rewardButtons.Add(btn);
       hbox.AddChild(btn);
     }
 
-    // Add confirm button
-    Button confirmBtn = new();
-    confirmBtn.Text = "Confirm";
-    confirmBtn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-    confirmBtn.CustomMinimumSize = new Vector2I(150, 0);
-    confirmBtn.Pressed += OnConfirmRewardPressed;
     vbox.AddChild(confirmBtn);
-  }
-
-  private StyleBoxFlat GetRewardButtonStyle(Color rarityColor)
-  {
-    StyleBoxFlat style = new();
-    style.BgColor = rarityColor;
-    style.CornerRadiusTopLeft = 6;
-    style.CornerRadiusTopRight = 6;
-    style.CornerRadiusBottomLeft = 6;
-    style.CornerRadiusBottomRight = 6;
-    style.ContentMarginLeft = 8;
-    style.ContentMarginRight = 8;
-    style.ContentMarginTop = 4;
-    style.ContentMarginBottom = 4;
-
-    return style;
-  }
-
-  private Color GetRarityColor(string rarity)
-  {
-    Color rarityColor;
-    switch (rarity)
-    {
-      case "common":
-        rarityColor = new Color("424040");
-        break;
-      case "rare":
-        rarityColor = new Color("1f08c9");
-        break;
-      case "epic":
-        rarityColor = new Color("8207ab");
-        break;
-      case "legendary":
-        rarityColor = new Color("cf8621");
-        break;
-      default:
-        rarityColor = new Color("424040");
-        break;
-    }
-
-    return rarityColor;
   }
 
   private void OnGridEntityDied(GridEntity gridEntity)
@@ -1196,15 +1126,7 @@ public partial class World : Node2D
       _selectedCellsLayer.Clear();
     }
 
-    if (_playing)
-    {
-      // Update unit side layers
-      if (unit.Side)
-        _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
-      else
-        _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
-    }
-    else
+    if (!_playing)
     {
       // Remove units from unit activity that were removed outside of playing
       _unitsActivity.Remove(unit);
@@ -1255,21 +1177,7 @@ public partial class World : Node2D
         _unitsGrid[cell.X, cell.Y] = unit;
       }
 
-      // Update unit side layers
-      if (_playing)
-      {
-        if (unit.Side)
-        {
-          _playerSideUnitsLayer.RemoveCells(removedCells);
-          _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-        }
-        else
-        {
-          _enemySideUnitsLayer.RemoveCells(removedCells);
-          _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
-        }
-      }
-      else
+      if (!_playing)
       {
         foreach (Vector2I cell in removedCells)
         {
@@ -1343,12 +1251,6 @@ public partial class World : Node2D
       if (_playing)
       {
         _unitsToAct.Add(unit);
-
-        // Update unit side layers
-        if (unit.Side)
-          _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-        else
-          _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
       }
 
       if (unit.Side)
@@ -1394,18 +1296,6 @@ public partial class World : Node2D
         _selectedCellsLayer.ShowCells(unit.GetOccupiedCells());
         _infoGui.SetSelectedInfo(unit, _terrainGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y],
           _propsGrid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y], unit.OccupiedMainCell);
-      }
-
-      // Update unit side layers
-      if (unit.Side)
-      {
-        _playerSideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
-        _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-      }
-      else
-      {
-        _enemySideUnitsLayer.RemoveCells([.. oldOccupiedCells]);
-        _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
       }
 
       foreach (Vector2I cell in oldOccupiedCells)
@@ -1463,21 +1353,6 @@ public partial class World : Node2D
         SortUnits(_units);
         _turnOrderDirty = true;
       }
-    }
-  }
-
-  private void OnUnitSideChanged(Unit unit)
-  {
-    // Update unit side layers
-    if (unit.Side)
-    {
-      _enemySideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
-      _playerSideUnitsLayer.AddCells(unit.GetOccupiedCells());
-    }
-    else
-    {
-      _playerSideUnitsLayer.RemoveCells(unit.GetOccupiedCells());
-      _enemySideUnitsLayer.AddCells(unit.GetOccupiedCells());
     }
   }
 
@@ -1559,6 +1434,7 @@ public partial class World : Node2D
     }
     _speedButton.Text = "Speed: " + _speedPopup.GetItemText((int)id);
     // Visual effects shrink with game speed, but not fully, so they stay visible at high speeds
+    _combatFx.GameSpeed = (float)_speed;
     _combatFx.TimeScale = (float)Mathf.Clamp(1.0 / Mathf.Sqrt(_speed), 0.2, 1.4);
   }
 
@@ -1965,18 +1841,7 @@ public partial class World : Node2D
         {
           foreach (string nextNodeId in levelNode.NextNodes)
           {
-            // Connect lines to next levels
-            LevelInfo nextLevel = Levels[nextNodeId];
-
-            Vector2 fromCenter = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerSection[levelNode.Layer, levelNode.LevelSection], levelNode.LevelSection);
-            Vector2 toCenter = GetLevelButtonPosition(nextLevel.Layer, nextLevel.LayerIndex, AmountOfNodesPerLayerPerSection[nextLevel.Layer, nextLevel.LevelSection], nextLevel.LevelSection);
-
-            Line2D line = new();
-            line.Points = new Vector2[] { fromCenter, toCenter };
-            line.Width = 2.0f;
-            line.DefaultColor = new Color(1, 1, 1, 0.8f);
-            _worldUi.AddChild(line);
-            _worldUi.MoveChild(line, 0); // Make sure lines appear behind buttons
+            AddLevelConnection(levelNode, Levels[nextNodeId]);
           }
 
           _completedLevels++;
@@ -1984,6 +1849,7 @@ public partial class World : Node2D
       }
     }
 
+    AddSectionLabels();
     _gridOverlay.IncreaseUnitCount(Mathf.FloorToInt(_completedLevels * 0.2f));
   }
 
@@ -1993,25 +1859,123 @@ public partial class World : Node2D
     Vector2 buttonPos = GetLevelButtonPosition(levelNode.Layer, levelNode.LayerIndex, AmountOfNodesPerLayerPerSection[levelNode.Layer, levelNode.LevelSection], levelNode.LevelSection);
 
     Button button = new();
-    button.Text = levelNode.Name;
+    button.Text = GetLevelButtonText(levelNode);
     button.Visible = levelNode.Unlocked;
     button.CustomMinimumSize = buttonSize;
     button.Position = buttonPos - buttonSize / 2.0f; // center the button on the position
+    button.AddThemeFontSizeOverride("font_size", 13);
     button.Pressed += () => OnLevelSelected(levelNode);
 
-    if (levelNode.Completed)
+    _levelButtons[levelNode.Id] = button;
+    StyleLevelButton(levelNode);
+    _worldUi.AddChild(button);
+  }
+
+  // Map nodes only have room for a short name; the full one is in the level panel
+  private string GetLevelButtonText(LevelInfo level)
+  {
+    if (level.Layer == 0)
+      return "Start";
+    if (level.Boss)
+      return $"BOSS\n{level.Name}";
+    string number = $"{level.Layer + 1}-{level.LayerIndex + 1}";
+    return level.Gauntlet ? $"Gauntlet\n{number}" : number;
+  }
+
+  // Filled = completed, outlined in the section's color = open. Bosses are red, gauntlets have a thick border.
+  private void StyleLevelButton(LevelInfo level)
+  {
+    Button button = _levelButtons[level.Id];
+    Color color = level.Layer == 0 ? GamePalette.Gold : level.Boss ? GamePalette.Enemy : GamePalette.Section(level.LevelSection);
+    bool selected = level == _selectedLevel;
+    int borderWidth = level.Boss || level.Gauntlet ? 4 : 2;
+    Color background = level.Completed ? GamePalette.Panel.Lerp(color, 0.45f) : GamePalette.Panel.Lerp(color, 0.1f);
+    Color border = selected ? Colors.White : level.Completed ? new Color(color, 0.6f) : color;
+
+    button.AddThemeColorOverride("font_color", level.Completed ? GamePalette.Text : color.Lightened(0.3f));
+    button.AddThemeStyleboxOverride("normal", GamePalette.Box(background, border, borderWidth, 14));
+    button.AddThemeStyleboxOverride("hover", GamePalette.Box(background.Lightened(0.12f), Colors.White, borderWidth, 14));
+    button.AddThemeStyleboxOverride("pressed", GamePalette.Box(background.Darkened(0.2f), Colors.White, borderWidth, 14));
+  }
+
+  private void AddLevelConnection(LevelInfo from, LevelInfo to)
+  {
+    Line2D line = new();
+    line.Points = new Vector2[]
     {
-      Color color = Colors.LightGreen;
-      StyleBoxFlat style = GetRewardButtonStyle(color);
-      StyleBoxFlat stylePressed = GetRewardButtonStyle(color.Darkened(0.2f));
-      StyleBoxFlat styleHover = GetRewardButtonStyle(color.Lightened(0.2f));
-      button.AddThemeStyleboxOverride("normal", style);
-      button.AddThemeStyleboxOverride("pressed", stylePressed);
-      button.AddThemeStyleboxOverride("hover", styleHover);
+      GetLevelButtonPosition(from.Layer, from.LayerIndex, AmountOfNodesPerLayerPerSection[from.Layer, from.LevelSection], from.LevelSection),
+      GetLevelButtonPosition(to.Layer, to.LayerIndex, AmountOfNodesPerLayerPerSection[to.Layer, to.LevelSection], to.LevelSection),
+    };
+    line.Width = 3.0f;
+    line.Antialiased = true;
+    line.DefaultColor = new Color(GamePalette.Section(to.LevelSection), 0.6f);
+    _worldUi.AddChild(line);
+    _worldUi.MoveChild(line, 0); // Make sure lines appear behind buttons
+  }
+
+  private void AddSectionLabels()
+  {
+    _sectionLabels.Clear();
+    for (int section = 0; section < _numLevelSections; section++)
+    {
+      Label label = new Label
+      {
+        Text = _levelSections[section].ToUpper(),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        MouseFilter = MouseFilterEnum.Ignore,
+        ThemeTypeVariation = "ValueLabel",
+      };
+      label.AddThemeColorOverride("font_color", GamePalette.Section(section));
+      label.AddThemeFontSizeOverride("font_size", 13);
+      label.AddThemeStyleboxOverride("normal", GamePalette.Box(GamePalette.Background, new Color(GamePalette.Section(section), 0.35f), 1, 10, 10, 2));
+      _worldUi.AddChild(label);
+      _sectionLabels.Add(label);
+    }
+    PlaceSectionLabels();
+  }
+
+  // A name is centered in its section on the first ring, and moves just above the section's first level once that is open
+  private void PlaceSectionLabels()
+  {
+    for (int section = 0; section < _sectionLabels.Count; section++)
+    {
+      Label label = _sectionLabels[section];
+      float angle = section * (Mathf.Tau / _numLevelSections) - Mathf.Pi / 2.0f;
+      Vector2 center = _worldCenter + Vector2.FromAngle(angle) * _ringSpacing;
+      if (Levels.Values.Any(l => l.Layer == 1 && l.LevelSection == section && l.Unlocked))
+        center.Y -= _buttonHeight / 2.0f + 16;
+      label.Position = center - label.GetCombinedMinimumSize() / 2;
+    }
+  }
+
+  // Map backdrop: a tinted wedge per section, and a ring per layer
+  private void DrawWorldMap()
+  {
+    float radius = (_numLayers - 0.5f) * _ringSpacing;
+    float half = Mathf.Tau / _numLevelSections / 2.0f;
+
+    for (int section = 0; section < _numLevelSections; section++)
+    {
+      float angle = section * (Mathf.Tau / _numLevelSections) - Mathf.Pi / 2.0f;
+      List<Vector2> wedge = [_worldCenter];
+      for (int i = 0; i <= 24; i++)
+        wedge.Add(_worldCenter + Vector2.FromAngle(angle - half + 2 * half * i / 24.0f) * radius);
+      _worldUi.DrawColoredPolygon(wedge.ToArray(), new Color(GamePalette.Section(section), 0.06f));
     }
 
-    _levelButtons[levelNode.Id] = button;
-    _worldUi.AddChild(button);
+    for (int layer = 1; layer < _numLayers; layer++)
+      _worldUi.DrawArc(_worldCenter, layer * _ringSpacing, 0, Mathf.Tau, 128, new Color(GamePalette.Border, 0.35f), 1.0f, true);
+  }
+
+  // Drag anywhere on the map to pan it
+  private void OnWorldMapInput(InputEvent @event)
+  {
+    if (@event is InputEventMouseMotion motion && motion.ButtonMask.HasFlag(MouseButtonMask.Left))
+    {
+      ScrollContainer scroll = _worldUi.GetParent<ScrollContainer>();
+      scroll.ScrollHorizontal -= Mathf.RoundToInt(motion.Relative.X);
+      scroll.ScrollVertical -= Mathf.RoundToInt(motion.Relative.Y);
+    }
   }
 
   Vector2 GetLevelButtonPosition(int layer, int layerIndex, int nodesInLayer, int section)
@@ -2044,11 +2008,31 @@ public partial class World : Node2D
 
   private void OnLevelSelected(LevelInfo levelInfo)
   {
+    LevelInfo? previous = _selectedLevel;
+    _selectedLevel = levelInfo;
+    if (previous != null && _levelButtons.ContainsKey(previous.Id))
+      StyleLevelButton(previous);
+    StyleLevelButton(levelInfo);
     _levelInfoContainer.DisplayInfo(levelInfo);
   }
 
   private void OnStartLevelPressed(LevelInfo levelInfo)
   {
+    if (!_decksHandler.HasSelectedDeck)
+    {
+      ClearMessagePanel();
+      _message.Text = "Create or select a deck first, so you have units to fight with.";
+      Button okayBtn = UiHelpers.MakeButton("Okay", primary: true);
+      okayBtn.Pressed += () =>
+      {
+        ClearMessagePanel();
+        _messagePanel.Hide();
+      };
+      _messageResponses.AddChild(okayBtn);
+      _messagePanel.Show();
+      return;
+    }
+
     _levelInfoContainer.Hide();
     _decksHandler.Show();
 
@@ -2061,28 +2045,19 @@ public partial class World : Node2D
       if (Coins >= levelRedoCost)
       {
         _message.Text = $"You have already completed this level. Do you want to repeat the level for {levelRedoCost} coins?";
-        Button yesBtn = new Button();
-        yesBtn.Text = "Yes";
-        yesBtn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        Button yesBtn = UiHelpers.MakeButton("Yes", primary: true);
         yesBtn.Pressed += () => OnRedoConfirmed(levelInfo);
-        yesBtn.CustomMinimumSize = new Vector2I(80, 0);
         _messageResponses.AddChild(yesBtn);
 
-        Button noBtn = new Button();
-        noBtn.Text = "No";
-        noBtn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        Button noBtn = UiHelpers.MakeButton("No");
         noBtn.Pressed += OnRedoCanceled;
-        noBtn.CustomMinimumSize = new Vector2I(80, 0);
         _messageResponses.AddChild(noBtn);
       }
       else
       {
         _message.Text = $"You have already completed this level. You do not have the required {levelRedoCost} coins to repeat this level.";
-        Button btn = new Button();
-        btn.Text = "Okay... :(";
-        btn.SizeFlagsVertical = SizeFlags.ExpandFill;
+        Button btn = UiHelpers.MakeButton("Okay", primary: true);
         btn.Pressed += () => OnRedoCanceled();
-        btn.CustomMinimumSize = new Vector2I(80, 0); 
         _messageResponses.AddChild(btn);
       }
 
@@ -2112,6 +2087,8 @@ public partial class World : Node2D
 
   private void OnRedoCanceled()
   {
+    _decksHandler.Hide();
+    _levelInfoContainer.Show();
     ClearMessagePanel();
     _messagePanel.Hide();
     _worldUi.GetParent<ScrollContainer>().Visible = true;
@@ -2141,12 +2118,14 @@ public partial class World : Node2D
       _worldUi.GetParent<ScrollContainer>().Show();
       _decksHandler.Hide();
       _levelInfoContainer.Show();
+      if (_selectedLevel != null)
+        _levelInfoContainer.DisplayInfo(_selectedLevel);
     }
 
     if (!_openedWorldOnce)
     {
-      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * _ringSpacing - 100));
-      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_horizontal", Mathf.FloorToInt(_numLayers * _ringSpacing - 100));
+      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_vertical", Mathf.FloorToInt(_numLayers * _ringSpacing - 134));
+      _worldUi.GetParent<ScrollContainer>().SetDeferred("scroll_horizontal", Mathf.FloorToInt(_numLayers * _ringSpacing - 134));
       _openedWorldOnce = true;
     }
   }
@@ -2161,6 +2140,8 @@ public partial class World : Node2D
   {
     // This function assumes the Levels variable has already been correctly loaded with new levels
 
+    _selectedLevel = null;
+    _levelInfoContainer.ClearInfo();
     // Clear existing levels
     foreach (var child in _worldUi.GetChildren())
     {
@@ -2179,7 +2160,8 @@ public partial class World : Node2D
         mouse.Pressed)
     {
       Control hovered = GetViewport().GuiGetHoveredControl();
-      if (hovered is Button || hovered is MenuButton)
+      // Only clicks on the board itself change the selection; UI above it handles its own clicks
+      if (hovered != null && hovered != _gridOverlay)
         return;
 
       Vector2 mousePos = mouse.Position;
@@ -2214,7 +2196,7 @@ public partial class World : Node2D
     else
     {
       _paused = true;
-      _playPauseButton.Text = "Play";
+      _playPauseButton.Text = "Resume";
     }
   }
 
@@ -2237,11 +2219,7 @@ public partial class World : Node2D
         {
           ClearMessagePanel();
           _message.Text = "You have units placed on blocking terrain or blocking props. Please move those units before starting the level.";
-          Button btn = new Button();
-          btn.Text = "Okay";
-          btn.SizeFlagsHorizontal = SizeFlags.ShrinkCenter;
-          btn.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-          btn.CustomMinimumSize = new Vector2I(150, 50);
+          Button btn = UiHelpers.MakeButton("Okay", primary: true);
           btn.Pressed += () =>
           {
             ClearMessagePanel();
@@ -2331,18 +2309,16 @@ public partial class World : Node2D
       _turnEndDamage += 1;  // Increase end of turn damage for next turn
     }
 
-    // Possibly respawn zombies
-    RespawnZombies();
-
     // Call turn end function of every unit
     // Use shallow copy to prevent spawned units having their turn end called as well
     foreach (Unit unit in _units.ToList())  
       unit.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
 
-    // Call turn end function of every prop
+    // Board update: dead zombies revive, and every prop's turn end function is called
     // Use shallow copy to prevent spawned props having their turn end called as well
-    if (_turn % 5 == 0) // Only call every 5 turns
+    if (_turn % GlobalConstants.TurnsPerBoardUpdate == 0)
     {
+      RespawnZombies();
       foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
         prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     }
@@ -2360,40 +2336,48 @@ public partial class World : Node2D
     _coinsCounter.Text = Coins.ToString();
   }
 
-  private void AddStatRow(Control container, string unitName, int value, int maxValue, bool side)
+  private void AddStatRow(Control container, Unit unit, int value, int maxValue)
   {
     HBoxContainer row = new();
+    row.AddThemeConstantOverride("separation", 8);
+    row.CustomMinimumSize = new Vector2(0, 26);
 
-    Label nameLabel = new();
-    nameLabel.Text = "  " + unitName;
-    nameLabel.CustomMinimumSize = new Vector2(150, 0);
+    TextureRect icon = new TextureRect
+    {
+      Texture = unit.Texture,
+      CustomMinimumSize = new Vector2(24, 24),
+      ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+      StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+    };
+    row.AddChild(icon);
+
+    Label nameLabel = new Label { Text = unit.DisplayName, CustomMinimumSize = new Vector2(130, 0) };
+    nameLabel.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
     row.AddChild(nameLabel);
 
-    Panel barBackground = new();
-    barBackground.CustomMinimumSize = new Vector2(200, 20);
-    StyleBoxFlat bgStyle = new();
-    bgStyle.BgColor = new Color(0.2f, 0.2f, 0.2f);
-    bgStyle.CornerRadiusTopLeft = bgStyle.CornerRadiusTopRight =
-    bgStyle.CornerRadiusBottomLeft = bgStyle.CornerRadiusBottomRight = 4;
-    barBackground.AddThemeStyleboxOverride("panel", bgStyle);
+    ProgressBar bar = new ProgressBar
+    {
+      MaxValue = Mathf.Max(1, maxValue),
+      Value = value,
+      ShowPercentage = false,
+      CustomMinimumSize = new Vector2(0, 12),
+      SizeFlagsHorizontal = SizeFlags.ExpandFill,
+      SizeFlagsVertical = SizeFlags.ShrinkCenter,
+    };
+    bar.AddThemeStyleboxOverride("background", GamePalette.Box(GamePalette.Background, GamePalette.Background, 0, 4, 0, 0));
+    bar.AddThemeStyleboxOverride("fill", GamePalette.Box(GamePalette.Side(unit.Side), GamePalette.Panel, 0, 4, 0, 0));
+    row.AddChild(bar);
 
-    Panel barFill = new();
-    float fillRatio = maxValue > 0 ? (float)value / maxValue : 0;
-    barFill.CustomMinimumSize = new Vector2(200 * fillRatio, 20);
-    StyleBoxFlat fillStyle = new();
-    fillStyle.BgColor = side ? Colors.LightGreen : Colors.LightSalmon;
-    fillStyle.CornerRadiusTopLeft = fillStyle.CornerRadiusTopRight =
-    fillStyle.CornerRadiusBottomLeft = fillStyle.CornerRadiusBottomRight = 4;
-    barFill.AddThemeStyleboxOverride("panel", fillStyle);
-
-    barBackground.AddChild(barFill);
-    row.AddChild(barBackground);
-
-    Label valueLabel = new();
-    valueLabel.Text = value.ToString();
-    valueLabel.CustomMinimumSize = new Vector2(50, 0);
+    Label valueLabel = new Label
+    {
+      Text = value.ToString(),
+      CustomMinimumSize = new Vector2(44, 0),
+      HorizontalAlignment = HorizontalAlignment.Right,
+      ThemeTypeVariation = "ValueLabel",
+    };
     row.AddChild(valueLabel);
 
+    row.AddChild(new Control { CustomMinimumSize = new Vector2(6, 0) }); // Keeps the value clear of the scrollbar
     container.AddChild(row);
   }
 
@@ -2405,7 +2389,7 @@ public partial class World : Node2D
     int maxDamageDealt = sortedByDamageDealt.FirstOrDefault().Value?.DamageDealth ?? 1;
 
     foreach (var entry in sortedByDamageDealt)
-      AddStatRow(_damageDealtStats, entry.Key.DisplayName, entry.Value.DamageDealth, maxDamageDealt, entry.Key.Side);
+      AddStatRow(_damageDealtStats, entry.Key, entry.Value.DamageDealth, maxDamageDealt);
 
     var sortedByDamageTaken = _unitsActivity
         .OrderByDescending(x => x.Value.DamageTaken)
@@ -2413,7 +2397,7 @@ public partial class World : Node2D
     int maxDamageTaken = sortedByDamageTaken.FirstOrDefault().Value?.DamageTaken ?? 1;
 
     foreach (var entry in sortedByDamageTaken)
-      AddStatRow(_damageTakenStats, entry.Key.DisplayName, entry.Value.DamageTaken, maxDamageTaken, entry.Key.Side);
+      AddStatRow(_damageTakenStats, entry.Key, entry.Value.DamageTaken, maxDamageTaken);
 
     var sortedByHealingDone = _unitsActivity
         .OrderByDescending(x => x.Value.HealingDone)
@@ -2421,7 +2405,7 @@ public partial class World : Node2D
     int maxHealingDone = sortedByHealingDone.FirstOrDefault().Value?.HealingDone ?? 1;
 
     foreach (var entry in sortedByHealingDone)
-      AddStatRow(_healingDoneStats, entry.Key.DisplayName, entry.Value.HealingDone, maxHealingDone, entry.Key.Side);
+      AddStatRow(_healingDoneStats, entry.Key, entry.Value.HealingDone, maxHealingDone);
 
     _gameStats.Show();
   }

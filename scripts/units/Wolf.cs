@@ -5,23 +5,10 @@ using System.Drawing;
 
 public partial class Wolf : Unit
 {
-  private Vector2I? _targetLocation = null;
-
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     if (targets.Count == 0)
       return;
-
-    // Possibly move to cell. If another unit took it during the wind-up, pick a new spot and target now.
-    if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-    {
-      _targetLocation = null;
-      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
-      if (targets.Count == 0)
-        return;
-      if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-        return;
-    }
 
     // Attack target
     Unit targetUnit = unitsGrid[targets[0].X, targets[0].Y];
@@ -37,7 +24,6 @@ public partial class Wolf : Unit
 
       targetUnit.ChangeHealth(-Damage - packBonus, this);
     }
-    _targetLocation = null;
   }
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
@@ -73,7 +59,7 @@ public partial class Wolf : Unit
             Unit unit = unitsGrid[x + cell.X, y + cell.Y];
             if (unit != null && unit.Side != Side)
             {
-              _targetLocation = newCell;
+              _moveTarget = newCell;
               return [newCell + cell];
             }
           }
@@ -98,7 +84,7 @@ public partial class Wolf : Unit
             Unit unit = unitsGrid[x + cell.X, y + cell.Y];
             if (unit != null && unit.Side != Side)
             {
-              _targetLocation = newCell;
+              _moveTarget = newCell;
               return [newCell + cell];
             }
           }

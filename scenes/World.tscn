@@ -13,6 +13,8 @@
 [ext_resource type="Script" uid="uid://dqcxmtgcm80wn" path="res://scripts/TerrainsInfoGui.cs" id="8_7c4bj"]
 [ext_resource type="Script" uid="uid://bx3s4pdwfwle" path="res://scripts/LevelInfoContainer.cs" id="8_pdh0q"]
 [ext_resource type="Script" uid="uid://dngmuh4qb5wn1" path="res://scripts/PropsInfoGui.cs" id="9_nrtoj"]
+[ext_resource type="Script" path="res://scripts/BoardFrame.cs" id="board_frame"]
+[ext_resource type="Script" path="res://scripts/UnitOutlines.cs" id="unit_outlines"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -48,21 +50,6 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_d1c63")
 
-[sub_resource type="Gradient" id="Gradient_hlk0d"]
-offsets = PackedFloat32Array(0)
-colors = PackedColorArray(5.631298e-06, 0.6247566, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_0uv0p"]
-gradient = SubResource("Gradient_hlk0d")
-width = 60
-
-[sub_resource type="Gradient" id="Gradient_b3faq"]
-offsets = PackedFloat32Array(0)
-colors = PackedColorArray(0, 0.9480956, 0, 1)
-
-[sub_resource type="GradientTexture1D" id="GradientTexture1D_ygioq"]
-gradient = SubResource("Gradient_b3faq")
-
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7g83o"]
 texture = ExtResource("1_kqs1s")
 texture_region_size = Vector2i(32, 32)
@@ -84,544 +71,740 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/0 = SubResource("TileSetAtlasSource_7g83o")
 
+[sub_resource type="Gradient" id="BackdropGradient"]
+colors = PackedColorArray(0.114, 0.129, 0.184, 1, 0.05, 0.055, 0.082, 1)
+
+[sub_resource type="GradientTexture2D" id="BackdropTexture"]
+gradient = SubResource("BackdropGradient")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.3)
+fill_to = Vector2(1.1, 1)
+
+[sub_resource type="StyleBoxFlat" id="MapBox"]
+bg_color = Color(0.059, 0.067, 0.098, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.227, 0.259, 0.341, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxEmpty" id="EmptyBox"]
+
 [node name="World" type="Node2D" unique_id=878260971]
 script = ExtResource("1_1lgw5")
 
 [node name="BackgroundLayer" type="TileMapLayer" parent="." unique_id=1575364190]
+visible = false
 tile_map_data = PackedByteArray("AAAAAAAAAQAEAAIAAAAAAAEAAQAEAAIAAAAAAAIAAQAEAAIAAAAAAAMAAQAEAAIAAAAAAAQAAQAEAAIAAAABAAAAAQAEAAIAAAACAAAAAQAEAAIAAAADAAAAAQAEAAIAAAAEAAAAAQAEAAIAAAAFAAAAAQAEAAIAAAAAAAUAAQAEAAIAAAAAAAYAAQAEAAIAAAAAAAcAAQAEAAIAAAAAAAgAAQABAAEAAAAIAAAAAQAEAAIAAAAHAAAAAQAEAAIAAAAGAAAAAQAEAAIAAAAJAAAAAQAEAAIAAAAAAAkAAQABAAEAAAAAAAoAAQABAAEAAAAAAAsAAQABAAEAAAAAAAwAAQABAAEAAAAAAA0AAQABAAEAAAAAAA4AAQABAAEAAAAAAA8AAQABAAEAAAAAABAAAQAEAAEAAAAQAAAAAQAEAAEAAAAPAAAAAQAEAAIAAAAOAAAAAQAEAAIAAAANAAAAAQAEAAIAAAAMAAAAAQAEAAIAAAALAAAAAQAEAAIAAAAKAAAAAQAEAAIAAAAGAAkAAQABAAEAAAAGAAgAAQABAAEAAAAGAAcAAQAEAAIAAAAGAAYAAQAEAAIAAAAGAAUAAQAEAAIAAAAGAAQAAQAEAAIAAAAGAAMAAQAEAAIAAAAGAAIAAQAEAAIAAAAGAAEAAQAEAAIAAAAFAAEAAQAEAAIAAAAEAAEAAQAEAAIAAAADAAEAAQAEAAIAAAACAAEAAQAEAAIAAAABAAEAAQAEAAIAAAABAAIAAQAEAAIAAAABAAMAAQAEAAIAAAABAAQAAQAEAAIAAAABAAUAAQAEAAIAAAABAAYAAQAEAAIAAAABAAcAAQAEAAIAAAABAAgAAQABAAEAAAABAAkAAQABAAEAAAABAAoAAQABAAEAAAABAAsAAQABAAEAAAABAAwAAQABAAEAAAABAA0AAQABAAEAAAABAA4AAQABAAEAAAABAA8AAQABAAEAAAABABAAAQAEAAEAAAACABAAAQAEAAEAAAACAA8AAQABAAEAAAACAA4AAQABAAEAAAACAA0AAQABAAEAAAACAAwAAQABAAEAAAACAAsAAQABAAEAAAACAAoAAQABAAEAAAACAAkAAQABAAEAAAACAAgAAQABAAEAAAACAAcAAQAEAAIAAAACAAYAAQAEAAIAAAACAAUAAQAEAAIAAAACAAQAAQAEAAIAAAACAAMAAQAEAAIAAAACAAIAAQAEAAIAAAADAAIAAQAEAAIAAAADAAMAAQAEAAIAAAADAAQAAQAEAAIAAAADAAUAAQAEAAIAAAADAAYAAQAEAAIAAAADAAcAAQAEAAIAAAADAAgAAQABAAEAAAADAAkAAQABAAEAAAADAAoAAQABAAEAAAADAAsAAQABAAEAAAADAAwAAQABAAEAAAADAA0AAQABAAEAAAADAA4AAQABAAEAAAADAA8AAQABAAEAAAADABAAAQAEAAEAAAAEABAAAQAEAAEAAAAEAA8AAQABAAEAAAAEAA4AAQABAAEAAAAEAA0AAQABAAEAAAAEAAwAAQABAAEAAAAEAAsAAQABAAEAAAAEAAoAAQABAAEAAAAEAAkAAQABAAEAAAAEAAgAAQABAAEAAAAEAAcAAQAEAAIAAAAEAAYAAQAEAAIAAAAEAAUAAQAEAAIAAAAEAAQAAQAEAAIAAAAEAAMAAQAEAAIAAAAEAAIAAQAEAAIAAAAFAAIAAQAEAAIAAAAFAAMAAQAEAAIAAAAFAAQAAQAEAAIAAAAFAAUAAQAEAAIAAAAFAAYAAQAEAAIAAAAFAAcAAQAEAAIAAAAFAAgAAQABAAEAAAAFAAkAAQABAAEAAAAFAAoAAQABAAEAAAAFAAsAAQABAAEAAAAFAAwAAQABAAEAAAAFAA0AAQABAAEAAAAFAA4AAQABAAEAAAAFAA8AAQABAAEAAAAFABAAAQAEAAEAAAAGABAAAQAEAAEAAAAGAA8AAQABAAEAAAAGAA4AAQABAAEAAAAGAA0AAQABAAEAAAAGAAwAAQABAAEAAAAGAAsAAQABAAEAAAAGAAoAAQABAAEAAAAHAAoAAQABAAEAAAAHAAkAAQABAAEAAAAHAAgAAQABAAEAAAAHAAcAAQAEAAIAAAAHAAYAAQAEAAIAAAAHAAUAAQAEAAIAAAAHAAQAAQAEAAIAAAAHAAMAAQAEAAIAAAAHAAIAAQAEAAIAAAAHAAEAAQAEAAIAAAAIAAEAAQAEAAIAAAAIAAIAAQAEAAIAAAAIAAMAAQAEAAIAAAAIAAQAAQAEAAIAAAAIAAUAAQAEAAIAAAAIAAYAAQAEAAIAAAAIAAcAAQAEAAIAAAAIAAgAAQABAAEAAAAIAAkAAQABAAEAAAAIAAoAAQABAAEAAAAIAAsAAQABAAEAAAAHAAsAAQABAAEAAAAHAAwAAQABAAEAAAAHAA0AAQABAAEAAAAHAA4AAQABAAEAAAAHAA8AAQABAAEAAAAHABAAAQAEAAEAAAAIABAAAQAEAAEAAAAIAA8AAQABAAEAAAAIAA4AAQABAAEAAAAIAA0AAQABAAEAAAAIAAwAAQABAAEAAAAJAAwAAQABAAEAAAAJAAsAAQABAAEAAAAJAAoAAQABAAEAAAAJAAkAAQABAAEAAAAJAAgAAQABAAEAAAAJAAcAAQAEAAIAAAAJAAYAAQAEAAIAAAAJAAUAAQAEAAIAAAAJAAQAAQAEAAIAAAAJAAMAAQAEAAIAAAAJAAIAAQAEAAIAAAAJAAEAAQAEAAIAAAAKAAEAAQAEAAIAAAAKAAIAAQAEAAIAAAAKAAMAAQAEAAIAAAAKAAQAAQAEAAIAAAAKAAUAAQAEAAIAAAAKAAYAAQAEAAIAAAAKAAcAAQAEAAIAAAAKAAgAAQABAAEAAAAKAAkAAQABAAEAAAAKAAoAAQABAAEAAAAKAAsAAQABAAEAAAAKAAwAAQABAAEAAAAKAA0AAQABAAEAAAAJAA0AAQABAAEAAAAJAA4AAQABAAEAAAAJAA8AAQABAAEAAAAJABAAAQAEAAEAAAAKABAAAQAEAAEAAAAKAA8AAQABAAEAAAAKAA4AAQABAAEAAAALAA4AAQABAAEAAAALAA0AAQABAAEAAAALAAwAAQABAAEAAAALAAsAAQABAAEAAAALAAoAAQABAAEAAAALAAkAAQABAAEAAAALAAgAAQABAAEAAAALAAcAAQAEAAIAAAALAAYAAQAEAAIAAAALAAUAAQAEAAIAAAALAAQAAQAEAAIAAAALAAMAAQAEAAIAAAALAAIAAQAEAAIAAAALAAEAAQAEAAIAAAAMAAEAAQAEAAIAAAAMAAIAAQAEAAIAAAAMAAMAAQAEAAIAAAAMAAQAAQAEAAIAAAAMAAUAAQAEAAIAAAAMAAYAAQAEAAIAAAAMAAcAAQAEAAIAAAAMAAgAAQABAAEAAAAMAAkAAQABAAEAAAAMAAoAAQABAAEAAAAMAAsAAQABAAEAAAAMAAwAAQABAAEAAAAMAA0AAQABAAEAAAAMAA4AAQABAAEAAAAMAA8AAQABAAEAAAALAA8AAQABAAEAAAALABAAAQAEAAEAAAAMABAAAQAEAAEAAAANABAAAQAEAAEAAAANAA8AAQABAAEAAAANAA4AAQABAAEAAAANAA0AAQABAAEAAAANAAwAAQABAAEAAAANAAsAAQABAAEAAAANAAoAAQABAAEAAAANAAkAAQABAAEAAAANAAgAAQABAAEAAAANAAcAAQAEAAIAAAANAAYAAQAEAAIAAAANAAUAAQAEAAIAAAANAAQAAQAEAAIAAAANAAMAAQAEAAIAAAANAAIAAQAEAAIAAAANAAEAAQAEAAIAAAAOAAEAAQAEAAIAAAAOAAIAAQAEAAIAAAAOAAMAAQAEAAIAAAAOAAQAAQAEAAIAAAAOAAUAAQAEAAIAAAAOAAYAAQAEAAIAAAAOAAcAAQAEAAIAAAAOAAgAAQABAAEAAAAOAAkAAQABAAEAAAAOAAoAAQABAAEAAAAOAAsAAQABAAEAAAAOAAwAAQABAAEAAAAOAA0AAQABAAEAAAAOAA4AAQABAAEAAAAOAA8AAQABAAEAAAAOABAAAQAEAAEAAAAPABAAAQAEAAEAAAAPAA8AAQABAAEAAAAPAA4AAQABAAEAAAAPAA0AAQABAAEAAAAPAAwAAQABAAEAAAAPAAsAAQABAAEAAAAPAAoAAQABAAEAAAAPAAkAAQABAAEAAAAPAAgAAQABAAEAAAAPAAcAAQAEAAIAAAAPAAYAAQAEAAIAAAAPAAUAAQAEAAIAAAAPAAQAAQAEAAIAAAAPAAMAAQAEAAIAAAAPAAIAAQAEAAIAAAAPAAEAAQAEAAIAAAAQAAEAAQAEAAEAAAAQAAIAAQAEAAEAAAAQAAMAAQAEAAEAAAAQAAQAAQAEAAEAAAAQAAUAAQAEAAEAAAAQAAYAAQAEAAEAAAAQAAcAAQAEAAEAAAAQAAgAAQAEAAEAAAAQAAkAAQAEAAEAAAAQAA0AAQAEAAEAAAAQAA4AAQAEAAEAAAAQAA8AAQAEAAEAAAAQABAAAQAEAAEAAAD/////AQAEAAEAAAD//wAAAQAEAAEAAAD//wEAAQAEAAEAAAD//wIAAQAEAAEAAAD//wMAAQAEAAEAAAD//wQAAQAEAAEAAAD//wUAAQAEAAEAAAD//wYAAQAEAAEAAAD//wcAAQAEAAEAAAD//wgAAQAEAAEAAAD//wkAAQAEAAEAAAD//woAAQAEAAEAAAD//wsAAQAEAAEAAAD//wwAAQAEAAEAAAD//w0AAQAEAAEAAAD//w4AAQAEAAEAAAD//w8AAQAEAAEAAAD//xAAAQAEAAEAAAAQAP//AQAEAAEAAAAPAP//AQAEAAEAAAAOAP//AQAEAAEAAAANAP//AQAEAAEAAAAMAP//AQAEAAEAAAALAP//AQAEAAEAAAAKAP//AQAEAAEAAAAJAP//AQAEAAEAAAAIAP//AQAEAAEAAAAHAP//AQAEAAEAAAAGAP//AQAEAAEAAAAFAP//AQAEAAEAAAAEAP//AQAEAAEAAAADAP//AQAEAAEAAAACAP//AQAEAAEAAAABAP//AQAEAAEAAAAAAP//AQAEAAEAAAAQAAwAAQAEAAEAAAAQAAsAAQAEAAEAAAAQAAoAAQAEAAEAAAA=")
 tile_set = SubResource("TileSet_7g83o")
 
 [node name="UnitsLayer" type="TileMapLayer" parent="." unique_id=1673542820]
 tile_set = SubResource("TileSet_1lgw5")
 
+[node name="BoardFrame" type="Node2D" parent="."]
+script = ExtResource("board_frame")
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=147641320]
-position = Vector2(545, 290)
+position = Vector2(544, 292)
 
 [node name="GridOverlay" type="ReferenceRect" parent="." unique_id=1864977688]
-offset_right = 577.0
-offset_bottom = 576.0
+offset_right = 512.0
+offset_bottom = 512.0
 script = ExtResource("2_d1c63")
+
+[node name="BackdropLayer" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="Backdrop" type="TextureRect" parent="BackdropLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("BackdropTexture")
+expand_mode = 1
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=477101008]
 
-[node name="SelectionUi" type="Panel" parent="CanvasLayer" unique_id=2060907660]
-anchors_preset = -1
-anchor_left = 0.47300002
-anchor_top = -0.049000002
-anchor_right = 0.97200006
-anchor_bottom = 0.84300005
-offset_left = 3.104004
-offset_top = 1.7520008
-offset_right = -29.744019
-offset_bottom = -1.2640381
-grow_horizontal = 2
-grow_vertical = 2
+[node name="SelectionUi" type="Control" parent="CanvasLayer"]
+offset_left = 584.0
+offset_top = 8.0
+offset_right = 1144.0
+offset_bottom = 576.0
+mouse_filter = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/SelectionUi" unique_id=1184375428]
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/SelectionUi"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 8
 
-[node name="Spacer" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=74957501]
-custom_minimum_size = Vector2(4, 0)
-layout_mode = 2
-
-[node name="LevelInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=165170159]
+[node name="LevelInfoContainer" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer"]
 visible = false
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 script = ExtResource("8_pdh0q")
 
-[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=793779740]
+[node name="Content" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer"]
 layout_mode = 2
-text = "Level Info:"
+theme_override_constants/separation = 6
 
-[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1172143513]
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content"]
 layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "World map"
+autowrap_mode = 2
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Id" unique_id=230509645]
+[node name="Hint" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content"]
 layout_mode = 2
-text = "Name:"
+theme_type_variation = &"MutedLabel"
+text = "Select a level on the map. Drag the map to look around."
+size_flags_vertical = 3
+autowrap_mode = 2
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Id" unique_id=329379976]
+[node name="Details" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content"]
+visible = false
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
 
-[node name="Type" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1109278425]
+[node name="Tags" type="HFlowContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details"]
 layout_mode = 2
+theme_override_constants/h_separation = 4
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Type" unique_id=1067759787]
+[node name="UnitsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details"]
 layout_mode = 2
-text = "Type:"
+theme_type_variation = &"MutedLabel"
+text = "Enemy units"
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Type" unique_id=525357755]
+[node name="UnitsPanel" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details"]
 layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"InsetPanel"
 
-[node name="Unlocked" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=251978665]
+[node name="Units" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details/UnitsPanel"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Unlocked" unique_id=559295647]
-layout_mode = 2
-text = "Unlocked:"
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Unlocked" unique_id=814821212]
-layout_mode = 2
-
-[node name="Completed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1106294101]
-layout_mode = 2
-
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Completed" unique_id=246678121]
-layout_mode = 2
-text = "Completed:"
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Completed" unique_id=1863730498]
-layout_mode = 2
-
-[node name="UnitsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1896711146]
-layout_mode = 2
-text = "Units:"
-
-[node name="Units" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=723567899]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Units" unique_id=2080123507]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details/UnitsPanel/Units"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="RewardsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Rewards"
+
+[node name="RewardsPanel" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+theme_type_variation = &"InsetPanel"
+
+[node name="Rewards" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details/RewardsPanel"]
+layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="RewardsLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=412917475]
-layout_mode = 2
-text = "Rewards:"
-
-[node name="Rewards" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=812289769]
-custom_minimum_size = Vector2(0, 150)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Rewards" unique_id=1862153375]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/Details/RewardsPanel/Rewards"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
+theme_override_constants/separation = 2
 
-[node name="StartLevelButton" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1788032247]
+[node name="StartLevelButton" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content"]
 layout_mode = 2
-text = "Start Level"
+text = "Start level"
+custom_minimum_size = Vector2(0, 38)
+theme_type_variation = &"PrimaryButton"
+disabled = true
 
-[node name="UnlockInfo" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer" unique_id=1353000164]
+[node name="UnlockInfo" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo" unique_id=1675157148]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/UnlockInfo"]
 layout_mode = 2
-text = "Levels until next unlock:"
+theme_type_variation = &"MutedLabel"
+text = "Levels to next unit slot"
+size_flags_horizontal = 3
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/UnlockInfo" unique_id=742971184]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/UnlockInfo"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
 text = "0/5"
 
-[node name="DecksHandler" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=435248968]
-custom_minimum_size = Vector2(250, 0)
+[node name="DecksHandler" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer"]
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 script = ExtResource("4_hlk0d")
 
-[node name="DecksContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler" unique_id=1936901764]
-layout_mode = 0
-offset_right = 102.0
-offset_bottom = 544.0
-
-[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer" unique_id=1919056606]
+[node name="DecksContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler"]
 layout_mode = 2
-text = "Decks:"
+theme_override_constants/separation = 8
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer" unique_id=1198254704]
-custom_minimum_size = Vector2(250, 400)
+[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer"]
 layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "Decks"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer/ScrollContainer" unique_id=151286284]
+[node name="EmptyHint" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "You have no decks yet. Create one to place your units."
+autowrap_mode = 2
 
-[node name="CreateDeck" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer" unique_id=834808578]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer"]
 layout_mode = 2
-text = "Create Deck"
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="AcceptDialog" type="AcceptDialog" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer" unique_id=1843365585]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CreateDeck" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer"]
+layout_mode = 2
+text = "Create deck"
+custom_minimum_size = Vector2(0, 38)
+theme_type_variation = &"PrimaryButton"
+
+[node name="AcceptDialog" type="AcceptDialog" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer"]
 oversampling_override = 1.0
-title = "New Deck"
-size = Vector2i(300, 100)
-ok_button_text = "Confirm"
+title = "New deck"
+size = Vector2i(320, 120)
+ok_button_text = "Create"
 
-[node name="LineEdit" type="LineEdit" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer/AcceptDialog" unique_id=349424214]
-offset_left = 8.0
-offset_top = 8.0
-offset_right = 292.0
-offset_bottom = 51.0
-placeholder_text = "Deck Name..."
+[node name="LineEdit" type="LineEdit" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/DecksContainer/AcceptDialog"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 308.0
+offset_bottom = 60.0
+placeholder_text = "Deck name..."
 
-[node name="UnitsSelectionContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler" unique_id=1975347159]
+[node name="UnitsSelectionContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler"]
 visible = false
-layout_mode = 0
-offset_right = 46.0
-offset_bottom = 544.0
+layout_mode = 2
 script = ExtResource("6_ygioq")
+theme_override_constants/separation = 8
 
-[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=331378763]
+[node name="Label" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer"]
 layout_mode = 2
-text = "Units:"
+theme_type_variation = &"HeaderLabel"
+text = "Units"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=1413774073]
-custom_minimum_size = Vector2(250, 400)
+[node name="Hint" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Drag units onto your half of the board."
+autowrap_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer/ScrollContainer" unique_id=1107325926]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="ChangeDeck" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer" unique_id=1927496580]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer/ScrollContainer"]
 layout_mode = 2
-text = "Change Deck"
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
 
-[node name="Spacer2" type="Control" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=421560759]
-custom_minimum_size = Vector2(20, 0)
+[node name="ChangeDeck" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/DecksHandler/UnitsSelectionContainer"]
 layout_mode = 2
+text = "Change deck"
+custom_minimum_size = Vector2(0, 36)
 
-[node name="InfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer" unique_id=635696729]
-visible = false
+[node name="InfoContainer" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
 script = ExtResource("7_nrtoj")
 
-[node name="Info" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1884338662]
+[node name="Content" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer"]
 layout_mode = 2
-text = "Info"
+theme_override_constants/separation = 8
 
-[node name="InfoTypeButton" type="MenuButton" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1119841916]
-custom_minimum_size = Vector2(150, 0)
+[node name="Tabs" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 4
-text = "Unit Info"
-flat = false
-item_count = 3
-popup/item_0/text = "Unit Info"
-popup/item_0/id = 0
-popup/item_1/text = "Terrain Info"
-popup/item_1/id = 1
-popup/item_2/text = "Prop Info"
-popup/item_2/id = 2
 
-[node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=2040826589]
+[node name="UnitTab" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Tabs"]
+layout_mode = 2
+text = "Unit"
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+
+[node name="TerrainTab" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Tabs"]
+layout_mode = 2
+text = "Terrain"
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+
+[node name="PropTab" type="Button" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Tabs"]
+layout_mode = 2
+text = "Prop"
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+
+[node name="Placeholder" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Click a unit or tile to see its details."
+size_flags_vertical = 3
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="UnitsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer"]
 layout_mode = 2
 script = ExtResource("4_d1c63")
 
-[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer" unique_id=1681875231]
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer"]
 layout_mode = 2
-text = "No unit selected"
+theme_type_variation = &"MutedLabel"
+text = "No unit here"
 
-[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer" unique_id=274891919]
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer"]
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=716529401]
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Id"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Id"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = ""
+size_flags_horizontal = 3
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="Rarity" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = ""
+
+[node name="Stats" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Id" unique_id=887211304]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Health"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Health"
+size_flags_horizontal = 3
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Health"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
+
+[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Id" unique_id=667948868]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Damage"]
 layout_mode = 2
-stretch_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Damage"
+size_flags_horizontal = 3
 
-[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1774858179]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Damage"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Health" unique_id=2130200108]
-layout_mode = 2
-text = "Health: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Health" unique_id=1670683559]
-layout_mode = 2
-
-[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1271192212]
+[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Damage" unique_id=1248566064]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Armor"]
 layout_mode = 2
-text = "Damage: "
+theme_type_variation = &"MutedLabel"
+text = "Armor"
+size_flags_horizontal = 3
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Damage" unique_id=1766909245]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Armor"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=299803042]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Armor" unique_id=800382474]
-layout_mode = 2
-text = "Armor: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Armor" unique_id=550631701]
+[node name="Speed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Speed" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1304916229]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Speed"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Speed"
+size_flags_horizontal = 3
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Speed"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
+
+[node name="Cooldown" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Speed" unique_id=313589130]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Cooldown"]
 layout_mode = 2
-text = "Speed: "
+theme_type_variation = &"MutedLabel"
+text = "Acts every"
+size_flags_horizontal = 3
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Speed" unique_id=1705863185]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/Cooldown"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Cooldown" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=321577487]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=616350665]
-layout_mode = 2
-text = "Acts every: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Cooldown" unique_id=828379318]
+[node name="UnitSlots" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="UnitSlots" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=103124016]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/UnitSlots"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Unit slots"
+size_flags_horizontal = 3
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/UnitSlots" unique_id=470073801]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Stats/UnitSlots"]
 layout_mode = 2
-text = "Unit slots:"
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/UnitSlots" unique_id=1282180164]
+[node name="Types" type="HFlowContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info"]
 layout_mode = 2
+theme_override_constants/h_separation = 4
 
-[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=1986817800]
+[node name="Description" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info"]
 layout_mode = 2
-text = "Types:"
+theme_type_variation = &"InsetPanel"
 
-[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=724212074]
-layout_mode = 2
-
-[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info" unique_id=236564824]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Description" unique_id=1979432891]
-layout_mode = 2
-text = "Description: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/UnitsInfoContainer/Info/Description" unique_id=1463439410]
-custom_minimum_size = Vector2(200, 0)
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/UnitsInfoContainer/Info/Description"]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="TerrainsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=1884374630]
+[node name="TerrainsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer"]
 visible = false
 layout_mode = 2
 script = ExtResource("8_7c4bj")
 
-[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer" unique_id=1669993624]
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer"]
 layout_mode = 2
-text = "No terrain selected"
+theme_type_variation = &"MutedLabel"
+text = "No terrain here"
 
-[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer" unique_id=2118050977]
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer"]
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=564343133]
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Id"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Id"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = ""
+size_flags_horizontal = 3
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="Stats" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info"]
 layout_mode = 2
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Id" unique_id=442405577]
+[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Id" unique_id=1025269038]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Stats/Blocking"]
 layout_mode = 2
-stretch_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Blocking"
+size_flags_horizontal = 3
 
-[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=817998107]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Stats/Blocking"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Blocking" unique_id=134745063]
+[node name="Types" type="HFlowContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info"]
 layout_mode = 2
-text = "Blocking: "
+theme_override_constants/h_separation = 4
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Blocking" unique_id=1167541010]
+[node name="Description" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info"]
 layout_mode = 2
+theme_type_variation = &"InsetPanel"
 
-[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=1352360972]
-layout_mode = 2
-text = "Types:"
-
-[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=335986239]
-layout_mode = 2
-
-[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info" unique_id=1857647690]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Description" unique_id=529965672]
-layout_mode = 2
-text = "Description: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/TerrainsInfoContainer/Info/Description" unique_id=64524810]
-custom_minimum_size = Vector2(200, 0)
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/TerrainsInfoContainer/Info/Description"]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="PropsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer" unique_id=10163695]
+[node name="PropsInfoContainer" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer"]
 visible = false
 layout_mode = 2
 script = ExtResource("9_nrtoj")
 
-[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer" unique_id=791514114]
+[node name="EmptyContainer" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer"]
 layout_mode = 2
-text = "No unit selected"
+theme_type_variation = &"MutedLabel"
+text = "No prop here"
 
-[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer" unique_id=389329630]
+[node name="Info" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer"]
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1393586919]
+[node name="Id" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Id"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Id"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = ""
+size_flags_horizontal = 3
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="Stats" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info"]
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Name" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Id" unique_id=547700243]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Health"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Health"
+size_flags_horizontal = 3
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Health"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
+
+[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Texture" type="TextureRect" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Id" unique_id=1215925203]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Damage"]
 layout_mode = 2
-stretch_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Damage"
+size_flags_horizontal = 3
 
-[node name="Health" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=2054011970]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Damage"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Health" unique_id=622049112]
-layout_mode = 2
-text = "Health: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Health" unique_id=2041440717]
-layout_mode = 2
-
-[node name="Damage" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1459580304]
+[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damage" unique_id=960025865]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Armor"]
 layout_mode = 2
-text = "Damage: "
+theme_type_variation = &"MutedLabel"
+text = "Armor"
+size_flags_horizontal = 3
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damage" unique_id=576445509]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Armor"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Armor" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=738845525]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Armor" unique_id=613622785]
-layout_mode = 2
-text = "Armor: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Armor" unique_id=1253486363]
+[node name="Damagable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Damagable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1926782364]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Damagable"]
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Damageable"
+size_flags_horizontal = 3
+
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Damagable"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
+
+[node name="Movable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damagable" unique_id=1045236489]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Movable"]
 layout_mode = 2
-text = "Damagable: "
+theme_type_variation = &"MutedLabel"
+text = "Movable"
+size_flags_horizontal = 3
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Damagable" unique_id=1373406800]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Movable"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Movable" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1901263613]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Movable" unique_id=533198456]
-layout_mode = 2
-text = "Movable: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Movable" unique_id=355642953]
+[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats"]
 layout_mode = 2
 
-[node name="Blocking" type="HBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1793046524]
+[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Blocking"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Blocking"
+size_flags_horizontal = 3
 
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Blocking" unique_id=949351745]
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Stats/Blocking"]
 layout_mode = 2
-text = "Blocking: "
+theme_type_variation = &"ValueLabel"
+text = ""
+horizontal_alignment = 2
 
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Blocking" unique_id=301068499]
+[node name="Types" type="HFlowContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info"]
 layout_mode = 2
+theme_override_constants/h_separation = 4
 
-[node name="TypesLabel" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=1927709251]
+[node name="Description" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info"]
 layout_mode = 2
-text = "Types:"
+theme_type_variation = &"InsetPanel"
 
-[node name="Types" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=581792707]
-layout_mode = 2
-
-[node name="Description" type="VBoxContainer" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info" unique_id=277464677]
-layout_mode = 2
-
-[node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Description" unique_id=2070621797]
-layout_mode = 2
-text = "Description: "
-
-[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/PropsInfoContainer/Info/Description" unique_id=1299918939]
-custom_minimum_size = Vector2(200, 0)
+[node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/InfoContainer/Content/Scroll/VBoxContainer/PropsInfoContainer/Info/Description"]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="BottomUi" type="HBoxContainer" parent="CanvasLayer" unique_id=1110027808]
-anchors_preset = -1
-anchor_top = 0.84400004
-anchor_right = 0.5
-anchor_bottom = 0.9480001
-offset_left = -30.0
-offset_top = 1.0879517
-offset_right = -31.0
-offset_bottom = 2.6959229
-grow_vertical = 2
+[node name="BottomPanel" type="Panel" parent="CanvasLayer"]
+offset_left = 8.0
+offset_top = 586.0
+offset_right = 1144.0
+offset_bottom = 640.0
 
-[node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=342629804]
+[node name="BottomUi" type="HBoxContainer" parent="CanvasLayer"]
+offset_left = 22.0
+offset_top = 594.0
+offset_right = 1132.0
+offset_bottom = 632.0
+theme_override_constants/separation = 14
+
+[node name="LevelCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
 visible = false
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/LevelCounter" unique_id=543323313]
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/LevelCounter"]
 layout_mode = 2
-text = "Level:"
+theme_type_variation = &"MutedLabel"
+text = "Level"
 
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/LevelCounter" unique_id=1598653928]
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/LevelCounter"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
 text = "1"
 
-[node name="UnitCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=1020753859]
+[node name="UnitCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
+theme_override_constants/separation = 6
 
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=1966678577]
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/UnitCounter"]
 layout_mode = 2
-text = "Unit slots:"
+theme_type_variation = &"MutedLabel"
+text = "Unit slots"
 
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/UnitCounter" unique_id=2050610620]
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/UnitCounter"]
 layout_mode = 2
+theme_type_variation = &"ValueLabel"
 text = "0/20"
 
-[node name="CoinsCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=386345272]
+[node name="Sep1" type="VSeparator" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter" unique_id=1116477226]
+[node name="CoinsCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
-text = "Coins:"
+theme_override_constants/separation = 6
 
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter" unique_id=470700629]
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Coins"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/CoinsCounter"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
 text = "0"
 
-[node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi" unique_id=612806901]
+[node name="Sep2" type="VSeparator" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=162195539]
+[node name="TurnCounter" type="HBoxContainer" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
-text = "Turn:"
+theme_override_constants/separation = 6
 
-[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/TurnCounter" unique_id=2100017693]
+[node name="Text" type="Label" parent="CanvasLayer/BottomUi/TurnCounter"]
 layout_mode = 2
+theme_type_variation = &"MutedLabel"
+text = "Turn"
+
+[node name="Counter" type="Label" parent="CanvasLayer/BottomUi/TurnCounter"]
+layout_mode = 2
+theme_type_variation = &"ValueLabel"
 text = "0"
 
-[node name="SpeedButton" type="MenuButton" parent="CanvasLayer/BottomUi" unique_id=482248829]
+[node name="Sep3" type="VSeparator" parent="CanvasLayer/BottomUi"]
+layout_mode = 2
+
+[node name="SpeedButton" type="MenuButton" parent="CanvasLayer/BottomUi"]
+custom_minimum_size = Vector2(110, 0)
 layout_mode = 2
 text = "Speed: 1x"
+flat = false
 item_count = 7
 popup/item_0/text = "0.5x"
 popup/item_0/id = 0
@@ -638,134 +821,119 @@ popup/item_5/id = 5
 popup/item_6/text = "32x"
 popup/item_6/id = 6
 
-[node name="PlayButton" type="TextureButton" parent="CanvasLayer/BottomUi" unique_id=422788990]
-visible = false
+[node name="Spacer" type="Control" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
-texture_normal = SubResource("GradientTexture1D_0uv0p")
-texture_hover = SubResource("GradientTexture1D_ygioq")
-stretch_mode = 0
+size_flags_horizontal = 3
+mouse_filter = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/BottomUi/PlayButton" unique_id=1521526838]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-text = "Play"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=650212465]
+[node name="WorldMapButton" type="Button" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
-text = "World"
+text = "World map"
+custom_minimum_size = Vector2(120, 0)
+theme_type_variation = &"PrimaryButton"
 
-[node name="PlayPauseButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=1872227772]
-visible = false
+[node name="PlayPauseButton" type="Button" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
 text = "Pause"
-
-[node name="SurrenderButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=889631460]
+custom_minimum_size = Vector2(120, 0)
 visible = false
+
+[node name="SurrenderButton" type="Button" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
 text = "Surrender"
-
-[node name="StartButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=452502198]
+custom_minimum_size = Vector2(120, 0)
 visible = false
-layout_mode = 2
-text = "Start"
+theme_type_variation = &"DangerButton"
 
-[node name="QuitButton" type="Button" parent="CanvasLayer/BottomUi" unique_id=1377824111]
+[node name="StartButton" type="Button" parent="CanvasLayer/BottomUi"]
+layout_mode = 2
+text = "Start battle"
+custom_minimum_size = Vector2(120, 0)
 visible = false
-layout_mode = 2
-text = "Quit"
+theme_type_variation = &"PrimaryButton"
 
-[node name="MessagePanel" type="Panel" parent="CanvasLayer" unique_id=485557296]
+[node name="QuitButton" type="Button" parent="CanvasLayer/BottomUi"]
+layout_mode = 2
+text = "Leave level"
+custom_minimum_size = Vector2(120, 0)
 visible = false
-anchors_preset = -1
-anchor_right = 0.5
-anchor_bottom = 0.88400006
-offset_left = 63.999992
-offset_top = 31.999998
-offset_right = -127.0
-offset_bottom = -379.06653
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="MessageContainer" type="VBoxContainer" parent="CanvasLayer/MessagePanel" unique_id=2120907335]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Message" type="RichTextLabel" parent="CanvasLayer/MessagePanel/MessageContainer" unique_id=1058101359]
+[node name="MainMenuButton" type="Button" parent="CanvasLayer/BottomUi"]
 layout_mode = 2
-size_flags_vertical = 3
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="Responses" type="HBoxContainer" parent="CanvasLayer/MessagePanel/MessageContainer" unique_id=2108899385]
-layout_mode = 2
-size_flags_vertical = 3
-alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer" unique_id=1402740388]
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = -607.0
-offset_bottom = -103.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="WorldUi" type="Panel" parent="CanvasLayer/ScrollContainer" unique_id=2004628543]
-layout_mode = 2
-
-[node name="MainMenuButton" type="Button" parent="CanvasLayer" unique_id=1791439870]
-anchors_preset = -1
-anchor_left = 0.5
-anchor_right = 0.9710001
-anchor_bottom = 0.9480001
-offset_left = 446.0
-offset_top = 581.0
-offset_right = -0.592041
-offset_bottom = -2.3040771
-grow_horizontal = 0
-grow_vertical = 0
-text = "Main Menu"
+text = "Menu"
+custom_minimum_size = Vector2(90, 0)
 script = ExtResource("7_ygioq")
 
-[node name="GameStats" type="Panel" parent="CanvasLayer" unique_id=583095066]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 576.0
+offset_bottom = 576.0
 visible = false
-anchors_preset = -1
-anchor_right = 0.5
-anchor_bottom = 0.883
-offset_left = 33.0
-offset_top = 224.43
-offset_right = -95.0
-offset_bottom = -91.18402
+theme_override_styles/panel = SubResource("MapBox")
+horizontal_scroll_mode = 3
+vertical_scroll_mode = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats" unique_id=1427428903]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1490531004]
+[node name="WorldUi" type="Panel" parent="CanvasLayer/ScrollContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-text = "Game Stats"
-horizontal_alignment = 1
+theme_override_styles/panel = SubResource("EmptyBox")
 
-[node name="StatisticsButton" type="MenuButton" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1198709160]
+[node name="Dimmer" type="ColorRect" parent="CanvasLayer"]
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 580.0
+offset_bottom = 582.0
+visible = false
+color = Color(0.03, 0.035, 0.055, 0.72)
+
+[node name="Results" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 568.0
+offset_bottom = 576.0
+mouse_filter = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="MessagePanel" type="PanelContainer" parent="CanvasLayer/Results"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"ModalPanel"
+
+[node name="MessageContainer" type="VBoxContainer" parent="CanvasLayer/Results/MessagePanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Message" type="Label" parent="CanvasLayer/Results/MessagePanel/MessageContainer"]
+layout_mode = 2
+autowrap_mode = 2
+horizontal_alignment = 1
+theme_type_variation = &"HeaderLabel"
+
+[node name="Responses" type="HBoxContainer" parent="CanvasLayer/Results/MessagePanel/MessageContainer"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 10
+
+[node name="GameStats" type="PanelContainer" parent="CanvasLayer/Results"]
+visible = false
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Results/GameStats"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/Results/GameStats/VBoxContainer/Header"]
+layout_mode = 2
+theme_type_variation = &"HeaderLabel"
+text = "Battle stats"
+size_flags_horizontal = 3
+
+[node name="StatisticsButton" type="MenuButton" parent="CanvasLayer/Results/GameStats/VBoxContainer/Header"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-size_flags_horizontal = 4
 text = "Damage Dealt"
 flat = false
 item_count = 3
@@ -776,196 +944,202 @@ popup/item_1/id = 1
 popup/item_2/text = "Healing Done"
 popup/item_2/id = 2
 
-[node name="DamageDealt" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=1733045209]
+[node name="DamageDealt" type="ScrollContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer"]
+visible = true
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
-size_flags_horizontal = 3
+horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/DamageDealt" unique_id=1308268964]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer/DamageDealt"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
 
-[node name="DamageTaken" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=2073597527]
+[node name="DamageTaken" type="ScrollContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer"]
 visible = false
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
-size_flags_horizontal = 3
+horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/DamageTaken" unique_id=1746131956]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer/DamageTaken"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
 
-[node name="HealingDone" type="ScrollContainer" parent="CanvasLayer/GameStats/VBoxContainer" unique_id=14978700]
+[node name="HealingDone" type="ScrollContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer"]
 visible = false
 custom_minimum_size = Vector2(0, 190)
 layout_mode = 2
-size_flags_horizontal = 3
+horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/GameStats/VBoxContainer/HealingDone" unique_id=1658294077]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Results/GameStats/VBoxContainer/HealingDone"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
 
-[node name="Menus" type="Control" parent="CanvasLayer" unique_id=1895102198]
+[node name="Menus" type="Control" parent="CanvasLayer"]
 layout_mode = 3
-anchor_right = 0.5
-anchor_bottom = 0.89400005
-offset_right = 3.0
-offset_bottom = -5.3120117
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("4_b3faq")
 
-[node name="MainMenu" type="Panel" parent="CanvasLayer/Menus" unique_id=928757555]
+[node name="Dimmer" type="ColorRect" parent="CanvasLayer/Menus"]
 visible = false
 layout_mode = 1
-anchors_preset = -1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 160.0
-offset_top = 129.0
-offset_right = -226.0
-offset_bottom = -190.0
-
-[node name="Buttons" type="VBoxContainer" parent="CanvasLayer/Menus/MainMenu" unique_id=259222532]
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 1
-anchors_preset = 13
-anchor_left = 0.5
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -48.0
-offset_right = 48.0
 grow_horizontal = 2
 grow_vertical = 2
+color = Color(0.03, 0.035, 0.055, 0.72)
 
-[node name="Label" type="Label" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=1707061794]
+[node name="MainMenu" type="PanelContainer" parent="CanvasLayer/Menus"]
+visible = false
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"ModalPanel"
+
+[node name="Buttons" type="VBoxContainer" parent="CanvasLayer/Menus/MainMenu"]
 layout_mode = 2
-text = "Main Menu"
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="CanvasLayer/Menus/MainMenu/Buttons"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Menu"
 horizontal_alignment = 1
 
-[node name="OptionsButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=1780698448]
+[node name="CloseButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
+layout_mode = 2
+text = "Continue"
+custom_minimum_size = Vector2(0, 38)
+theme_type_variation = &"PrimaryButton"
+
+[node name="SaveGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
+layout_mode = 2
+text = "Save game"
+custom_minimum_size = Vector2(0, 38)
+
+[node name="LoadGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
+layout_mode = 2
+text = "Load game"
+custom_minimum_size = Vector2(0, 38)
+
+[node name="OptionsButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
 layout_mode = 2
 text = "Options"
+custom_minimum_size = Vector2(0, 38)
+disabled = true
+tooltip_text = "Not available yet"
 
-[node name="SaveGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=259414056]
+[node name="QuitGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
 layout_mode = 2
-text = "Save Game"
+text = "Quit game"
+custom_minimum_size = Vector2(0, 38)
+theme_type_variation = &"DangerButton"
 
-[node name="LoadGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=2110177063]
-layout_mode = 2
-text = "Load Game"
-
-[node name="QuitGameButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=579963492]
-layout_mode = 2
-text = "Quit Game"
-
-[node name="CloseButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons" unique_id=502908350]
-layout_mode = 2
-text = "Close"
-
-[node name="SaveGamesPanel" type="Panel" parent="CanvasLayer/Menus" unique_id=1704379954]
+[node name="SaveGamesPanel" type="PanelContainer" parent="CanvasLayer/Menus"]
 visible = false
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 160.0
-offset_top = 128.0
-offset_right = -225.0
-offset_bottom = -190.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+theme_type_variation = &"ModalPanel"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel" unique_id=285234230]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1649244420]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel"]
 layout_mode = 2
-text = "Load Game"
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "Load game"
 horizontal_alignment = 1
 
-[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1727642449]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
+horizontal_scroll_mode = 0
 
-[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer" unique_id=1321786220]
-custom_minimum_size = Vector2(150, 0)
+[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer/ScrollContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamesPanel/VBoxContainer"]
+layout_mode = 2
 text = "Cancel"
+custom_minimum_size = Vector2(0, 38)
 
-[node name="SaveGamePanel" type="Panel" parent="CanvasLayer/Menus" unique_id=321173701]
+[node name="SaveGamePanel" type="PanelContainer" parent="CanvasLayer/Menus"]
 visible = false
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 1
-anchors_preset = -1
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 126.0
-offset_top = 194.0
-offset_right = -193.5
-offset_bottom = -254.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+theme_type_variation = &"ModalPanel"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel" unique_id=881100282]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1400933037]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel"]
 layout_mode = 2
-size_flags_vertical = 1
-text = "Save Game"
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"TitleLabel"
+text = "New save"
 horizontal_alignment = 1
 
-[node name="SaveGames" type="VBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=723335598]
+[node name="SaveName" type="LineEdit" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer"]
 layout_mode = 2
-
-[node name="SaveName" type="LineEdit" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1023165353]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 3
 placeholder_text = "Enter save name..."
 alignment = 1
 
-[node name="Buttons" type="HBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer" unique_id=1706500386]
+[node name="Buttons" type="HBoxContainer" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer"]
 layout_mode = 2
 alignment = 1
+theme_override_constants/separation = 10
 
-[node name="Confirm" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons" unique_id=790886902]
-custom_minimum_size = Vector2(100, 0)
-layout_mode = 2
-text = "Confirm"
-
-[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons" unique_id=697839289]
-custom_minimum_size = Vector2(100, 0)
+[node name="Cancel" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons"]
 layout_mode = 2
 text = "Cancel"
+custom_minimum_size = Vector2(110, 0)
+
+[node name="Confirm" type="Button" parent="CanvasLayer/Menus/SaveGamePanel/VBoxContainer/Buttons"]
+layout_mode = 2
+text = "Save"
+custom_minimum_size = Vector2(110, 0)
+theme_type_variation = &"PrimaryButton"
 
 [node name="Terrain" type="Node2D" parent="." unique_id=915798487]
+
+[node name="BoardDivider" type="Node2D" parent="."]
+script = ExtResource("board_frame")
+IsDivider = true
 
 [node name="Props" type="Node2D" parent="." unique_id=912004966]
 
 [node name="Units" type="Node2D" parent="." unique_id=972718010]
 
-[node name="PlayerSideUnitsLayer" type="TileMapLayer" parent="." unique_id=211327906]
-tile_set = SubResource("TileSet_d1c63")
-script = ExtResource("5_1lgw5")
-
-[node name="EnemySideUnitsLayer" type="TileMapLayer" parent="." unique_id=997152698]
-tile_set = SubResource("TileSet_d1c63")
-script = ExtResource("5_1lgw5")
+[node name="UnitOutlines" type="Node2D" parent="."]
+script = ExtResource("unit_outlines")
 
 [node name="SelectedUnitLayer" type="TileMapLayer" parent="." unique_id=421687747]
 tile_set = SubResource("TileSet_d1c63")

@@ -34,7 +34,10 @@ public partial class Blob : Unit
     Vector2I relPos = GlobalFunctions.GetRelPosInCells(OccupiedCells, OccupiedCells[0]);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(OccupiedMainCell, cellDimensions.X, cellDimensions.Y, relPos);
     _globalSignals.EmitSignal(GlobalSignals.SignalName.SizeChanged, this, new Godot.Collections.Array<Vector2I>(oldOccupiedCells));
-    _sprite.Scale = GlobalFunctions.CellsToDimensions(OccupiedCells);
+    StopMove();
+    _restScale = GlobalFunctions.CellsToDimensions(OccupiedCells);
+    _sprite.Scale = _restScale;
+    LayoutBars();
   }
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

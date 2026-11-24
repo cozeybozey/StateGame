@@ -60,7 +60,21 @@ public partial class Unit : GridEntity
     // Every unit, also ones spawned mid-battle, starts with an empty bar.
     _actionBar = GetNode<TextureProgressBar>("Cooldown");
     _actionBar.MaxValue = GlobalConstants.ActionBarSize;
+    _actionBar.Visible = Speed > 0;
     ResetActionBar();
+  }
+
+  // The action bar mirrors the health bar along the bottom edge
+  public override void LayoutBars()
+  {
+    base.LayoutBars();
+    PlaceBar(_actionBar, bottom: true);
+  }
+
+  protected override void UpdateHealthBar()
+  {
+    _healthBar.Value = Health;
+    _healthBar.TintProgress = GamePalette.Support;
   }
 
   public bool IsTelegraphing => _telegraphTicksLeft > 0;
@@ -106,55 +120,27 @@ public partial class Unit : GridEntity
     SpawnFloatingText(text, amount >= 0 ? Colors.Yellow : Colors.Red);
   }
 
-  // Small number in the unit's top-left corner showing its place in the turn order (placement phase only)
-  private Label? _turnOrderLabel = null;
+  // Badge in the unit's top-left corner showing its place in the turn order (placement phase only)
+  private TurnBadge? _turnBadge = null;
 
   public void ShowTurnOrder(int? order)
   {
     if (order == null)
     {
-      if (_turnOrderLabel != null)
-        _turnOrderLabel.Visible = false;
+      if (_turnBadge != null)
+        _turnBadge.Visible = false;
       return;
     }
 
-    if (_turnOrderLabel == null)
+    if (_turnBadge == null)
     {
-      _turnOrderLabel = new Label
-      {
-        ZIndex = 20,
-        MouseFilter = Control.MouseFilterEnum.Ignore,
-        HorizontalAlignment = HorizontalAlignment.Center,
-        VerticalAlignment = VerticalAlignment.Center,
-        CustomMinimumSize = new Vector2(14, 14),
-      };
-      _turnOrderLabel.AddThemeFontSizeOverride("font_size", 11);
-      _turnOrderLabel.AddThemeColorOverride("font_color", Colors.White);
-      AddChild(_turnOrderLabel);
+      _turnBadge = new TurnBadge { ZIndex = 20 };
+      AddChild(_turnBadge);
     }
 
-    // Solid badge in the side's color (blue = player, red = enemy) so the number reads on any tile
-    StyleBoxFlat badge = new StyleBoxFlat
-    {
-      BgColor = Side ? new Color(0.15f, 0.45f, 0.85f) : new Color(0.8f, 0.2f, 0.15f),
-      BorderColor = new Color(0, 0, 0, 0.9f),
-      ContentMarginLeft = 3,
-      ContentMarginRight = 3,
-      ContentMarginTop = 0,
-      ContentMarginBottom = 0,
-    };
-    badge.SetBorderWidthAll(1);
-    badge.SetCornerRadiusAll(7);
-    _turnOrderLabel.AddThemeStyleboxOverride("normal", badge);
-    _turnOrderLabel.Text = order.Value.ToString();
-    _turnOrderLabel.Size = Vector2.Zero; // Shrink to fit the new text
-    _turnOrderLabel.Size = _turnOrderLabel.GetCombinedMinimumSize();
-
-    // Center the badge on the top-left corner of the unit's bounding box (GlobalPosition is the box center)
-    Vector2I dims = GlobalFunctions.CellsToDimensions(OccupiedCells);
-    Vector2 corner = new Vector2(-dims.X * GlobalConstants.TileSize * 0.5f + 3, -dims.Y * GlobalConstants.TileSize * 0.5f + 3);
-    _turnOrderLabel.Position = corner - _turnOrderLabel.Size / 2;
-    _turnOrderLabel.Visible = true;
+    // Centered near the top-left corner of the unit's cells (the unit's position is the center of its cells)
+    _turnBadge.Position = -GetPixelSize() / 2 + new Vector2(4, 4);
+    _turnBadge.Show(order.Value, Side);
   }
 
   public void SetPlayData(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> removedUnits, OverlayLayer activeUnitsLayer, OverlayLayer targetedCellsLayer)
@@ -187,8 +173,39 @@ public partial class Unit : GridEntity
     if (_dead || _telegraphTicksLeft <= 0)
       return;
     _telegraphTicksLeft--;
-    if (_telegraphTicksLeft == 0)
+    if (_telegraphTicksLeft > 0)
+      return;
+
+    if (!_movedThisAction && MoveBeforeStrike())
+    {
+      // Travel first, with the wind-up shown from the new cell, and strike on arrival
+      _movedThisAction = true;
+      _telegraphTicksLeft = GlobalConstants.MoveTicks;
+      CombatFx.Instance?.ClearTelegraph(_telegraph);
+      _telegraph = CombatFx.Instance?.ShowTelegraph(this, _selectedTargets, _actionColor, _unitsGrid);
+    }
+    else
       Strike();
+  }
+
+  // Cell this action moves to before striking, set by GetTargets of units that jump at their target
+  protected Vector2I? _moveTarget = null;
+  private bool _movedThisAction = false;
+
+  // If another unit took the destination during the wind-up, pick a new spot and target. Returns whether the unit moved.
+  private bool MoveBeforeStrike()
+  {
+    if (_moveTarget == null || _moveTarget == OccupiedMainCell)
+      return false;
+
+    if (!TryMoveToCell(_moveTarget.Value))
+    {
+      _moveTarget = null;
+      _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+      if (_moveTarget == null || _moveTarget == OccupiedMainCell || !TryMoveToCell(_moveTarget.Value))
+        return false;
+    }
+    return true;
   }
 
   public bool IsReady => !_dead && _telegraphTicksLeft <= 0 && Speed > 0 && ActionProgress >= GlobalConstants.ActionBarSize;
@@ -211,6 +228,8 @@ public partial class Unit : GridEntity
   // Pick targets and show a telegraph; the actual action happens TelegraphTicks later
   private void BeginAction()
   {
+    _moveTarget = null;
+    _movedThisAction = false;
     _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     PulseActionBar();
 
@@ -470,6 +489,13 @@ public partial class Unit : GridEntity
     _turn++;    
   }
 
+  // Units with base speed 0 are passive: they never act, so speed changes do not apply to them
+  public override void ChangeSpeed(int amount)
+  {
+    if (StartUnitInfo.Speed > 0)
+      base.ChangeSpeed(amount);
+  }
+
   public override void Die()
   {
     base.Die();
@@ -483,6 +509,7 @@ public partial class Unit : GridEntity
   {
     SwitchedSides = !SwitchedSides;
     Side = !Side;
+    UpdateHealthBar();
     SpawnFloatingText("Switched sides", Colors.Red);
     _globalSignals.EmitSignal(GlobalSignals.SignalName.SideChanged, this);
   }

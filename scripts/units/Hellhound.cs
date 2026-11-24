@@ -7,8 +7,6 @@ using static System.Net.Mime.MediaTypeNames;
 
 public partial class Hellhound : Unit
 {
-  private Vector2I? _targetLocation = null;
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Vector2I currentAttackTarget = new Vector2I(OccupiedMainCell.X, Side ? OccupiedMainCell.Y - 1 : OccupiedMainCell.Y + 1);
@@ -16,7 +14,7 @@ public partial class Hellhound : Unit
       unitsGrid[currentAttackTarget.X, currentAttackTarget.Y] != null && 
       unitsGrid[currentAttackTarget.X, currentAttackTarget.Y].Side != Side)
     {
-      _targetLocation = OccupiedMainCell;
+      _moveTarget = OccupiedMainCell;
       return [currentAttackTarget];
     }
 
@@ -40,30 +38,20 @@ public partial class Hellhound : Unit
         Vector2I attackTarget = new Vector2I(cell.X, Side ? cell.Y - 1 : cell.Y + 1);
         if (GlobalFunctions.CanMoveToCell(this, jumpCell, unitsGrid, terrainGrid, propsGrid) && GlobalFunctions.IsCellInsideGrid(attackTarget))
         {
-          _targetLocation = jumpCell;
+          _moveTarget = jumpCell;
           return [attackTarget];
         }
       }
     }
 
-    _targetLocation = null;
+    _moveTarget = null;
     return [];
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    if (_targetLocation == null || targets.Count == 0)
+    if (targets.Count == 0)
       return;
-
-    // Jump to the landing cell. If another unit took it during the wind-up, pick a new spot and target now.
-    if (_targetLocation.Value != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-    {
-      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
-      if (_targetLocation == null || targets.Count == 0)
-        return;
-      if (_targetLocation.Value != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-        return;
-    }
 
     // Deal damage to the enemy in front
     Unit enemy = unitsGrid[targets[0].X, targets[0].Y];

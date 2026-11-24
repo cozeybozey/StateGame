@@ -43,38 +43,24 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		if (unit == null)
 			return default;
 
-		if (unit.Texture != null)
-		{
-			var preview = new TextureRect();
-			preview.Texture = unit.Texture;
-			preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
-			preview.CustomMinimumSize = new Vector2(32, 32);
-			preview.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
-
-			SetDragPreview(preview);
-		}
-
 		return new DragPayload(unit.GetStartInfo(), this, unit.OccupiedMainCell);
   }
 
 	public override bool _CanDropData(Vector2 atPosition, Variant data)
 	{
+    return data.Obj is DragPayload dragPayload && CanPlace(dragPayload, GetCellUnderMouse(atPosition));
+  }
+
+  public bool CanPlace(DragPayload dragPayload, Vector2I cell)
+  {
     if (_interactionLocked)
       return false;
 
-    if (data.Obj is not DragPayload dragPayload)
-			return false;
-
-		if (dragPayload.Source != this && _currentUnitSlotsCount + dragPayload.Unit.OccupiedCells.Count > MaxUnitSlots)
-			return false;
-		
-		Vector2I cell = GetCellUnderMouse(atPosition);
-
-    if (!IsCellValid(dragPayload, cell))
+    if (dragPayload.Source != this && _currentUnitSlotsCount + dragPayload.Unit.OccupiedCells.Count > MaxUnitSlots)
       return false;
 
-    return true;
-	}
+    return IsCellValid(dragPayload, cell);
+  }
 
 	public override void _DropData(Vector2 atPosition, Variant data)
 	{

@@ -33,10 +33,16 @@ project/assembly_name="StateGame"
 Theme=false
 Themea=false
 
+[gui]
+
+theme/custom="res://themes/game_theme.tres"
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
 
 [rendering]
+
+environment/defaults/default_clear_color=Color(0.07, 0.078, 0.11, 1)
 
 rendering_device/driver.windows="d3d12"

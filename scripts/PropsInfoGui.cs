@@ -16,7 +16,7 @@ public partial class PropsInfoGui : VBoxContainer
   private Label _movable = null!;
   private Label _blocking = null!;
   private Label _description = null!;
-  private VBoxContainer _types = null!;
+  private HFlowContainer _types = null!;
   private Prop? _selectedProp = null!;
 
   public override void _Ready()
@@ -25,14 +25,14 @@ public partial class PropsInfoGui : VBoxContainer
     _info = GetNode<VBoxContainer>("Info");
     _name = GetNode<Label>("Info/Id/Name");
     _texture = GetNode<TextureRect>("Info/Id/Texture");
-    _health = GetNode<Label>("Info/Health/Value");
-    _damage = GetNode<Label>("Info/Damage/Value");
-    _armor = GetNode<Label>("Info/Armor/Value");
-    _damagable = GetNode<Label>("Info/Damagable/Value");
-    _movable = GetNode<Label>("Info/Movable/Value");
-    _blocking = GetNode<Label>("Info/Blocking/Value");
+    _health = GetNode<Label>("Info/Stats/Health/Value");
+    _damage = GetNode<Label>("Info/Stats/Damage/Value");
+    _armor = GetNode<Label>("Info/Stats/Armor/Value");
+    _damagable = GetNode<Label>("Info/Stats/Damagable/Value");
+    _movable = GetNode<Label>("Info/Stats/Movable/Value");
+    _blocking = GetNode<Label>("Info/Stats/Blocking/Value");
     _description = GetNode<Label>("Info/Description/Value");
-    _types = GetNode<VBoxContainer>("Info/Types");
+    _types = GetNode<HFlowContainer>("Info/Types");
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -49,21 +49,12 @@ public partial class PropsInfoGui : VBoxContainer
     _health.Text = propInfo.Health.ToString() + '/' + propInfo.MaxHealth.ToString();
     _damage.Text = propInfo.Damage.ToString();
     _armor.Text = propInfo.Armor.ToString();
-    _damagable.Text = propInfo.Damagable ? "yes" : "no";
-    _movable.Text = propInfo.Movable ? "yes" : "no";
-    _blocking.Text = propInfo.Blocking ? "yes" : "no";
+    _damagable.Text = propInfo.Damagable ? "Yes" : "No";
+    _movable.Text = propInfo.Movable ? "Yes" : "No";
+    _blocking.Text = propInfo.Blocking ? "Yes" : "No";
     _description.Text = propInfo.Description.ToString();
 
-    foreach (var child in _types.GetChildren())
-      child.QueueFree();
-    foreach (string type in propInfo.Types)
-    {
-      // Upper case the first letter TODO AKN make this nicer
-      string displayType = "  - ";
-      displayType += string.IsNullOrEmpty(type) ? type : char.ToUpper(type[0]) + type.Substring(1);
-      Label label = new Label() { Text = displayType };
-      _types.AddChild(label);
-    }
+    UiHelpers.ShowTags(_types, propInfo.Types);
   }
 
   public void SetSelectedProp(Prop? prop)

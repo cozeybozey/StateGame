@@ -1,33 +1,43 @@
 using Godot;
 using System;
 
-public partial class InfoGui : VBoxContainer
+public partial class InfoGui : PanelContainer
 {
-  MenuButton _menuButton = null!;
-  PopupMenu _popupMenu = null!;
-  UnitsInfoGui _unitsInfoContainer = null!;
-  TerrainsInfoGui _terrainsInfoContainer = null!;
+  private Button _unitTab = null!;
+  private Button _terrainTab = null!;
+  private Button _propTab = null!;
+  private HBoxContainer _tabs = null!;
+  private Label _placeholder = null!;
+  private ScrollContainer _scroll = null!;
+  private UnitsInfoGui _unitsInfoContainer = null!;
+  private TerrainsInfoGui _terrainsInfoContainer = null!;
+  private PropsInfoGui _propsInfoContainer = null!;
   private GlobalSignals _globalSignals = null!;
-  PropsInfoGui _propsInfoContainer = null!;
-  Vector2I _selectedCell = new Vector2I(0, 0);
+  private Vector2I _selectedCell = new Vector2I(0, 0);
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    _menuButton = GetNode<MenuButton>("InfoTypeButton");
-    _popupMenu = _menuButton.GetPopup();
-    _popupMenu.IdPressed += OnInfoTypeSelected;
-    _unitsInfoContainer = GetNode<UnitsInfoGui>("UnitsInfoContainer");
-    _terrainsInfoContainer = GetNode<TerrainsInfoGui>("TerrainsInfoContainer");
-    _propsInfoContainer = GetNode<PropsInfoGui>("PropsInfoContainer"); 
+    _tabs = GetNode<HBoxContainer>("Content/Tabs");
+    _unitTab = GetNode<Button>("Content/Tabs/UnitTab");
+    _terrainTab = GetNode<Button>("Content/Tabs/TerrainTab");
+    _propTab = GetNode<Button>("Content/Tabs/PropTab");
+    _placeholder = GetNode<Label>("Content/Placeholder");
+    _scroll = GetNode<ScrollContainer>("Content/Scroll");
+    _unitsInfoContainer = GetNode<UnitsInfoGui>("Content/Scroll/VBoxContainer/UnitsInfoContainer");
+    _terrainsInfoContainer = GetNode<TerrainsInfoGui>("Content/Scroll/VBoxContainer/TerrainsInfoContainer");
+    _propsInfoContainer = GetNode<PropsInfoGui>("Content/Scroll/VBoxContainer/PropsInfoContainer");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
-    _globalSignals.UnitInfoSelected += OnUnitInfoSelected;
-  }
+    ButtonGroup group = new ButtonGroup();
+    foreach (Button tab in new[] { _unitTab, _terrainTab, _propTab })
+      tab.ButtonGroup = group;
+    _unitTab.Pressed += () => ShowTab(_unitTab);
+    _terrainTab.Pressed += () => ShowTab(_terrainTab);
+    _propTab.Pressed += () => ShowTab(_propTab);
 
-  // Called every frame. 'delta' is the elapsed time since the previous frame.
-  public override void _Process(double delta)
-  {
+    _globalSignals.UnitInfoSelected += OnUnitInfoSelected;
+    ShowContent(false);
   }
 
   private void OnUnitInfoSelected(UnitInfo unitInfo)
@@ -35,49 +45,30 @@ public partial class InfoGui : VBoxContainer
     _unitsInfoContainer.ResetSelectedUnit();
     _unitsInfoContainer.DisplayInfo(unitInfo);
     _unitsInfoContainer.ShowInfo();
-    ShowUnitInfo();
-    Show();
+    _terrainsInfoContainer.ResetSelectedTerrain();
+    _propsInfoContainer.ResetSelectedProp();
+    _unitTab.Disabled = false;
+    _terrainTab.Disabled = true;
+    _propTab.Disabled = true;
+    ShowTab(_unitTab);
+    ShowContent(true);
   }
 
-  private void ShowUnitInfo()
+  private void ShowTab(Button tab)
   {
-    _unitsInfoContainer.Show();
-    _terrainsInfoContainer.Hide();
-    _propsInfoContainer.Hide();
-    _menuButton.Text = "Unit Info";
+    tab.ButtonPressed = true;
+    _unitsInfoContainer.Visible = tab == _unitTab;
+    _terrainsInfoContainer.Visible = tab == _terrainTab;
+    _propsInfoContainer.Visible = tab == _propTab;
+    _scroll.ScrollVertical = 0;
   }
 
-  private void ShowTerrainInfo()
+  // Without a selection the panel stays in place and shows a hint, so the layout never jumps
+  private void ShowContent(bool show)
   {
-    _unitsInfoContainer.Hide();
-    _terrainsInfoContainer.Show();
-    _propsInfoContainer.Hide();
-    _menuButton.Text = "Terrain Info";
-  }
-
-  private void ShowPropInfo()
-  {
-    _unitsInfoContainer.Hide();
-    _terrainsInfoContainer.Hide();
-    _propsInfoContainer.Show();
-    _menuButton.Text = "Prop Info";
-
-  }
-
-  private void OnInfoTypeSelected(long id)
-  {
-    switch (id)
-    {
-      case 0:
-        ShowUnitInfo();
-        break;
-      case 1:
-        ShowTerrainInfo();
-        break;
-      case 2:
-        ShowPropInfo();
-        break;
-    }
+    _tabs.Visible = show;
+    _scroll.Visible = show;
+    _placeholder.Visible = !show;
   }
 
   public void Reset()
@@ -85,7 +76,7 @@ public partial class InfoGui : VBoxContainer
     _unitsInfoContainer.ResetSelectedUnit();
     _terrainsInfoContainer.ResetSelectedTerrain();
     _propsInfoContainer.ResetSelectedProp();
-    Hide();
+    ShowContent(false);
   }
 
   public void SetSelectedInfo(Unit? unit, Terrain? terrain, Prop? prop, Vector2I cell)
@@ -95,15 +86,19 @@ public partial class InfoGui : VBoxContainer
     _propsInfoContainer.SetSelectedProp(prop);
     _selectedCell = cell;
 
-    // Show unit with highest priority
-    if (unit != null)
-      ShowUnitInfo();
-    else if (prop != null)
-      ShowPropInfo();
-    else
-      ShowTerrainInfo();
+    _unitTab.Disabled = unit == null;
+    _terrainTab.Disabled = terrain == null;
+    _propTab.Disabled = prop == null;
 
-    Show();
+    // Show the most specific thing on the cell
+    if (unit != null)
+      ShowTab(_unitTab);
+    else if (prop != null)
+      ShowTab(_propTab);
+    else
+      ShowTab(_terrainTab);
+
+    ShowContent(unit != null || prop != null || terrain != null);
   }
 
   public Unit? GetSelectedUnit()

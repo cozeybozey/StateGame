@@ -10,7 +10,7 @@ public partial class TerrainsInfoGui : VBoxContainer
   private TextureRect _texture = null!;
   private Label _blocking = null!;
   private Label _description = null!;
-  private VBoxContainer _types = null!;
+  private HFlowContainer _types = null!;
   private Terrain? _selectedTerrain = null!;
 
   public override void _Ready()
@@ -19,9 +19,9 @@ public partial class TerrainsInfoGui : VBoxContainer
     _info = GetNode<VBoxContainer>("Info");
     _name = GetNode<Label>("Info/Id/Name");
     _texture = GetNode<TextureRect>("Info/Id/Texture");
-    _blocking = GetNode<Label>("Info/Blocking/Value");
+    _blocking = GetNode<Label>("Info/Stats/Blocking/Value");
     _description = GetNode<Label>("Info/Description/Value");
-    _types = GetNode<VBoxContainer>("Info/Types");
+    _types = GetNode<HFlowContainer>("Info/Types");
   }
 
   // Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -35,19 +35,10 @@ public partial class TerrainsInfoGui : VBoxContainer
   {
     _name.Text = terrainInfo.Name;
     _texture.Texture = terrainInfo.Texture;
-    _blocking.Text = terrainInfo.Blocking ? "yes" : "no";
+    _blocking.Text = terrainInfo.Blocking ? "Yes" : "No";
     _description.Text = terrainInfo.Description.ToString();
 
-    foreach (var child in _types.GetChildren())
-      child.QueueFree();
-    foreach (string type in terrainInfo.Types)
-    {
-      // Upper case the first letter TODO AKN make this nicer
-      string displayType = "  - ";
-      displayType += string.IsNullOrEmpty(type) ? type : char.ToUpper(type[0]) + type.Substring(1);
-      Label label = new Label() { Text = displayType };
-      _types.AddChild(label);
-    }
+    UiHelpers.ShowTags(_types, terrainInfo.Types);
   }
 
   public void SetSelectedTerrain(Terrain? terrain)

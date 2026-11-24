@@ -5,7 +5,7 @@ using System.Drawing;
 
 public partial class Parasite : Unit
 {
-  private Vector2I? _targetLocation = null;
+  private Vector2 _deathDrift = Vector2.Zero;
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
@@ -40,7 +40,7 @@ public partial class Parasite : Unit
     else
     {
       int index = _rng.RandiRange(0, targets.Count - 1);
-      _targetLocation = targets[index].Item1;
+      _moveTarget = targets[index].Item1;
       return [targets[index].Item2];
     }
   }
@@ -50,24 +50,18 @@ public partial class Parasite : Unit
     if (targets.Count == 0)
       return;
 
-    // Possibly move to cell. If another unit took it during the wind-up, pick a new spot and target now.
-    if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-    {
-      _targetLocation = null;
-      targets = GetTargets(unitsGrid, terrainGrid, propsGrid, units, deadUnits);
-      if (targets.Count == 0)
-        return;
-      if (_targetLocation != null && _targetLocation != OccupiedMainCell && !TryMoveToCell(_targetLocation.Value))
-        return;
-    }
-
     // Attack target
     Unit targetUnit = unitsGrid[targets[0].X, targets[0].Y];
     if (targetUnit != null)
       targetUnit.ChangeHealth(-Damage, this);
-    _targetLocation = null;
 
-    SpawnFloatingText("Died", Colors.Red);
+    // The parasite burrows into its target
+    _deathDrift = CombatFx.CellCenter(targets[0]) - GlobalPosition;
     Die();
+  }
+
+  protected override Vector2 GetDeathDrift()
+  {
+    return _deathDrift;
   }
 }

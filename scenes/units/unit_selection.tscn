@@ -1,24 +1,40 @@
 [gd_scene format=3 uid="uid://c0fm7pqoiilgi"]
 
 [ext_resource type="Script" uid="uid://cikvsxaa8k2ji" path="res://scripts/UnitGui.cs" id="1_xe61n"]
-[ext_resource type="Texture2D" uid="uid://bun8o320vv2wg" path="res://sprites/units/blue_unit.png" id="2_nbbkm"]
 
 [node name="UnitSelection" type="HBoxContainer" unique_id=912728828]
+custom_minimum_size = Vector2(0, 40)
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_constants/separation = 8
 script = ExtResource("1_xe61n")
 Amount = 2
 
-[node name="Sprite" type="TextureRect" parent="." unique_id=1648097564]
+[node name="Spacer" type="Control" parent="."]
+custom_minimum_size = Vector2(1, 0)
 layout_mode = 2
-texture = ExtResource("2_nbbkm")
+mouse_filter = 2
+
+[node name="Sprite" type="TextureRect" parent="." unique_id=1648097564]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Name" type="Label" parent="." unique_id=1224713486]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Turret"
-
-[node name="X" type="Label" parent="." unique_id=1733821637]
-layout_mode = 2
-text = " x"
+text_overrun_behavior = 3
 
 [node name="Amount" type="Label" parent="." unique_id=372042491]
 layout_mode = 2
-text = "1"
+theme_type_variation = &"ValueLabel"
+text = "x1"
+
+[node name="Spacer2" type="Control" parent="."]
+custom_minimum_size = Vector2(4, 0)
+layout_mode = 2
+mouse_filter = 2

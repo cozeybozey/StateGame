@@ -3,14 +3,14 @@
 [ext_resource type="Script" uid="uid://cfapm1ds21tv4" path="res://scripts/props/Prop.cs" id="1_rqolk"]
 
 [sub_resource type="Gradient" id="Gradient_mgebg"]
-colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
+colors = PackedColorArray(0.05, 0.06, 0.09, 0.9, 0.05, 0.06, 0.09, 0.9)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_rk2mp"]
 gradient = SubResource("Gradient_mgebg")
 width = 24
 
 [sub_resource type="Gradient" id="Gradient_44d7s"]
-colors = PackedColorArray(1, 0, 0, 1, 1, 0, 0, 1)
+colors = PackedColorArray(0.82, 0.74, 0.6, 1, 0.82, 0.74, 0.6, 1)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_fe0lq"]
 gradient = SubResource("Gradient_44d7s")
@@ -22,13 +22,8 @@ script = ExtResource("1_rqolk")
 [node name="Sprite" type="Sprite2D" parent="." unique_id=387835248]
 
 [node name="Health" type="TextureProgressBar" parent="." unique_id=1791189684]
-anchors_preset = 10
-anchor_right = 1.0
-offset_left = -12.0
-offset_top = -18.0
-offset_right = 12.0
-offset_bottom = -15.0
-grow_horizontal = 2
+offset_right = 24.0
+offset_bottom = 4.0
 nine_patch_stretch = true
 texture_under = SubResource("GradientTexture1D_rk2mp")
 texture_progress = SubResource("GradientTexture1D_fe0lq")

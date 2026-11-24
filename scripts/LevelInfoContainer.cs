@@ -2,12 +2,12 @@ using Godot;
 using Godot.NativeInterop;
 using System;
 
-public partial class LevelInfoContainer : VBoxContainer
+public partial class LevelInfoContainer : PanelContainer
 {
   private Label _name;
-  private Label _type;
-  private Label _unlocked;
-  private Label _completed;
+  private Label _hint;
+  private VBoxContainer _details;
+  private HFlowContainer _tags;
   private VBoxContainer _units;
   private VBoxContainer _rewards;
   private Button _startLevelButton;
@@ -20,13 +20,13 @@ public partial class LevelInfoContainer : VBoxContainer
   // Called when the node enters the scene tree for the first time.
   public override void _Ready()
   {
-    _name = GetNode<Label>("Id/Value");
-    _type = GetNode<Label>("Type/Value");
-    _unlocked = GetNode<Label>("Unlocked/Value");
-    _completed = GetNode<Label>("Completed/Value");
-    _units = GetNode<VBoxContainer>("Units/VBoxContainer");
-    _rewards = GetNode<VBoxContainer>("Rewards/VBoxContainer");
-    _startLevelButton = GetNode<Button>("StartLevelButton");
+    _name = GetNode<Label>("Content/Name");
+    _hint = GetNode<Label>("Content/Hint");
+    _details = GetNode<VBoxContainer>("Content/Details");
+    _tags = GetNode<HFlowContainer>("Content/Details/Tags");
+    _units = GetNode<VBoxContainer>("Content/Details/UnitsPanel/Units/VBoxContainer");
+    _rewards = GetNode<VBoxContainer>("Content/Details/RewardsPanel/Rewards/VBoxContainer");
+    _startLevelButton = GetNode<Button>("Content/StartLevelButton");
 
     _startLevelButton.Pressed += OnStartLevelButtonPressed;
   }
@@ -102,21 +102,21 @@ public partial class LevelInfoContainer : VBoxContainer
       child.Free();
 
     Label coinsRewardLabel = new();
-    coinsRewardLabel.Text = $"{levelInfo.CoinsReward} coins,";
+    coinsRewardLabel.Text = $"{levelInfo.CoinsReward} coins";
     coinsRewardLabel.AutowrapMode = TextServer.AutowrapMode.Word;
     _rewards.AddChild(coinsRewardLabel);
 
     if (levelInfo.Rewards.Count == 0)
     {
       Label unitRewardsLabel = new();
-      unitRewardsLabel.Text = "1 of 3 random units from this level";
+      unitRewardsLabel.Text = "Plus one of 3 random units from this level";
       unitRewardsLabel.AutowrapMode = TextServer.AutowrapMode.Word;
       _rewards.AddChild(unitRewardsLabel);
     }
     else
     {
       Label unitRewardsLabel = new();
-      unitRewardsLabel.Text = $"1 of the following units:";
+      unitRewardsLabel.Text = "One of these units:";
       unitRewardsLabel.AutowrapMode = TextServer.AutowrapMode.Word;
       _rewards.AddChild(unitRewardsLabel);
 
@@ -136,18 +136,26 @@ public partial class LevelInfoContainer : VBoxContainer
     }
   }
 
+  public void ClearInfo()
+  {
+    _activeLevel = null!;
+    _name.Text = "World map";
+    _hint.Show();
+    _details.Hide();
+    _startLevelButton.Disabled = true;
+  }
+
   public void DisplayInfo(LevelInfo levelInfo)
   {
     _activeLevel = levelInfo;
-    _name.Text = levelInfo.Name;
-    if (levelInfo.Boss)
-      _type.Text = "Boss";
-    else if (levelInfo.Gauntlet)
-      _type.Text = $"Gauntlet, {levelInfo.Units.Count} levels";
-    else
-      _type.Text = "Regular";
-    _unlocked.Text = levelInfo.Unlocked ? "Yes" : "No";
-    _completed.Text = levelInfo.Completed ? "Yes" : "No";
+    _name.Text = levelInfo.Name.Replace("\n", " - ");
+    _hint.Hide();
+    _details.Show();
+    _startLevelButton.Disabled = false;
+    _startLevelButton.Text = levelInfo.Completed ? "Replay level" : "Start level";
+
+    string type = levelInfo.Boss ? "Boss" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : "Regular";
+    UiHelpers.ShowTags(_tags, levelInfo.Completed ? [type, "Completed"] : [type]);
 
     DisplayUnits(levelInfo);
     DisplayRewards(levelInfo);

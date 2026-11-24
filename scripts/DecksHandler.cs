@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Principal;
 
-public partial class DecksHandler : Control
+public partial class DecksHandler : PanelContainer
 {
   public Dictionary<string, UnitInfo[,]> Decks = new Dictionary<string, UnitInfo[,]>();
   public List<UnitInfo> AvailableUnits = new List<UnitInfo>();
@@ -21,6 +21,7 @@ public partial class DecksHandler : Control
   private VBoxContainer _decksContainer;
   private Button _createDeckButton;
   private VBoxContainer _decksList;
+  private Label _emptyHint;
   private AcceptDialog _popup;
   private LineEdit _nameInput;
 
@@ -38,6 +39,7 @@ public partial class DecksHandler : Control
     _decksContainer = GetNode<VBoxContainer>("DecksContainer");
     _createDeckButton = GetNode<Button>("DecksContainer/CreateDeck");
     _decksList = GetNode<VBoxContainer>("DecksContainer/ScrollContainer/VBoxContainer");
+    _emptyHint = GetNode<Label>("DecksContainer/EmptyHint");
     _popup = GetNode<AcceptDialog>("DecksContainer/AcceptDialog");
     _nameInput = GetNode<LineEdit>("DecksContainer/AcceptDialog/LineEdit");
 
@@ -103,12 +105,20 @@ public partial class DecksHandler : Control
     string deckName = _nameInput.Text.Trim();
     if (string.IsNullOrEmpty(deckName)) return;
 
-    Button deckButton = new();
-    deckButton.Text = deckName;
-    _decksList.AddChild(deckButton);
+    AddDeckButton(deckName);
     Decks[deckName] = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    deckButton.Pressed += () => OnDeckSelected(deckButton);
   }
+
+  private Button AddDeckButton(string deckName)
+  {
+    Button deckButton = new Button { Text = deckName, CustomMinimumSize = new Vector2(0, 38), Alignment = HorizontalAlignment.Left };
+    deckButton.Pressed += () => OnDeckSelected(deckButton);
+    _decksList.AddChild(deckButton);
+    _emptyHint.Hide();
+    return deckButton;
+  }
+
+  public bool HasSelectedDeck => _selectedDeck != null && Decks.ContainsKey(_selectedDeck);
 
   private void OnDeckSelected(Button button)
   {
@@ -279,15 +289,13 @@ public partial class DecksHandler : Control
     _decksContainer.Show();
     _unitsSelectionContainer.Hide();
 
+    _emptyHint.Show();
     string newSelectedDeck = null!;
     foreach (var deck in Decks)
     {
       if (newSelectedDeck == null)
         newSelectedDeck = deck.Key;
-      Button deckButton = new();
-      deckButton.Text = deck.Key;
-      _decksList.AddChild(deckButton);
-      deckButton.Pressed += () => OnDeckSelected(deckButton);
+      AddDeckButton(deck.Key);
     }
 
     _selectedDeck = newSelectedDeck;

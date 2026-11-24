@@ -33,7 +33,7 @@ public partial class GridEntity : Node2D
 
   // Children
   protected Sprite2D _sprite = null!;
-	private TextureProgressBar _healthBar = null!;
+	protected TextureProgressBar _healthBar = null!;
 
   // Private variables
   protected GlobalSignals _globalSignals = null!;
@@ -54,8 +54,9 @@ public partial class GridEntity : Node2D
 		_healthBar = GetNode<TextureProgressBar>("Health");
     _globalSignals = GetNode<GlobalSignals>("/root/GlobalSignals");
 
+    LayoutBars();
     _healthBar.MaxValue = MaxHealth;
-    _healthBar.Value = Health;
+    UpdateHealthBar();
     if (!Damagable)
       _healthBar.Hide();
     OccupiedMainCell = StartCell;
@@ -63,6 +64,7 @@ public partial class GridEntity : Node2D
 		Vector2I relPos = GlobalFunctions.GetRelPosInCells(OccupiedCells, OccupiedCells[0]);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(OccupiedMainCell, cellDimensions.X, cellDimensions.Y, relPos);
 		_sprite.Texture = Texture;
+    UpdateHealthBar();
 
     _globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntitySpawned, this, !_placed);
 
@@ -128,11 +130,95 @@ public partial class GridEntity : Node2D
   {
   }
 
+  // Rest scale of the sprite, which the hit and buff reactions return to
+  protected Vector2 _restScale = Vector2.One;
+
+  protected Vector2 GetPixelSize()
+  {
+    return GlobalFunctions.CellsToDimensions(OccupiedCells) * GlobalConstants.TileSize;
+  }
+
+  // The health bar runs along the top row of the entity's cells, so it never floats next to an L shape
+  public virtual void LayoutBars()
+  {
+    if (!Damagable)
+      return;
+
+    PlaceBar(_healthBar, bottom: false);
+  }
+
+  protected void PlaceBar(Control bar, bool bottom)
+  {
+    Vector2 size = GetPixelSize();
+    int tile = GlobalConstants.TileSize;
+    int minX = OccupiedCells.Min(c => c.X);
+    int rowY = bottom ? OccupiedCells.Max(c => c.Y) : OccupiedCells.Min(c => c.Y);
+    List<int> rowCells = OccupiedCells.Where(c => c.Y == rowY).Select(c => c.X - minX).ToList();
+    float left = -size.X / 2 + rowCells.Min() * tile + 3;
+    float right = -size.X / 2 + (rowCells.Max() + 1) * tile - 3;
+    float y = bottom ? size.Y / 2 - 5 : -size.Y / 2 + 1;
+    bar.Position = new Vector2(left, y) + VisualOffset;
+    bar.Size = new Vector2(right - left, 4);
+  }
+
+  // Where the entity is drawn relative to its real position. Moving changes GlobalPosition at once, which the
+  // game logic relies on, while this offset shrinks to zero so the entity visibly travels to its new cell.
+  private Vector2 _visualOffset = Vector2.Zero;
+  private Tween? _moveTween = null;
+  public Vector2 VisualOffset
+  {
+    get => _visualOffset;
+    protected set
+    {
+      _visualOffset = value;
+      _sprite.Offset = value / _restScale;
+      LayoutBars();
+    }
+  }
+
+  private void PlayMove(Vector2 fromGlobalPosition)
+  {
+    StopMove();
+    Vector2 start = fromGlobalPosition - GlobalPosition;
+    if (start == Vector2.Zero)
+      return;
+
+    float duration = Mathf.Max(0.05f, 0.9f * GlobalConstants.MoveTicks / GlobalConstants.TicksPerSecond / (CombatFx.Instance?.GameSpeed ?? 1.0f));
+    VisualOffset = start;
+    ZIndex = 5;
+    _moveTween = CreateTween();
+    _moveTween.TweenMethod(Callable.From<float>(t => VisualOffset = start * (1 - t) + Vector2.Up * Mathf.Sin(t * Mathf.Pi) * 10), 0.0f, 1.0f, duration)
+      .SetEase(Tween.EaseType.InOut).SetTrans(Tween.TransitionType.Sine);
+    _moveTween.TweenCallback(Callable.From(StopMove));
+  }
+
+  protected void StopMove()
+  {
+    if (_moveTween != null && _moveTween.IsValid())
+      _moveTween.Kill();
+    _moveTween = null;
+    ZIndex = 0;
+    VisualOffset = Vector2.Zero;
+  }
+
+  // Direction and distance the sprite travels while its death plays
+  protected virtual Vector2 GetDeathDrift()
+  {
+    return Vector2.Zero;
+  }
+
+  protected virtual void UpdateHealthBar()
+  {
+    _healthBar.Value = Health;
+    _healthBar.Visible = Damagable && !_dead && Health < MaxHealth;
+  }
+
   public virtual void Die()
 	{
     _dead = true;
     _globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntityDied, this);
     _healthBar.Hide();
+    CombatFx.Instance?.ShowDeath(_sprite, VisualOffset, GetDeathDrift());
     _sprite.Hide();
   }
 
@@ -175,7 +261,7 @@ public partial class GridEntity : Node2D
         _globalSignals.EmitSignal(GlobalSignals.SignalName.HealingDone, unit, effectiveHealing);
       effectiveAmount = effectiveHealing;
     }
-    _healthBar.Value = Health;
+    UpdateHealthBar();
 
     if (_affected)
       _floatingTextQueue.Enqueue(new Tuple<string, Color>(displayedText, displayedColor));
@@ -236,7 +322,7 @@ public partial class GridEntity : Node2D
     MaxHealth += amount;
 		Health += amount;
 		_healthBar.MaxValue = MaxHealth;
-    _healthBar.Value = Health;
+    UpdateHealthBar();
 
     string text = $"+{amount} Health";
     Color color = Colors.Yellow;
@@ -328,12 +414,15 @@ public partial class GridEntity : Node2D
       return;
 
 		Vector2I oldMainCell = OccupiedMainCell;
+    Vector2 oldVisualPosition = GlobalPosition + VisualOffset;
 		if (!playing)
 			StartCell = newCell;
     OccupiedMainCell = newCell;
 		Vector2I cellDimensions = GlobalFunctions.CellsToDimensions(OccupiedCells);
     Vector2I relPos = GlobalFunctions.GetRelPosInCells(OccupiedCells, OccupiedCells[0]);
     GlobalPosition = GlobalFunctions.CellToGlobalPosition(OccupiedMainCell, cellDimensions.X, cellDimensions.Y, relPos);
+    if (playing)
+      PlayMove(oldVisualPosition);
 		_globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntityMoved, this, oldMainCell, playing);
   }
 
@@ -344,7 +433,7 @@ public partial class GridEntity : Node2D
 
     floatingText.Text = text;
 		floatingText.Modulate = color;
-    floatingText.GlobalPosition = GlobalPosition - new Vector2(0, 0.5f * GlobalConstants.TileSize);
+    floatingText.GlobalPosition = GlobalPosition + VisualOffset - new Vector2(0, 0.5f * GlobalConstants.TileSize);
 
     GetTree().CurrentScene.AddChild(floatingText);
   }
@@ -367,7 +456,7 @@ public partial class GridEntity : Node2D
   {
     if (_spriteTween != null && _spriteTween.IsValid())
       _spriteTween.Kill();
-    _sprite.Scale = Vector2.One;
+    _sprite.Scale = _restScale;
     _spriteTween = CreateTween();
     return _spriteTween;
   }
@@ -395,7 +484,7 @@ public partial class GridEntity : Node2D
     float t = FxTimeScale();
     Tween tween = RestartSpriteTween();
     _sprite.Position = Vector2.Zero;
-    tween.TweenProperty(_sprite, "scale", new Vector2(1.2f, 1.2f), 0.06f * t);
-    tween.TweenProperty(_sprite, "scale", Vector2.One, 0.14f * t);
+    tween.TweenProperty(_sprite, "scale", _restScale * 1.2f, 0.06f * t);
+    tween.TweenProperty(_sprite, "scale", _restScale, 0.14f * t);
   }
 }

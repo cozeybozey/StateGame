@@ -23,8 +23,8 @@ public partial class TurnTimeline : Node2D
   private int _hoveredSlot = -1;
   private Unit? _hoveredUnit = null;
 
-  private static readonly Color PlayerColor = new Color(0.15f, 0.45f, 0.85f);
-  private static readonly Color EnemyColor = new Color(0.8f, 0.2f, 0.15f);
+  private static readonly Color PlayerColor = GamePalette.Player;
+  private static readonly Color EnemyColor = GamePalette.Enemy;
 
   public override void _EnterTree()
   {
@@ -124,8 +124,23 @@ public partial class TurnTimeline : Node2D
     return new Rect2(center - new Vector2(IconSize, IconSize) / 2, new Vector2(IconSize, IconSize));
   }
 
+  // Largest rect with the texture's proportions, centered in the slot (wide units keep their shape)
+  private static Rect2 FitInside(Vector2 textureSize, Rect2 slot)
+  {
+    float scale = Mathf.Min(slot.Size.X / textureSize.X, slot.Size.Y / textureSize.Y);
+    Vector2 size = textureSize * scale;
+    return new Rect2(slot.GetCenter() - size / 2, size);
+  }
+
   public override void _Draw()
   {
+    // Arrow pointing at the first slot
+    if (_actions.Count > 0)
+    {
+      float y = -GlobalConstants.TileSize * 0.5f;
+      DrawColoredPolygon([new Vector2(-12, y - 6), new Vector2(-3, y), new Vector2(-12, y + 6)], GamePalette.Gold);
+    }
+
     for (int i = 0; i < _actions.Count; i++)
     {
       PredictedAction action = _actions[i];
@@ -138,13 +153,13 @@ public partial class TurnTimeline : Node2D
       bool highlighted = _hoveredUnit != null && unit == _hoveredUnit;
       bool dimmed = _hoveredUnit != null && !highlighted;
 
-      DrawRect(rect, new Color(sideColor.Darkened(0.55f), dimmed ? 0.5f : 1f));
-      if (unit.Texture != null)
-        DrawTextureRect(unit.Texture, rect.Grow(-3), false, new Color(1, 1, 1, dimmed ? 0.35f : 1f));
 
       // Border: side color; yellow while that unit is winding up; white when linked to the hovered unit
-      Color border = highlighted ? Colors.White : action.InProgress ? new Color(1f, 0.85f, 0.2f) : sideColor;
-      DrawRect(rect, border, false, highlighted || action.InProgress ? 2.5f : 1.5f);
+      Color border = highlighted ? Colors.White : action.InProgress ? GamePalette.Gold : sideColor;
+      int borderWidth = highlighted || action.InProgress ? 3 : 2;
+      DrawStyleBox(GamePalette.Box(new Color(sideColor.Darkened(0.65f), dimmed ? 0.5f : 1f), new Color(border, dimmed ? 0.5f : 1f), borderWidth, 5), rect);
+      if (unit.Texture != null)
+        DrawTextureRect(unit.Texture, FitInside(unit.Texture.GetSize(), rect.Grow(-4)), false, new Color(1, 1, 1, dimmed ? 0.35f : 1f));
     }
 
     // Outline the hovered unit on the board
