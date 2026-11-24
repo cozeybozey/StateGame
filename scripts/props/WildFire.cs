@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public partial class WildFire : Prop
 {
+  public override bool ActsWithWorld => true;
+
   private Node _propsNode = null!;
 
   protected override void Start()

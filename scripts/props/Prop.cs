@@ -6,6 +6,9 @@ public partial class Prop : GridEntity
 {
   public PropInfo StartPropInfo = null!;
 
+  // Whether the prop does something when the world acts (see World.TurnEnd)
+  public virtual bool ActsWithWorld => false;
+
   public void Initialize(PropInfo propInfo, Vector2I startCell, bool placed = false)
 	{
     Id = propInfo.Id;

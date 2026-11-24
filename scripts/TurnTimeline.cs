@@ -2,13 +2,13 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 
-// Strip of unit icons along the top border of the board showing who acts next, in order.
+// Strip of unit icons along the top border of the board showing who acts next, in order. The globe is the world's own action.
 // Hovering an icon outlines that unit on the board; hovering a unit on the board highlights its icons.
 public partial class TurnTimeline : Node2D
 {
   public struct PredictedAction
   {
-    public Unit Unit;
+    public Unit? Unit;        // Null for the world's action
     public int Tick;          // Ticks from now (0 = winding up right now)
     public bool InProgress;   // Unit is telegraphing this action right now
   }
@@ -20,8 +20,11 @@ public partial class TurnTimeline : Node2D
   private Unit[,]? _unitsGrid = null;
   private IReadOnlyList<Unit>? _actionQueue = null;
   private List<PredictedAction> _actions = new();
+  private int _worldTicksLeft = 0;
   private int _hoveredSlot = -1;
   private Unit? _hoveredUnit = null;
+
+  public bool WorldHovered => _hoveredSlot >= 0 && _hoveredSlot < _actions.Count && _actions[_hoveredSlot].Unit == null;
 
   private static readonly Color PlayerColor = GamePalette.Player;
   private static readonly Color EnemyColor = GamePalette.Enemy;
@@ -31,11 +34,12 @@ public partial class TurnTimeline : Node2D
     ZIndex = 40;
   }
 
-  public void SetData(List<Unit> units, Unit[,] unitsGrid, IReadOnlyList<Unit> actionQueue)
+  public void SetData(List<Unit> units, Unit[,] unitsGrid, IReadOnlyList<Unit> actionQueue, int worldTicksLeft)
   {
     _units = units;
     _unitsGrid = unitsGrid;
     _actionQueue = actionQueue;
+    _worldTicksLeft = worldTicksLeft;
   }
 
   // Predict the next `count` actions. `units` must be in turn order (World.SortUnits): units that fill
@@ -86,12 +90,28 @@ public partial class TurnTimeline : Node2D
     return result.Take(count).ToList();
   }
 
+  // The world acts at the end of a tick, so it comes after units acting on that same tick
+  private void InsertWorldActions()
+  {
+    if (_actions.Count == 0)
+      return;
+
+    int lastTick = _actions[^1].Tick;
+    for (int tick = _worldTicksLeft; tick <= lastTick; tick += GlobalConstants.TicksPerWorldAction)
+    {
+      int index = _actions.FindIndex(a => a.Tick > tick);
+      _actions.Insert(index < 0 ? _actions.Count : index, new PredictedAction { Unit = null, Tick = tick, InProgress = false });
+    }
+    _actions = _actions.Take(SlotCount).ToList();
+  }
+
   public override void _Process(double delta)
   {
     if (!Visible)
       return;
 
     _actions = Predict(_units, SlotCount, _actionQueue);
+    InsertWorldActions();
 
     // Hover detection (world coordinates, same space as the board)
     Vector2 mouse = GetGlobalMousePosition();
@@ -132,6 +152,26 @@ public partial class TurnTimeline : Node2D
     return new Rect2(slot.GetCenter() - size / 2, size);
   }
 
+  private void DrawWorldSlot(Rect2 rect, bool hovered, bool dimmed)
+  {
+    Color color = new Color(GamePalette.World, dimmed ? 0.4f : 1f);
+    DrawStyleBox(GamePalette.Box(GamePalette.World.Darkened(0.75f), hovered ? Colors.White : color, hovered ? 3 : 2, 5), rect);
+
+    // Globe: outline, equator and two meridians
+    Vector2 center = rect.GetCenter();
+    const float radius = 7f;
+    DrawArc(center, radius, 0, Mathf.Tau, 24, color, 1.2f, true);
+    DrawLine(center - new Vector2(radius, 0), center + new Vector2(radius, 0), color, 1.2f, true);
+    DrawLine(center - new Vector2(0, radius), center + new Vector2(0, radius), color, 1.2f, true);
+    Vector2[] meridian = new Vector2[25];
+    for (int i = 0; i < meridian.Length; i++)
+    {
+      float angle = Mathf.Tau * i / (meridian.Length - 1);
+      meridian[i] = center + new Vector2(Mathf.Cos(angle) * radius * 0.5f, Mathf.Sin(angle) * radius);
+    }
+    DrawPolyline(meridian, color, 1.2f, true);
+  }
+
   public override void _Draw()
   {
     // Arrow pointing at the first slot
@@ -144,15 +184,20 @@ public partial class TurnTimeline : Node2D
     for (int i = 0; i < _actions.Count; i++)
     {
       PredictedAction action = _actions[i];
+      Rect2 rect = SlotRect(i);
+      if (action.Unit == null)
+      {
+        DrawWorldSlot(rect, i == _hoveredSlot, _hoveredUnit != null);
+        continue;
+      }
+
       Unit unit = action.Unit;
       if (!IsInstanceValid(unit))
         continue;
 
-      Rect2 rect = SlotRect(i);
       Color sideColor = unit.Side ? PlayerColor : EnemyColor;
       bool highlighted = _hoveredUnit != null && unit == _hoveredUnit;
-      bool dimmed = _hoveredUnit != null && !highlighted;
-
+      bool dimmed = (_hoveredUnit != null || WorldHovered) && !highlighted;
 
       // Border: side color; yellow while that unit is winding up; white when linked to the hovered unit
       Color border = highlighted ? Colors.White : action.InProgress ? GamePalette.Gold : sideColor;

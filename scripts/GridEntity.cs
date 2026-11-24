@@ -74,6 +74,8 @@ public partial class GridEntity : Node2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
+    AdvanceMove((float)delta);
+
     if (Damagable)
     {
       if (_affected)
@@ -164,7 +166,9 @@ public partial class GridEntity : Node2D
   // Where the entity is drawn relative to its real position. Moving changes GlobalPosition at once, which the
   // game logic relies on, while this offset shrinks to zero so the entity visibly travels to its new cell.
   private Vector2 _visualOffset = Vector2.Zero;
-  private Tween? _moveTween = null;
+  private Vector2 _moveStart = Vector2.Zero;
+  private float _moveDuration = 0;
+  private float _moveTime = 0;
   public Vector2 VisualOffset
   {
     get => _visualOffset;
@@ -183,20 +187,33 @@ public partial class GridEntity : Node2D
     if (start == Vector2.Zero)
       return;
 
-    float duration = Mathf.Max(0.05f, 0.9f * GlobalConstants.MoveTicks / GlobalConstants.TicksPerSecond / (CombatFx.Instance?.GameSpeed ?? 1.0f));
+    _moveDuration = Mathf.Max(0.05f, 0.9f * GlobalConstants.MoveTicks / GlobalConstants.TicksPerSecond / (CombatFx.Instance?.GameSpeed ?? 1.0f));
+    _moveTime = 0;
+    _moveStart = start;
     VisualOffset = start;
     ZIndex = 5;
-    _moveTween = CreateTween();
-    _moveTween.TweenMethod(Callable.From<float>(t => VisualOffset = start * (1 - t) + Vector2.Up * Mathf.Sin(t * Mathf.Pi) * 10), 0.0f, 1.0f, duration)
-      .SetEase(Tween.EaseType.InOut).SetTrans(Tween.TransitionType.Sine);
-    _moveTween.TweenCallback(Callable.From(StopMove));
+  }
+
+  // Runs in _Process and not in a tween, because tweens update after nodes redraw and the unit's outline would trail it
+  private void AdvanceMove(float delta)
+  {
+    if (_moveDuration <= 0)
+      return;
+
+    _moveTime += delta;
+    float t = _moveTime / _moveDuration;
+    if (t >= 1)
+    {
+      StopMove();
+      return;
+    }
+    float eased = 0.5f - 0.5f * Mathf.Cos(t * Mathf.Pi);
+    VisualOffset = _moveStart * (1 - eased) + Vector2.Up * Mathf.Sin(eased * Mathf.Pi) * 10;
   }
 
   protected void StopMove()
   {
-    if (_moveTween != null && _moveTween.IsValid())
-      _moveTween.Kill();
-    _moveTween = null;
+    _moveDuration = 0;
     ZIndex = 0;
     VisualOffset = Vector2.Zero;
   }

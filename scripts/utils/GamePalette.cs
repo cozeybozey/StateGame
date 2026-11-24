@@ -15,6 +15,7 @@ public static class GamePalette
   public static readonly Color Enemy = new Color("e0564f");
   public static readonly Color Support = new Color("6fdc7f");
   public static readonly Color Neutral = new Color("f2f2f2");
+  public static readonly Color World = new Color("4fd1c5");
   public static readonly Color Completed = new Color("5fb878");
 
   // Earth, Heaven, Future, Graveyard, Hell

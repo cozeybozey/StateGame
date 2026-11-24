@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public partial class Fire : Prop
 {
+  public override bool ActsWithWorld => true;
+
   public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Unit unit = unitsGrid[OccupiedMainCell.X, OccupiedMainCell.Y];

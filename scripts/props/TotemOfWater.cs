@@ -5,6 +5,8 @@ using System.Linq;
 
 public partial class TotemOfWater : Prop
 {
+  public override bool ActsWithWorld => true;
+
   public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Unit? randomFriendlyUnit = units

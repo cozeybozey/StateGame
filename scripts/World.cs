@@ -70,6 +70,7 @@ public partial class World : Node2D
   private List<Unit> _actionQueue = new();  // Units that became ready on the same tick, acting one by one
   private CombatFx _combatFx = null!;
   private TurnTimeline _turnTimeline = null!;
+  private WorldBar _worldBar = null!;
   private double _speed = 1.0f;
   private int _turnEndDamage = 1;
   private bool _paused = false;
@@ -148,6 +149,8 @@ public partial class World : Node2D
     AddChild(_combatFx);
     _turnTimeline = new TurnTimeline { Name = "TurnTimeline" };
     AddChild(_turnTimeline);
+    _worldBar = new WorldBar { Name = "WorldBar" };
+    AddChild(_worldBar);
     AddChild(new UnitDragPreview { Name = "UnitDragPreview" });
     _speedButton = GetNode<MenuButton>("CanvasLayer/BottomUi/SpeedButton");
     _worldUi = GetNode<Panel>("CanvasLayer/ScrollContainer/WorldUi");
@@ -243,8 +246,12 @@ public partial class World : Node2D
     if (!_playing && _turnOrderDirty)
       UpdateTurnOrderPreview();
 
-    _turnTimeline.SetData(_units, _unitsGrid, _actionQueue);
+    int worldTicksLeft = GlobalConstants.TicksPerWorldAction - _tick % GlobalConstants.TicksPerWorldAction;
+    // While the queue runs, the tick that started it is still unfinished, so the world is one tick closer
+    _turnTimeline.SetData(_units, _unitsGrid, _actionQueue, _actionQueue.Count > 0 ? worldTicksLeft - 1 : worldTicksLeft);
     _turnTimeline.Visible = _units.Count > 0 && !_worldUi.GetParent<ScrollContainer>().Visible;
+    _worldBar.SetData(worldTicksLeft, _playing && !_gameEnd, _turnTimeline.WorldHovered, _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)));
+    _worldBar.Visible = _turnTimeline.Visible;
     _unitOutlines.SetData(_units);
     _unitOutlines.Visible = _playing;
     _dimmer.Visible = _messagePanel.Visible || _gameStats.Visible;
@@ -308,6 +315,8 @@ public partial class World : Node2D
     if (_actionQueue.Count > 0)
     {
       ProcessActionQueue();
+      if (_actionQueue.Count == 0)
+        AdvanceClock();
       return;
     }
 
@@ -340,6 +349,13 @@ public partial class World : Node2D
     }
     _unitToAct = null;
 
+    // A running queue finishes this tick first
+    if (_actionQueue.Count == 0)
+      AdvanceClock();
+  }
+
+  private void AdvanceClock()
+  {
     _tick++;
     if (_tick % GlobalConstants.TicksPerTurn == 0 && !_gameEnd)
       TurnEnd();
@@ -2314,10 +2330,11 @@ public partial class World : Node2D
     foreach (Unit unit in _units.ToList())  
       unit.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
 
-    // Board update: dead zombies revive, and every prop's turn end function is called
+    // The world acts: dead zombies revive, and every prop's turn end function is called
     // Use shallow copy to prevent spawned props having their turn end called as well
     if (_turn % GlobalConstants.TurnsPerBoardUpdate == 0)
     {
+      _worldBar.PlayAction();
       RespawnZombies();
       foreach (Prop prop in _propsGrid.Cast<Prop>().Where(p => p != null && IsInstanceValid(p)).ToList())
         prop.TurnEnd(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
