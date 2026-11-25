@@ -232,6 +232,10 @@ public partial class GridEntity : Node2D
 
   public virtual void Die()
 	{
+    // The cause of death can happen again while this entity is dying, like two units that kill each other with their deaths
+    if (_dead)
+      return;
+
     _dead = true;
     _globalSignals.EmitSignal(GlobalSignals.SignalName.GridEntityDied, this);
     _healthBar.Hide();
