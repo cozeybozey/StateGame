@@ -239,13 +239,13 @@ layout_mode = 2
 [node name="Text" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/UnlockInfo"]
 layout_mode = 2
 theme_type_variation = &"MutedLabel"
-text = "Levels to next unit slot"
+text = "Gatekeepers (+1 slot each)"
 size_flags_horizontal = 3
 
 [node name="Value" type="Label" parent="CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer/Content/UnlockInfo"]
 layout_mode = 2
 theme_type_variation = &"ValueLabel"
-text = "0/5"
+text = "0/20"
 
 [node name="DecksHandler" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer"]
 custom_minimum_size = Vector2(268, 0)

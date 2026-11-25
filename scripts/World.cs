@@ -9,7 +9,6 @@ public partial class World : Node2D
   private const int LevelRedoCost = 100;
   private const float GauntletRedoCostFactor = 2.5f;
   private const int BossesToWin = 5;
-  private const int LevelsPerUnitSlot = 5;
 
   // In the order of the speed button's menu
   private static readonly float[] Speeds = [0.5f, 1, 2, 4, 8, 16, 32];
@@ -48,7 +47,7 @@ public partial class World : Node2D
   private LevelEditor _levelEditor = null!;
   private Label _turnCounter = null!;
   private Label _coinsCounter = null!;
-  private Label _levelsUntilNextUnlock = null!;
+  private Label _gatekeepersBeaten = null!;
   private MenuButton _speedButton = null!;
   private Button _worldMapButton = null!;
   private Button _pauseButton = null!;
@@ -85,7 +84,7 @@ public partial class World : Node2D
     _dimmer = GetNode<ColorRect>("CanvasLayer/Dimmer");
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _levelInfo = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
-    _levelsUntilNextUnlock = _levelInfo.GetNode<Label>("Content/UnlockInfo/Value");
+    _gatekeepersBeaten = _levelInfo.GetNode<Label>("Content/UnlockInfo/Value");
     _levelEditor = GetNode<LevelEditor>("CanvasLayer/SelectionUi/HBoxContainer/LevelEditor");
 
     Node bottomUi = GetNode("CanvasLayer/BottomUi");
@@ -143,7 +142,7 @@ public partial class World : Node2D
     _surrenderButton.Pressed += OnSurrenderPressed;
     _speedButton.GetPopup().IdPressed += OnSpeedSelected;
     _levelInfo.StartLevelPressed += OnStartLevelPressed;
-    Map.LevelSelected += _levelInfo.DisplayInfo;
+    Map.LevelSelected += ShowLevelInfo;
     _levelEditor.Closed += CloseEditor;
     _levelEditor.TestRequested += TestLevel;
   }
@@ -160,7 +159,7 @@ public partial class World : Node2D
     int worldTicksLeft = _battle.WorldTicksLeft;
     // While the queue runs, the tick that started it is still unfinished, so the world is one tick closer
     _turnTimeline.SetData(_board.Units, _board.UnitsGrid, _battle.ActionQueue, _battle.ActionQueue.Count > 0 ? worldTicksLeft - 1 : worldTicksLeft);
-    _turnTimeline.Visible = _board.Units.Count > 0 && !Map.IsOpen;
+    _turnTimeline.Visible = _board.Units.Count > 0 && !Map.IsShown;
     _worldBar.SetData(worldTicksLeft, _battle.Running, _turnTimeline.WorldHovered, _board.Props);
     _worldBar.Visible = _turnTimeline.Visible;
     _unitOutlines.SetData(_board.Units);
@@ -179,9 +178,9 @@ public partial class World : Node2D
   // Progress follows from which levels are completed, so it is also right after loading a save
   private void UpdateProgress()
   {
-    int completed = Map.Levels.Values.Count(l => l.Completed);
-    _levelsUntilNextUnlock.Text = $"{completed % LevelsPerUnitSlot}/{LevelsPerUnitSlot}";
-    _gridOverlay.SetExtraUnitSlots(completed / LevelsPerUnitSlot);
+    int gatekeepersBeaten = Map.CountGatekeepersBeaten();
+    _gatekeepersBeaten.Text = $"{gatekeepersBeaten}/{WorldGenerator.NumTiers * WorldGenerator.NumSections}";
+    _gridOverlay.SetExtraUnitSlots(gatekeepersBeaten);
   }
 
   // Called after the map's levels were replaced by those of a save file
@@ -191,15 +190,24 @@ public partial class World : Node2D
     BuildMap();
   }
 
+  private void ShowLevelInfo(LevelInfo level)
+  {
+    int tier = WorldGenerator.GetTier(level.Layer);
+    string lockedText = Map.IsOpen(level)
+      ? ""
+      : $"Beat the tier {tier} gatekeepers of {WorldMap.GatekeepersPerTier} sections first ({Map.CountGatekeepersBeaten(tier - 1)}/{WorldMap.GatekeepersPerTier}).";
+    _levelInfo.DisplayInfo(level, lockedText);
+  }
+
   private void OnWorldMapPressed()
   {
-    if (Map.IsOpen)
+    if (Map.IsShown)
       CloseMap();
     else
     {
       OpenMap();
       if (Map.SelectedLevel != null)
-        _levelInfo.DisplayInfo(Map.SelectedLevel);
+        ShowLevelInfo(Map.SelectedLevel);
     }
   }
 
@@ -459,7 +467,9 @@ public partial class World : Node2D
       return;
     }
 
-    _popup.ShowRewards("Victory! Choose your reward", GetRewards(), reward =>
+    bool gainsSlot = WorldGenerator.IsGatekeeper(_activeLevel) && !_activeLevel.Completed;
+    string title = gainsSlot ? "Gatekeeper beaten! You gain a unit slot. Choose your reward" : "Victory! Choose your reward";
+    _popup.ShowRewards(title, GetRewards(), reward =>
     {
       _decksHandler.AddUnit(reward);
       LeaveLevel();

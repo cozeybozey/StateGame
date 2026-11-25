@@ -7,7 +7,7 @@ using static Godot.Control;
 
 public partial class GridOverlay : ReferenceRect, IUnitDragSource
 {
-	private const int BaseUnitSlots = 15;
+	private const int BaseUnitSlots = 6;
 	public int MaxUnitSlots = BaseUnitSlots;
 
 	private TileMapLayer _backgroundLayer = null!;

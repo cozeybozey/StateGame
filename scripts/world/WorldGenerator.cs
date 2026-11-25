@@ -10,6 +10,10 @@ public class WorldGenerator
   public const int NumSections = 5;
   public static readonly string[] SectionNames = ["Earth", "Heaven", "Future", "Graveyard", "Hell"];
 
+  // A tier is a choice of levels, followed by a gatekeeper
+  public const int LayersPerTier = 2;
+  public const int NumTiers = (NumLayers - 2) / LayersPerTier;
+
   private const int LevelsPerChoice = 2;
   private const int CoinsPerWin = 20;
   private const int GauntletLevels = 4;
@@ -39,10 +43,27 @@ public class WorldGenerator
     return index >= 0 ? index : null;
   }
 
-  // Number of levels a section has in a layer. Layers alternate between a choice and a single level that every path goes through.
+  // Counted from 0. The boss comes after the last tier.
+  public static int GetTier(int layer)
+  {
+    return Mathf.Max(0, layer - 1) / LayersPerTier;
+  }
+
+  public static bool IsGatekeeper(LevelInfo level)
+  {
+    return IsGatekeeperLayer(level.Layer);
+  }
+
+  public static bool IsGatekeeperLayer(int layer)
+  {
+    return layer > 0 && layer < NumLayers - 1 && layer % LayersPerTier == 0;
+  }
+
+  // Number of levels a section has in a layer
   public static int GetNodesInLayer(int layer)
   {
-    return layer % 2 == 1 && layer < NumLayers - 1 ? LevelsPerChoice : 1;
+    bool choice = layer > 0 && layer < NumLayers - 1 && !IsGatekeeperLayer(layer);
+    return choice ? LevelsPerChoice : 1;
   }
 
   // A level outside the world, to try out a design

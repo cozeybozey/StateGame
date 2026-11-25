@@ -6,6 +6,7 @@ public partial class LevelInfoContainer : PanelContainer
 {
   private Label _name;
   private Label _hint;
+  private string _mapHint = "";
   private VBoxContainer _details;
   private HFlowContainer _tags;
   private VBoxContainer _units;
@@ -22,6 +23,7 @@ public partial class LevelInfoContainer : PanelContainer
   {
     _name = GetNode<Label>("Content/Name");
     _hint = GetNode<Label>("Content/Hint");
+    _mapHint = _hint.Text;
     _details = GetNode<VBoxContainer>("Content/Details");
     _tags = GetNode<HFlowContainer>("Content/Details/Tags");
     _units = GetNode<VBoxContainer>("Content/Details/UnitsPanel/Units/VBoxContainer");
@@ -140,21 +142,27 @@ public partial class LevelInfoContainer : PanelContainer
   {
     _activeLevel = null!;
     _name.Text = "World map";
+    _hint.SizeFlagsVertical = SizeFlags.ExpandFill;
+    _hint.Text = _mapHint;
     _hint.Show();
     _details.Hide();
     _startLevelButton.Disabled = true;
   }
 
-  public void DisplayInfo(LevelInfo levelInfo)
+  // A level that cannot be played yet has a text that tells why
+  public void DisplayInfo(LevelInfo levelInfo, string lockedText)
   {
     _activeLevel = levelInfo;
     _name.Text = levelInfo.Name.Replace("\n", " - ");
-    _hint.Hide();
+    bool locked = lockedText != "";
+    _hint.SizeFlagsVertical = locked ? SizeFlags.Fill : SizeFlags.ExpandFill;
+    _hint.Visible = locked;
+    _hint.Text = locked ? lockedText : _mapHint;
     _details.Show();
-    _startLevelButton.Disabled = false;
+    _startLevelButton.Disabled = locked;
     _startLevelButton.Text = levelInfo.Completed ? "Replay level" : "Start level";
 
-    string type = levelInfo.Boss ? "Boss" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : "Regular";
+    string type = levelInfo.Boss ? "Boss" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : WorldGenerator.IsGatekeeper(levelInfo) ? "Gatekeeper" : "Regular";
     UiHelpers.ShowTags(_tags, levelInfo.Completed ? [type, "Completed"] : [type]);
 
     DisplayUnits(levelInfo);
