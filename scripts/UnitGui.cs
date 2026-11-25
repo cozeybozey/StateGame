@@ -8,6 +8,9 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 	[Export] public int Amount;
 	[Export] public bool Draggable = true;
 
+  // Can be placed any number of times, and shows no amount
+  public bool Infinite = false;
+
 	private TextureRect _sprite = null!;
 	private Label _nameText = null!;
 	private Label _amountText = null!;
@@ -33,7 +36,7 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 
 	public override Variant _GetDragData(Vector2 atPosition)
 	{
-		if (!Draggable || Amount <= 0)
+		if (!Draggable || (Amount <= 0 && !Infinite))
 			return default;
 
 		return new DragPayload(Info, this, null);
@@ -51,14 +54,16 @@ public partial class UnitGui : HBoxContainer, IUnitDragSource
 
   public void OnUnitPlacedSuccessfully(DragPayload dragPayload)
 	{
+    if (Infinite)
+      return;
     UpdateAmount(Amount - 1);
 	}
 
   // Rows you can drag from fade out once none are left to place
   private void ShowAmount()
   {
-    _amountText.Text = $"x{Amount}";
-    Modulate = Draggable && Amount <= 0 ? new Color(1, 1, 1, 0.55f) : Colors.White;
+    _amountText.Text = Infinite ? "" : $"x{Amount}";
+    Modulate = Draggable && Amount <= 0 && !Infinite ? new Color(1, 1, 1, 0.55f) : Colors.White;
   }
 
   public override void _Draw()

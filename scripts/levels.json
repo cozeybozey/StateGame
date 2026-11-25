@@ -1,211 +1,221 @@
 {
-	"level_1": {
-		"id": 1,
-		"units": [
-            { "x": 6, "y": 4, "name": "turret"}
-        ]
-	},
-    "level_2": {
-		"id": 2,
-		"units": [
-            { "x": 6, "y": 4, "name": "turret"},
-            { "x": 10, "y": 4, "name": "turret"}
-        ]
-	},
-    "level_3": {
-		"id": 3,
-		"units": [
-            { "x": 7, "y": 4, "name": "turret"},
-            { "x": 9, "y": 4, "name": "turret"},
-            { "x": 11, "y": 4, "name": "healer"}
-        ]
-	},
-    "level_4": {
-		"id": 4,
-		"units": [
-            { "x": 6, "y": 3, "name": "turret"},
-            { "x": 10, "y": 3, "name": "turret"},
-            { "x": 6, "y": 5, "name": "healer"},
-            { "x": 10, "y": 7, "name": "tank"}
-        ]
-	},
-    "level_5": {
-		"id": 5,
-		"units": [
-            { "x": 7, "y": 1, "name": "healer"},
-            { "x": 10, "y": 3, "name": "turret"},
-            { "x": 9, "y": 3, "name": "booster"},
-            { "x": 5, "y": 3, "name": "cluster"},
-            { "x": 7, "y": 7, "name": "tank"}
-        ]
-	},
-    "level_6": {
-		"id": 6,
-		"units": [
-            { "x": 2, "y": 7, "name": "laser"},
-            { "x": 5, "y": 7, "name": "laser"},
-            { "x": 8, "y": 7, "name": "laser"},
-            { "x": 11, "y": 7, "name": "laser"},
-            { "x": 7, "y": 4, "name": "turret"},
-            { "x": 9, "y": 4, "name": "turret"}
-        ]
-	},
-    "golden_turret": {
+	"golden_turret": {
 		"id": 7,
 		"units": [
-            { "x": 0, "y": 0, "name": "turret_factory"},
-            { "x": 5, "y": 0, "name": "repair_unit"},
-            { "x": 7, "y": 0, "name": "repair_unit"},
-            { "x": 9, "y": 0, "name": "repair_unit"},
-            { "x": 11, "y": 0, "name": "repair_unit"},
-            { "x": 14, "y": 0, "name": "turret_factory"},
-            { "x": 6, "y": 4, "name": "turret"},
-            { "x": 7, "y": 4, "name": "turret"},
-            { "x": 8, "y": 4, "name": "turret"},
-            { "x": 9, "y": 4, "name": "turret"},
-            { "x": 6, "y": 5, "name": "turret"},
-            { "x": 7, "y": 5, "name": "golden_turret"},
-            { "x": 8, "y": 5, "name": "golden_turret"},
-            { "x": 9, "y": 5, "name": "turret"},
-            { "x": 6, "y": 6, "name": "turret"},
-            { "x": 7, "y": 6, "name": "turret"},
-            { "x": 8, "y": 6, "name": "turret"},
-            { "x": 9, "y": 6, "name": "turret"}
-        ]
+			{ "x": 0, "y": 0, "name": "turret_factory" },
+			{ "x": 5, "y": 0, "name": "repair_unit" },
+			{ "x": 7, "y": 0, "name": "repair_unit" },
+			{ "x": 9, "y": 0, "name": "repair_unit" },
+			{ "x": 11, "y": 0, "name": "repair_unit" },
+			{ "x": 14, "y": 0, "name": "turret_factory" },
+			{ "x": 6, "y": 4, "name": "turret" },
+			{ "x": 7, "y": 4, "name": "turret" },
+			{ "x": 8, "y": 4, "name": "turret" },
+			{ "x": 9, "y": 4, "name": "turret" },
+			{ "x": 6, "y": 5, "name": "turret" },
+			{ "x": 7, "y": 5, "name": "golden_turret" },
+			{ "x": 8, "y": 5, "name": "golden_turret" },
+			{ "x": 9, "y": 5, "name": "turret" },
+			{ "x": 6, "y": 6, "name": "turret" },
+			{ "x": 7, "y": 6, "name": "turret" },
+			{ "x": 8, "y": 6, "name": "turret" },
+			{ "x": 9, "y": 6, "name": "turret" }
+		]
 	},
-    "blob": {
-        "id": 8,
-        "units": [
-            { "x": 1, "y": 0, "name": "tank"},
-            { "x": 3, "y": 0, "name": "priest"},
-            { "x": 12, "y": 0, "name": "priest"},
-            { "x": 14, "y": 0, "name": "tank"},
-            { "x": 4, "y": 3, "name": "zombie"},
-            { "x": 5, "y": 3, "name": "healer"},
-            { "x": 6, "y": 3, "name": "zombie"},
-            { "x": 7, "y": 3, "name": "healer"},
-            { "x": 8, "y": 3, "name": "zombie"},
-            { "x": 9, "y": 3, "name": "healer"},
-            { "x": 10, "y": 3, "name": "zombie"},
-            { "x": 7, "y": 4, "name": "tank"},
-            { "x": 5, "y": 5, "name": "zombie"},
-            { "x": 6, "y": 5, "name": "zombie"},
-            { "x": 7, "y": 5, "name": "blob"},
-            { "x": 8, "y": 5, "name": "zombie"},
-            { "x": 9, "y": 5, "name": "zombie"},
-            { "x": 1, "y": 6, "name": "tank"},
-            { "x": 4, "y": 6, "name": "tank"},
-            { "x": 7, "y": 6, "name": "tank"},
-            { "x": 10, "y": 6, "name": "tank"},
-            { "x": 13, "y": 6, "name": "tank"},
-            { "x": 7, "y": 7, "name": "tank"}
-        ]
-    },
-    "nuke":
-    {
-        "id": 9,
-        "units": [
-            { "x": 1, "y": 0, "name": "tank"},
-            { "x": 3, "y": 0, "name": "priest"},
-            { "x": 4, "y": 0, "name": "priest"},
-            { "x": 7, "y": 0, "name": "tank"},
-            { "x": 11, "y": 0, "name": "priest"},
-            { "x": 12, "y": 0, "name": "priest"},
-            { "x": 14, "y": 0, "name": "tank"},
-            { "x": 1, "y": 1, "name": "healer"},
-            { "x": 3, "y": 1, "name": "healer"},
-            { "x": 5, "y": 1, "name": "healer"},
-            { "x": 7, "y": 1, "name": "healer"},
-            { "x": 9, "y": 1, "name": "healer"},
-            { "x": 11, "y": 1, "name": "healer"},
-            { "x": 13, "y": 1, "name": "healer"},
-            { "x": 5, "y": 2, "name": "booster"},
-            { "x": 5, "y": 3, "name": "booster"},
-            { "x": 5, "y": 4, "name": "booster"},
-            { "x": 7, "y": 3, "name": "nuke"},
-            { "x": 4, "y": 5, "name": "sergeant"},
-            { "x": 7, "y": 5, "name": "sergeant"},
-            { "x": 10, "y": 5, "name": "sergeant"},
-            { "x": 2, "y": 6, "name": "tank"},
-            { "x": 7, "y": 6, "name": "tank"},
-            { "x": 12, "y": 6, "name": "tank"},
-            { "x": 4, "y": 7, "name": "tank"},
-            { "x": 7, "y": 7, "name": "tank"},
-            { "x": 10, "y": 7, "name": "tank"}
-        ]
-    },
-    "lucifer":
-    {
-        "id": 10,
-        "units": [
-            { "x": 1, "y": 0, "name": "fire_enthusiast"},
-            { "x": 6, "y": 0, "name": "blood_priest"},
-            { "x": 7, "y": 0, "name": "blood_priest"},
-            { "x": 8, "y": 0, "name": "blood_priest"},
-            { "x": 9, "y": 0, "name": "blood_priest"},
-            { "x": 14, "y": 0, "name": "fire_enthusiast"},
-            { "x": 6, "y": 1, "name": "booster"},
-            { "x": 7, "y": 1, "name": "archdemon"},
-            { "x": 6, "y": 2, "name": "booster"},
-            { "x": 3, "y": 3, "name": "conjurer"},
-            { "x": 7, "y": 3, "name": "conjurer"},
-            { "x": 11, "y": 3, "name": "conjurer"},
-            { "x": 2, "y": 5, "name": "succubus"},
-            { "x": 5, "y": 5, "name": "succubus"},
-            { "x": 6, "y": 5, "name": "succubus"},
-            { "x": 9, "y": 5, "name": "succubus"},
-            { "x": 10, "y": 5, "name": "succubus"},
-            { "x": 13, "y": 5, "name": "succubus"},
-            { "x": 3, "y": 6, "name": "pit_fiend"},
-            { "x": 7, "y": 6, "name": "pit_fiend"},
-            { "x": 11, "y": 6, "name": "pit_fiend"}
-        ]
-    },
-    "michael":
-    {
-        "id": 11,
-        "units": [
-            { "x": 1, "y": 0, "name": "priest"},
-            { "x": 2, "y": 0, "name": "templar"},
-            { "x": 6, "y": 0, "name": "cleric"},
-            { "x": 7, "y": 0, "name": "cleric"},
-            { "x": 8, "y": 0, "name": "cleric"},
-            { "x": 9, "y": 0, "name": "cleric"},
-            { "x": 14, "y": 0, "name": "templar"},
-            { "x": 15, "y": 0, "name": "priest"},
-            { "x": 7, "y": 1, "name": "archangel"},
-            { "x": 5, "y": 4, "name": "paladin"},
-            { "x": 7 , "y": 4, "name": "paladin"},
-            { "x": 9, "y": 4, "name": "paladin"},
-            { "x": 6, "y": 7, "name": "guardian"},
-            { "x": 9, "y": 7, "name": "guardian"}
-        ]
-    },
-    "earth_mother":
-    {
-        "id": 12,
-        "units": [
-            { "x": 4, "y": 0, "name": "shaman"},
-            { "x": 8, "y": 0, "name": "shaman"},
-            { "x": 12, "y": 0, "name": "shaman"},
-            { "x": 1, "y": 2, "name": "booster"},
-            { "x": 2, "y": 2, "name": "avatar_of_nature"},
-            { "x": 1, "y": 3, "name": "booster"},
-            { "x": 11, "y": 2, "name": "booster"},
-            { "x": 12, "y": 2, "name": "avatar_of_nature"},
-            { "x": 11, "y": 3, "name": "booster"},
-            { "x": 6, "y": 4, "name": "lifebinder"},
-            { "x": 7, "y": 4, "name": "lifebinder"},
-            { "x": 8, "y": 4, "name": "lifebinder"},
-            { "x": 9, "y": 4, "name": "lifebinder"},
-            { "x": 3, "y": 5, "name": "druid"},
-            { "x": 6, "y": 5, "name": "druid"},
-            { "x": 9, "y": 5, "name": "druid"},
-            { "x": 12, "y": 5, "name": "druid"},
-            { "x": 3, "y": 7, "name": "earth_elemental"},
-            { "x": 7, "y": 7, "name": "earth_elemental"},
-            { "x": 11, "y": 7, "name": "earth_elemental"}
-
-        ]
-    }
+	"blob": {
+		"id": 8,
+		"units": [
+			{ "x": 1, "y": 0, "name": "tank" },
+			{ "x": 3, "y": 0, "name": "priest" },
+			{ "x": 12, "y": 0, "name": "priest" },
+			{ "x": 14, "y": 0, "name": "tank" },
+			{ "x": 4, "y": 3, "name": "zombie" },
+			{ "x": 5, "y": 3, "name": "healer" },
+			{ "x": 6, "y": 3, "name": "zombie" },
+			{ "x": 7, "y": 3, "name": "healer" },
+			{ "x": 8, "y": 3, "name": "zombie" },
+			{ "x": 9, "y": 3, "name": "healer" },
+			{ "x": 10, "y": 3, "name": "zombie" },
+			{ "x": 7, "y": 4, "name": "tank" },
+			{ "x": 5, "y": 5, "name": "zombie" },
+			{ "x": 6, "y": 5, "name": "zombie" },
+			{ "x": 7, "y": 5, "name": "blob" },
+			{ "x": 8, "y": 5, "name": "zombie" },
+			{ "x": 9, "y": 5, "name": "zombie" },
+			{ "x": 1, "y": 6, "name": "tank" },
+			{ "x": 4, "y": 6, "name": "tank" },
+			{ "x": 7, "y": 6, "name": "tank" },
+			{ "x": 10, "y": 6, "name": "tank" },
+			{ "x": 13, "y": 6, "name": "tank" },
+			{ "x": 7, "y": 7, "name": "tank" }
+		]
+	},
+	"nuke": {
+		"id": 9,
+		"units": [
+			{ "x": 1, "y": 0, "name": "tank" },
+			{ "x": 3, "y": 0, "name": "priest" },
+			{ "x": 4, "y": 0, "name": "priest" },
+			{ "x": 7, "y": 0, "name": "tank" },
+			{ "x": 11, "y": 0, "name": "priest" },
+			{ "x": 12, "y": 0, "name": "priest" },
+			{ "x": 14, "y": 0, "name": "tank" },
+			{ "x": 1, "y": 1, "name": "healer" },
+			{ "x": 3, "y": 1, "name": "healer" },
+			{ "x": 5, "y": 1, "name": "healer" },
+			{ "x": 7, "y": 1, "name": "healer" },
+			{ "x": 9, "y": 1, "name": "healer" },
+			{ "x": 11, "y": 1, "name": "healer" },
+			{ "x": 13, "y": 1, "name": "healer" },
+			{ "x": 5, "y": 2, "name": "booster" },
+			{ "x": 5, "y": 3, "name": "booster" },
+			{ "x": 5, "y": 4, "name": "booster" },
+			{ "x": 7, "y": 3, "name": "nuke" },
+			{ "x": 4, "y": 5, "name": "sergeant" },
+			{ "x": 7, "y": 5, "name": "sergeant" },
+			{ "x": 10, "y": 5, "name": "sergeant" },
+			{ "x": 2, "y": 6, "name": "tank" },
+			{ "x": 7, "y": 6, "name": "tank" },
+			{ "x": 12, "y": 6, "name": "tank" },
+			{ "x": 4, "y": 7, "name": "tank" },
+			{ "x": 7, "y": 7, "name": "tank" },
+			{ "x": 10, "y": 7, "name": "tank" }
+		]
+	},
+	"lucifer": {
+		"id": 10,
+		"units": [
+			{ "x": 1, "y": 0, "name": "fire_enthusiast" },
+			{ "x": 6, "y": 0, "name": "blood_priest" },
+			{ "x": 7, "y": 0, "name": "blood_priest" },
+			{ "x": 8, "y": 0, "name": "blood_priest" },
+			{ "x": 9, "y": 0, "name": "blood_priest" },
+			{ "x": 14, "y": 0, "name": "fire_enthusiast" },
+			{ "x": 6, "y": 1, "name": "booster" },
+			{ "x": 7, "y": 1, "name": "archdemon" },
+			{ "x": 6, "y": 2, "name": "booster" },
+			{ "x": 3, "y": 3, "name": "conjurer" },
+			{ "x": 7, "y": 3, "name": "conjurer" },
+			{ "x": 11, "y": 3, "name": "conjurer" },
+			{ "x": 2, "y": 5, "name": "succubus" },
+			{ "x": 5, "y": 5, "name": "succubus" },
+			{ "x": 6, "y": 5, "name": "succubus" },
+			{ "x": 9, "y": 5, "name": "succubus" },
+			{ "x": 10, "y": 5, "name": "succubus" },
+			{ "x": 13, "y": 5, "name": "succubus" },
+			{ "x": 3, "y": 6, "name": "pit_fiend" },
+			{ "x": 7, "y": 6, "name": "pit_fiend" },
+			{ "x": 11, "y": 6, "name": "pit_fiend" }
+		]
+	},
+	"michael": {
+		"id": 11,
+		"units": [
+			{ "x": 1, "y": 0, "name": "priest" },
+			{ "x": 2, "y": 0, "name": "templar" },
+			{ "x": 6, "y": 0, "name": "cleric" },
+			{ "x": 7, "y": 0, "name": "cleric" },
+			{ "x": 8, "y": 0, "name": "cleric" },
+			{ "x": 9, "y": 0, "name": "cleric" },
+			{ "x": 14, "y": 0, "name": "templar" },
+			{ "x": 15, "y": 0, "name": "priest" },
+			{ "x": 7, "y": 1, "name": "archangel" },
+			{ "x": 5, "y": 4, "name": "paladin" },
+			{ "x": 7, "y": 4, "name": "paladin" },
+			{ "x": 9, "y": 4, "name": "paladin" },
+			{ "x": 6, "y": 7, "name": "guardian" },
+			{ "x": 9, "y": 7, "name": "guardian" }
+		]
+	},
+	"earth_mother": {
+		"id": 12,
+		"units": [
+			{ "x": 4, "y": 0, "name": "shaman" },
+			{ "x": 8, "y": 0, "name": "shaman" },
+			{ "x": 12, "y": 0, "name": "shaman" },
+			{ "x": 1, "y": 2, "name": "booster" },
+			{ "x": 2, "y": 2, "name": "avatar_of_nature" },
+			{ "x": 1, "y": 3, "name": "booster" },
+			{ "x": 11, "y": 2, "name": "booster" },
+			{ "x": 12, "y": 2, "name": "avatar_of_nature" },
+			{ "x": 11, "y": 3, "name": "booster" },
+			{ "x": 6, "y": 4, "name": "lifebinder" },
+			{ "x": 7, "y": 4, "name": "lifebinder" },
+			{ "x": 8, "y": 4, "name": "lifebinder" },
+			{ "x": 9, "y": 4, "name": "lifebinder" },
+			{ "x": 3, "y": 5, "name": "druid" },
+			{ "x": 6, "y": 5, "name": "druid" },
+			{ "x": 9, "y": 5, "name": "druid" },
+			{ "x": 12, "y": 5, "name": "druid" },
+			{ "x": 3, "y": 7, "name": "earth_elemental" },
+			{ "x": 7, "y": 7, "name": "earth_elemental" },
+			{ "x": 11, "y": 7, "name": "earth_elemental" }
+		]
+	},
+	"water_and_fire": {
+		"name": "Water and Fire",
+		"units": [
+			{ "x": 6, "y": 6, "name": "water_elemental" },
+			{ "x": 8, "y": 6, "name": "fire_elemental" }
+		],
+		"section": 0,
+		"layer": 1,
+		"terrain": { "water": [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [1, 1], [1, 2], [1, 3], [2, 0], [2, 1], [2, 2], [3, 0], [3, 1], [3, 2], [4, 0], [4, 1], [5, 0]] },
+		"props": { "rock": [[2, 6]], "bush": [[12, 2]] }
+	},
+	"ambush": {
+		"name": "Ambush",
+		"units": [
+			{ "x": 5, "y": 4, "name": "wolf" },
+			{ "x": 7, "y": 4, "name": "wolf" },
+			{ "x": 9, "y": 4, "name": "wolf" }
+		],
+		"section": 0,
+		"layer": 1
+	},
+	"elements": {
+		"name": "Elements",
+		"units": [
+			{ "x": 6, "y": 4, "name": "water_elemental" },
+			{ "x": 8, "y": 4, "name": "fire_elemental" },
+			{ "x": 7, "y": 6, "name": "earth_elemental" }
+		],
+		"section": 0,
+		"layer": 2
+	},
+	"fire": {
+		"name": "Fire",
+		"units": [
+			{ "x": 6, "y": 2, "name": "pyromancer" },
+			{ "x": 9, "y": 2, "name": "druid" },
+			{ "x": 7, "y": 6, "name": "fire_elemental" }
+		],
+		"section": 0,
+		"layer": 2
+	},
+	"living_elements": {
+		"name": "Living Elements",
+		"units": [
+			{ "x": 5, "y": 2, "name": "lifebinder" },
+			{ "x": 10, "y": 2, "name": "lifebinder" },
+			{ "x": 7, "y": 4, "name": "water_elemental" },
+			{ "x": 7, "y": 6, "name": "earth_elemental" }
+		],
+		"section": 0,
+		"layer": 2
+	},
+	"wolf_pack": {
+		"name": "Wolf Pack",
+		"units": [
+			{ "x": 7, "y": 1, "name": "dire_wolf" },
+			{ "x": 9, "y": 1, "name": "lifebinder" },
+			{ "x": 3, "y": 4, "name": "wolf" },
+			{ "x": 7, "y": 4, "name": "wolf" },
+			{ "x": 10, "y": 4, "name": "wolf" },
+			{ "x": 14, "y": 4, "name": "wolf" },
+			{ "x": 7, "y": 6, "name": "earth_elemental" }
+		],
+		"section": 0,
+		"layer": 4
+	}
 }

@@ -119,6 +119,34 @@ public partial class DecksHandler : PanelContainer
   }
 
   public bool HasSelectedDeck => _selectedDeck != null && Decks.ContainsKey(_selectedDeck);
+  public string? SelectedDeck => HasSelectedDeck ? _selectedDeck : null;
+
+  public void SelectDeck(string deckName)
+  {
+    _selectedDeck = deckName;
+  }
+
+  // Decks no longer follow what happens on the board, until Resume
+  public void Suspend()
+  {
+    _processUnitChanges = false;
+    Hide();
+    _gridOverlay.ClearUnits();
+  }
+
+  public void Resume()
+  {
+    _processUnitChanges = false;
+    _gridOverlay.ClearUnits();
+    if (HasSelectedDeck)
+    {
+      _decksContainer.Hide();
+      _unitsSelectionContainer.Show();
+      LoadAfterLevel();
+    }
+    _processUnitChanges = true;
+    Show();
+  }
 
   private void OnDeckSelected(Button button)
   {

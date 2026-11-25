@@ -4,6 +4,18 @@ using System;
 // The clicked cell: outlines it on the board and shows what is on it in the info panel
 public partial class BoardSelection : Node
 {
+  private bool _enabled = true;
+  public bool Enabled
+  {
+    get => _enabled;
+    set
+    {
+      _enabled = value;
+      if (!_enabled)
+        Deselect();
+    }
+  }
+
   private Board _board = null!;
   private GridOverlay _gridOverlay = null!;
   private OverlayLayer _layer = null!;
@@ -26,7 +38,7 @@ public partial class BoardSelection : Node
 
   public override void _Input(InputEvent @event)
   {
-    if (@event is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
+    if (!Enabled || @event is not InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouse)
       return;
 
     // Only clicks on the board itself change the selection; UI above it handles its own clicks

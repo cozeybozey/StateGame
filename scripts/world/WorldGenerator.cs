@@ -19,11 +19,43 @@ public class WorldGenerator
 
   private readonly Random _rng;
   private readonly LevelGenerator _levelGenerator;
+  private readonly LevelStore _levelStore = new();
 
   public WorldGenerator(Random rng)
   {
     _rng = rng;
     _levelGenerator = new LevelGenerator(rng);
+  }
+
+  public static bool IsBossLevel(string levelId)
+  {
+    return Bosses.Any(boss => boss.LevelId == levelId);
+  }
+
+  public static int? GetBossSection(string levelId)
+  {
+    int index = Array.FindIndex(Bosses, boss => boss.LevelId == levelId);
+    return index >= 0 ? index : null;
+  }
+
+  // Number of levels a section has in a layer
+  public static int GetNodesInLayer(int layer)
+  {
+    if (layer <= 1 || layer == NumLayers - 1)
+      return 1;
+    if (layer == 2)
+      return 3;
+    if (layer < NumLayers * 0.75f - 1)
+      return GetNodesInLayer(layer - 1) + 1;
+    return GetNodesInLayer(layer - 1) - 2; // After a while the layers converge to one boss layer
+  }
+
+  // A level outside the world, to try out a design
+  public static LevelInfo CreateTestLevel(DesignedLevel level, int section)
+  {
+    LevelBoard board = new LevelGenerator(new Random()).CreateDesignedLevel(level, section);
+    return new LevelInfo("Test", level.Name, completed: false, unlocked: true, layer: 0, layerIndex: 0, boss: false, gauntlet: false,
+      rewards: [], coinsReward: 0, section, nextNodes: [], [board.Terrain], [board.Props], [board.Units]);
   }
 
   // Fills `levels` by id, and `nodesPerLayer` with the number of levels per [layer, section]
@@ -50,16 +82,7 @@ public class WorldGenerator
       for (int layer = 2; layer < NumLayers; layer++)
       {
         bool isBoss = layer % (NumLayers - 1) == 0;
-        int nodesInLayer = 0;
-        if (layer == 2)
-          nodesInLayer = nodesPerLayer[layer - 1, q] + 2;
-        else if (layer < (NumLayers * 0.75f - 1))
-          nodesInLayer = nodesPerLayer[layer - 1, q] + 1;
-        else if (layer < (NumLayers - 1)) // After a while the layers converge to one boss layer
-          nodesInLayer = nodesPerLayer[layer - 1, q] - 2;
-        else
-          nodesInLayer = 1;
-
+        int nodesInLayer = GetNodesInLayer(layer);
         List<LevelInfo> layerNodes = new();
 
         for (int node = 0; node < nodesInLayer; node++)
@@ -153,9 +176,14 @@ public class WorldGenerator
     if (isBoss)
     {
       (string bossName, string levelId) = Bosses[section];
-      LevelBoard board = _levelGenerator.LoadLevel(levelId, section);
+      LevelBoard board = _levelGenerator.CreateDesignedLevel(_levelStore.Get(levelId), section);
       return MakeLevel(bossName, boss: true, gauntlet: false, rewards: [], CoinsPerWin, [board]);
     }
+
+    // Designed levels take the first places of their layer, random ones fill up the rest
+    DesignedLevel? designed = _levelStore.Levels.Where(l => l.Section == section && l.Layer == layer).ElementAtOrDefault(node);
+    if (layer > 0 && designed != null)
+      return MakeLevel(designed.Name, boss: false, gauntlet: false, rewards: [], CoinsPerWin, [_levelGenerator.CreateDesignedLevel(designed, section)]);
 
     if (layer > 4 && _rng.NextDouble() < 0.2)
     {

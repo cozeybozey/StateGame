@@ -1,5 +1,4 @@
 using Godot;
-using Godot.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,47 +6,35 @@ using System.Linq;
 // The starting content of one board: terrain, props, and enemy units on their main cells
 public record LevelBoard(TerrainInfo[,] Terrain, PropInfo[,] Props, UnitInfo[,] Units);
 
-// Creates the boards of levels: random ones that scale with difficulty, and the fixed ones in levels.json
+// Creates the boards of levels: random ones that scale with difficulty, and hand-made ones
 public class LevelGenerator
 {
   // One entry per section of the world
-  private readonly List<string> _nonBlockingTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"];
+  private static readonly List<string> BaseTerrains = ["grass", "white_floor_tiles", "stone_floor", "dark_grass", "gray_floor_tiles"];
   private readonly List<string> _blockingTerrains1 = ["water", "holy_water", "oil", "poisoned_water", "blood"];
   private readonly List<string> _blockingTerrains2 = ["mountain", "green_mountain", "hole_in_floor", "mud", "lower_gray_floor_tiles"];
 
   private readonly Random _rng;
-  private readonly Dictionary _levelsData;
 
   public LevelGenerator(Random rng)
   {
     _rng = rng;
-    _levelsData = (Dictionary)Json.ParseString(FileAccess.Open("res://scripts/levels.json", FileAccess.ModeFlags.Read).GetAsText());
   }
 
-  public LevelBoard LoadLevel(string levelId, int levelSection)
+  // Id of the terrain a section's boards are made of, before anything else is placed
+  public static string GetBaseTerrain(int section)
   {
-    TerrainInfo[,] terrainGrid = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    PropInfo[,] propsGrid = new PropInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    UnitInfo[,] mainCellsUnitGrid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
-    Dictionary levelData = (Dictionary)_levelsData[levelId];
+    return BaseTerrains[section];
+  }
 
+  public LevelBoard CreateDesignedLevel(DesignedLevel level, int levelSection)
+  {
+    TerrainInfo[,] terrain = new TerrainInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        terrainGrid[x, y] = GlobalConstants.TerrainsData[_nonBlockingTerrains[levelSection]];
+        terrain[x, y] = level.Terrain[x, y] ?? GlobalConstants.TerrainsData[BaseTerrains[levelSection]];
 
-    Godot.Collections.Array levelUnits = (Godot.Collections.Array)levelData["units"];
-    foreach (Dictionary unitData in levelUnits)
-    {
-      int x = (int)unitData["x"];
-      int y = (int)unitData["y"];
-      string name = (string)unitData["name"];
-
-      UnitInfo unitInfo = GlobalConstants.UnitsData[name];
-
-      mainCellsUnitGrid[x, y] = unitInfo;
-    }
-
-    return new LevelBoard(terrainGrid, propsGrid, mainCellsUnitGrid);
+    return new LevelBoard(terrain, (PropInfo[,])level.Props.Clone(), level.Units);
   }
 
   public LevelBoard CreateRandomLevel(int difficulty, int levelSection)
@@ -75,7 +62,7 @@ public class LevelGenerator
 
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-        terrain[x, y] = GlobalConstants.TerrainsData[_nonBlockingTerrains[levelSection]];
+        terrain[x, y] = GlobalConstants.TerrainsData[BaseTerrains[levelSection]];
 
     FastNoiseLite mountainNoise = new();
     mountainNoise.Seed = _rng.Next();

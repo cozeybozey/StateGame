@@ -24,6 +24,9 @@ public partial class World : Node2D
   private LevelInfo _activeLevel = null!;
   private int _gauntletIndex = 0;
 
+  // Fighting a level from the editor, without rewards or progress
+  private bool _testing = false;
+
   // The player's placement right before the battle, to retry the level with
   private UnitInfo[,] _playerUnitsBeforeBattle = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
@@ -42,6 +45,7 @@ public partial class World : Node2D
   private ColorRect _dimmer = null!;
   private DecksHandler _decksHandler = null!;
   private LevelInfoContainer _levelInfo = null!;
+  private LevelEditor _levelEditor = null!;
   private Label _turnCounter = null!;
   private Label _coinsCounter = null!;
   private Label _levelsUntilNextUnlock = null!;
@@ -82,6 +86,7 @@ public partial class World : Node2D
     _decksHandler = GetNode<DecksHandler>("CanvasLayer/SelectionUi/HBoxContainer/DecksHandler");
     _levelInfo = GetNode<LevelInfoContainer>("CanvasLayer/SelectionUi/HBoxContainer/LevelInfoContainer");
     _levelsUntilNextUnlock = _levelInfo.GetNode<Label>("Content/UnlockInfo/Value");
+    _levelEditor = GetNode<LevelEditor>("CanvasLayer/SelectionUi/HBoxContainer/LevelEditor");
 
     Node bottomUi = GetNode("CanvasLayer/BottomUi");
     _turnCounter = bottomUi.GetNode<Label>("TurnCounter/Counter");
@@ -118,6 +123,8 @@ public partial class World : Node2D
       GetNode<InfoGui>("CanvasLayer/SelectionUi/HBoxContainer/InfoContainer"));
     AddChild(selection);
 
+    _levelEditor.Initialize(_board, selection, _gridOverlay, _decksHandler, _popup);
+
     _battle = new Battle(_board, _activeUnitLayer, _targetedCellsLayer);
     _battle.TurnChanged += turn => _turnCounter.Text = turn.ToString();
     _battle.WorldActing += _worldBar.PlayAction;
@@ -133,6 +140,8 @@ public partial class World : Node2D
     _speedButton.GetPopup().IdPressed += OnSpeedSelected;
     _levelInfo.StartLevelPressed += OnStartLevelPressed;
     Map.LevelSelected += _levelInfo.DisplayInfo;
+    _levelEditor.Closed += CloseEditor;
+    _levelEditor.TestRequested += TestLevel;
   }
 
   public override void _Process(double delta)
@@ -289,7 +298,53 @@ public partial class World : Node2D
 
   private void OnQuitLevelPressed()
   {
+    if (_testing)
+      EndTest();
+    else
+      LeaveLevel();
+  }
+
+  // ---- Level editor
+
+  // The editor uses the board, so it can only be opened from the deck screen or the map
+  public bool CanOpenEditor => _worldMapButton.Visible;
+  public bool IsEditing => _levelEditor.Visible || _testing;
+
+  public void OpenEditor()
+  {
+    CloseMap();
+    _decksHandler.Suspend();
+    ShowButtons();
+    _levelEditor.Open();
+  }
+
+  private void CloseEditor()
+  {
+    LeaveEditor();
+    ShowButtons(_worldMapButton);
+  }
+
+  private void LeaveEditor()
+  {
+    _levelEditor.Close();
+    UpdateProgress();
+    _decksHandler.Resume();
+  }
+
+  private void TestLevel(LevelInfo level)
+  {
+    _testing = true;
+    LeaveEditor();
+    EnterLevel(level);
+  }
+
+  private void EndTest()
+  {
+    _testing = false;
     LeaveLevel();
+    _decksHandler.Suspend();
+    ShowButtons();
+    _levelEditor.Resume();
   }
 
   // ---- Battle
@@ -302,7 +357,7 @@ public partial class World : Node2D
       return;
     }
 
-    _playerUnitsBeforeBattle = _board.GetPlayerUnits();
+    _playerUnitsBeforeBattle = _board.GetUnits(playerSide: true);
     _gridOverlay.SetInteractionLocked(true);
     ShowButtons(_pauseButton, _surrenderButton);
     _battle.Start();
@@ -362,11 +417,16 @@ public partial class World : Node2D
       return;
 
     EndBattle();
-    _popup.ShowMessage("Defeat", ("Try again", () =>
-    {
-      LeaveLevel(keepPlacement: true);
-      SetUpLevel(keepPlacement: true);
-    }));
+    if (_testing)
+      _popup.ShowMessage("Defeat", ("Try again", Retry), ("Back to editor", EndTest));
+    else
+      _popup.ShowMessage("Defeat", ("Try again", Retry));
+  }
+
+  private void Retry()
+  {
+    LeaveLevel(keepPlacement: true);
+    SetUpLevel(keepPlacement: true);
   }
 
   private void Win()
@@ -375,6 +435,12 @@ public partial class World : Node2D
       return;
 
     EndBattle();
+
+    if (_testing)
+    {
+      _popup.ShowMessage("Victory", ("Back to editor", EndTest), ("Fight again", Retry));
+      return;
+    }
 
     if (_activeLevel.Gauntlet && _gauntletIndex + 1 < _activeLevel.Units.Count)
     {

@@ -1,0 +1,152 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/LevelEditor.cs" id="1_editor"]
+
+[node name="LevelEditor" type="PanelContainer"]
+custom_minimum_size = Vector2(268, 0)
+script = ExtResource("1_editor")
+
+[node name="Content" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Header" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderLabel"
+text = "Level editor"
+
+[node name="Close" type="Button" parent="Content/Header"]
+layout_mode = 2
+text = "Close"
+
+[node name="Level" type="OptionButton" parent="Content"]
+layout_mode = 2
+fit_to_longest_item = false
+clip_text = true
+
+[node name="LevelName" type="LineEdit" parent="Content"]
+layout_mode = 2
+placeholder_text = "Level name..."
+
+[node name="Place" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="Section" type="OptionButton" parent="Content/Place"]
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+
+[node name="Layer" type="OptionButton" parent="Content/Place"]
+layout_mode = 2
+
+[node name="Tabs" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="Units" type="Button" parent="Content/Tabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+button_pressed = true
+text = "Units"
+
+[node name="Terrain" type="Button" parent="Content/Tabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+text = "Terrain"
+
+[node name="Props" type="Button" parent="Content/Tabs"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"TabButton"
+toggle_mode = true
+text = "Props"
+
+[node name="BrushRow" type="HBoxContainer" parent="Content"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Content/BrushRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"MutedLabel"
+text = "Brush size"
+
+[node name="Size" type="OptionButton" parent="Content/BrushRow"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+
+[node name="Search" type="LineEdit" parent="Content"]
+layout_mode = 2
+placeholder_text = "Search name, type or text..."
+clear_button_enabled = true
+
+[node name="Scroll" type="ScrollContainer" parent="Content"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Lists" type="VBoxContainer" parent="Content/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Units" type="VBoxContainer" parent="Content/Scroll/Lists"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Terrain" type="VBoxContainer" parent="Content/Scroll/Lists"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Props" type="VBoxContainer" parent="Content/Scroll/Lists"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Status" type="Label" parent="Content"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+theme_type_variation = &"MutedLabel"
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="TestRow" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="Deck" type="OptionButton" parent="Content/TestRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Deck to test with"
+fit_to_longest_item = false
+clip_text = true
+
+[node name="Test" type="Button" parent="Content/TestRow"]
+custom_minimum_size = Vector2(76, 0)
+layout_mode = 2
+text = "Test"
+
+[node name="SaveRow" type="HBoxContainer" parent="Content"]
+layout_mode = 2
+
+[node name="Clear" type="Button" parent="Content/SaveRow"]
+layout_mode = 2
+tooltip_text = "Clears the units, terrain or props, depending on the tab"
+text = "Clear"
+
+[node name="Delete" type="Button" parent="Content/SaveRow"]
+layout_mode = 2
+theme_type_variation = &"DangerButton"
+text = "Delete"
+
+[node name="Save" type="Button" parent="Content/SaveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PrimaryButton"
+text = "Save"

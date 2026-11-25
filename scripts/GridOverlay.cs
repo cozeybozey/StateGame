@@ -18,6 +18,9 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 	private Prop[,] _propsGrid = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 	private Node _unitsNode = null!;
 
+  // The half of the board units can be placed on. Units placed there belong to that side.
+  public bool EditsEnemySide = false;
+
   private bool _interactionLocked = false;
 	private int _currentUnitSlotsCount = 0;
 
@@ -37,7 +40,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
     Vector2I cell = GetCellUnderMouse(atPosition);
 
-		if (!GlobalFunctions.IsCellInsideGrid(cell) || cell.Y < GlobalConstants.GridSize.Y * 0.5)
+		if (!IsOnEditedSide(cell))
 			return default;
 
 		Unit unit = _unitsGrid[cell.X, cell.Y];
@@ -87,7 +90,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
       PackedScene scene = GD.Load<PackedScene>(dragPayload.Unit.ScenePath);
       Node instance = scene.Instantiate();
       Unit unit = instance as Unit;
-			unit!.Initialize(dragPayload.Unit, true, targetCell, placed:true);
+			unit!.Initialize(dragPayload.Unit, !EditsEnemySide, targetCell, placed:true);
       _unitsNode.AddChild(instance);
       _currentUnitSlotsCount += dragPayload.Unit.OccupiedCells.Count;
       _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
@@ -106,6 +109,12 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 		return _backgroundLayer.LocalToMap(localPos);
 	}
 
+  private bool IsOnEditedSide(Vector2I cell)
+  {
+    bool enemySide = cell.Y < GlobalConstants.GridSize.Y / 2;
+    return GlobalFunctions.IsCellInsideGrid(cell) && enemySide == EditsEnemySide;
+  }
+
 	private bool IsCellValid(DragPayload dragPayload, Vector2I cell)
 	{
 		List<Vector2I> originalCells = new List<Vector2I>();
@@ -119,8 +128,8 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
 
 		foreach (Vector2I occupiedCell in dragPayload.Unit.OccupiedCells)
 		{
-			// Reject if cell is not on player's side of the board
-			if (!GlobalFunctions.IsCellInsideGrid(cell + occupiedCell) || cell.Y + occupiedCell.Y < GlobalConstants.GridSize.Y * 0.5)
+			// Reject if cell is not on the side of the board that can be edited
+			if (!IsOnEditedSide(cell + occupiedCell))
 				return false;
 
 			// Cannot place if there is already a unit there and that unit is not this unit
@@ -154,7 +163,7 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
           PackedScene scene = GD.Load<PackedScene>(unitInfo.ScenePath);
           Node instance = scene.Instantiate();
           Unit newUnit = instance as Unit;
-          newUnit!.Initialize(unitInfo, true, new Vector2I(x, y), placed: true);
+          newUnit!.Initialize(unitInfo, !EditsEnemySide, new Vector2I(x, y), placed: true);
           _unitsNode.AddChild(instance);
           _currentUnitSlotsCount += newUnit.GetOccupiedCells().Count;
           _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
@@ -194,6 +203,12 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     unit.Remove();
     _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
     _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
+  }
+
+  // Room for the whole half of the board
+  public void RemoveUnitSlotLimit()
+  {
+    SetExtraUnitSlots(GlobalConstants.GridSize.X * GlobalConstants.GridSize.Y / 2 - BaseUnitSlots);
   }
 
 	public void SetExtraUnitSlots(int amount)

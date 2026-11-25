@@ -18,6 +18,7 @@
 [ext_resource type="Script" path="res://scripts/world/WorldMap.cs" id="world_map"]
 [ext_resource type="Script" path="res://scripts/world/MessagePopup.cs" id="message_popup"]
 [ext_resource type="Script" path="res://scripts/world/BattleStats.cs" id="battle_stats"]
+[ext_resource type="PackedScene" path="res://scenes/level_editor.tscn" id="level_editor"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_32lhk"]
 texture = ExtResource("1_kqs1s")
@@ -326,6 +327,10 @@ theme_override_constants/separation = 2
 layout_mode = 2
 text = "Change deck"
 custom_minimum_size = Vector2(0, 36)
+
+[node name="LevelEditor" parent="CanvasLayer/SelectionUi/HBoxContainer" instance=ExtResource("level_editor")]
+visible = false
+layout_mode = 2
 
 [node name="InfoContainer" type="PanelContainer" parent="CanvasLayer/SelectionUi/HBoxContainer"]
 layout_mode = 2
@@ -1023,6 +1028,12 @@ custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 text = "Load game"
 custom_minimum_size = Vector2(0, 38)
+
+[node name="LevelEditorButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
+layout_mode = 2
+text = "Level editor"
+custom_minimum_size = Vector2(0, 38)
+tooltip_text = "Available outside of levels"
 
 [node name="OptionsButton" type="Button" parent="CanvasLayer/Menus/MainMenu/Buttons"]
 layout_mode = 2

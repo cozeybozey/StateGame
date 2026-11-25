@@ -20,6 +20,16 @@ public class Board
   public Terrain[,] TerrainGrid { get; private set; } = new Terrain[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
   public Prop[,] PropsGrid { get; private set; } = new Prop[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
+  public static IEnumerable<Vector2I> Cells
+  {
+    get
+    {
+      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+        for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
+          yield return new Vector2I(x, y);
+    }
+  }
+
   public int PlayerUnitsCount { get; private set; } = 0;
   public int EnemyUnitsCount { get; private set; } = 0;
 
@@ -60,32 +70,18 @@ public class Board
   // Cells that already hold a prop or unit keep it
   public void SpawnLevel(TerrainInfo[,] terrain, PropInfo[,] props, UnitInfo[,] enemies)
   {
-    int halfY = GlobalConstants.GridSize.Y / 2;
-    for (int x = 0; x < GlobalConstants.GridSize.X; x++)
+    foreach (Vector2I cell in Cells)
     {
-      for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-      {
-        Vector2I cell = new Vector2I(x, y);
-        TerrainInfo terrainInfo = terrain[x, y];
-        if (terrainInfo != null)
-        {
-          Terrain instance = GD.Load<PackedScene>(terrainInfo.ScenePath).Instantiate<Terrain>();
-          instance.Initialize(terrainInfo, cell, placed: true);
-          _terrainNode.AddChild(instance);
-          if (y < halfY)
-            instance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
-        }
+      TerrainInfo terrainInfo = terrain[cell.X, cell.Y];
+      if (terrainInfo != null)
+        SpawnTerrain(terrainInfo, cell);
 
-        PropInfo propInfo = props[x, y];
-        if (propInfo != null && PropsGrid[x, y] == null)
-        {
-          Prop instance = GD.Load<PackedScene>(propInfo.ScenePath).Instantiate<Prop>();
-          instance.Initialize(propInfo, cell, placed: true);
-          _propsNode.AddChild(instance);
-        }
-      }
+      PropInfo propInfo = props[cell.X, cell.Y];
+      if (propInfo != null && PropsGrid[cell.X, cell.Y] == null)
+        SpawnProp(propInfo, cell);
     }
 
+    int halfY = GlobalConstants.GridSize.Y / 2;
     for (int x = 0; x < GlobalConstants.GridSize.X; x++)
     {
       for (int y = 0; y < halfY; y++)
@@ -104,6 +100,43 @@ public class Board
 
     _gridOverlay.SetTerrain(TerrainGrid);
     _gridOverlay.SetProps(PropsGrid);
+  }
+
+  private void SpawnTerrain(TerrainInfo terrainInfo, Vector2I cell)
+  {
+    Terrain instance = GD.Load<PackedScene>(terrainInfo.ScenePath).Instantiate<Terrain>();
+    instance.Initialize(terrainInfo, cell, placed: true);
+    _terrainNode.AddChild(instance);
+    if (cell.Y < GlobalConstants.GridSize.Y / 2)
+      instance.ModulateSprite(new Color(0.8f, 0.8f, 0.8f));  // Darken the sprite to make it clear it's the enemy side
+  }
+
+  private void SpawnProp(PropInfo propInfo, Vector2I cell)
+  {
+    Prop instance = GD.Load<PackedScene>(propInfo.ScenePath).Instantiate<Prop>();
+    instance.Initialize(propInfo, cell, placed: true);
+    _propsNode.AddChild(instance);
+  }
+
+  // Replaces what is on the cell
+  public void SetTerrain(Vector2I cell, TerrainInfo terrainInfo)
+  {
+    Terrain current = TerrainGrid[cell.X, cell.Y];
+    if (current != null && current.Id == terrainInfo.Id)
+      return;
+    current?.QueueFree();
+    SpawnTerrain(terrainInfo, cell);
+  }
+
+  public void SetProp(Vector2I cell, PropInfo? propInfo)
+  {
+    Prop current = PropsGrid[cell.X, cell.Y];
+    if (current?.Id == propInfo?.Id)
+      return;
+    current?.QueueFree();
+    PropsGrid[cell.X, cell.Y] = null!;
+    if (propInfo != null)
+      SpawnProp(propInfo, cell);
   }
 
   public Unit SpawnUnit(UnitInfo unitInfo, bool side, Vector2I cell, bool placed = false, Action<Unit>? beforeAdd = null)
@@ -129,12 +162,12 @@ public class Board
     }
   }
 
-  public UnitInfo[,] GetPlayerUnits()
+  public UnitInfo[,] GetUnits(bool playerSide)
   {
     UnitInfo[,] grid = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
     foreach (Unit unit in Units)
     {
-      if (unit.Side)
+      if (unit.Side == playerSide)
         grid[unit.OccupiedMainCell.X, unit.OccupiedMainCell.Y] = unit.GetInfo();
     }
     return grid;

@@ -11,6 +11,7 @@ public partial class MainMenu : Control
   private Button _saveGameButton;
   private Button _loadGameButton;
   private Button _quitGameButton;
+  private Button _levelEditorButton;
   private Button _closeButton;
 
   private PanelContainer _saveGamePanel;
@@ -36,6 +37,7 @@ public partial class MainMenu : Control
     _saveGameButton = GetNode<Button>("MainMenu/Buttons/SaveGameButton");
     _loadGameButton = GetNode<Button>("MainMenu/Buttons/LoadGameButton");
     _quitGameButton = GetNode<Button>("MainMenu/Buttons/QuitGameButton");
+    _levelEditorButton = GetNode<Button>("MainMenu/Buttons/LevelEditorButton");
     _closeButton = GetNode<Button>("MainMenu/Buttons/CloseButton");
 
     _saveGamePanel = GetNode<PanelContainer>("SaveGamePanel");
@@ -55,6 +57,10 @@ public partial class MainMenu : Control
     _saveGameButton.Pressed += OnSaveGameButtonPressed;
     _loadGameButton.Pressed += OnLoadGameButtonPressed;
     _quitGameButton.Pressed += OnQuitGameButtonPressed;
+    _levelEditorButton.Pressed += OnLevelEditorButtonPressed;
+
+    // Levels are stored in the project, which an exported game can't write to
+    _levelEditorButton.Visible = OS.HasFeature("editor");
     _closeButton.Pressed += OnCloseButtonPressed;
     _confirmSaveButton.Pressed += OnConfirmSaveButtonPressed;
     _cancelSaveButton.Pressed += OnCancelSaveButtonPressed;
@@ -66,6 +72,8 @@ public partial class MainMenu : Control
   public override void _Process(double delta)
   {
     _dimmer.Visible = _mainMenuPanel.Visible || _saveGamesPanel.Visible || _saveGamePanel.Visible;
+    _levelEditorButton.Disabled = !_world.CanOpenEditor;
+    _loadGameButton.Disabled = _world.IsEditing;
   }
 
   private void OnOptionsButtonPressed()
@@ -444,6 +452,12 @@ public partial class MainMenu : Control
   private void OnCancelSaveGamesButtonPressed()
   {
     _saveGamesPanel.Hide();
+  }
+
+  private void OnLevelEditorButtonPressed()
+  {
+    _mainMenuPanel.Hide();
+    _world.OpenEditor();
   }
 
   private void OnQuitGameButtonPressed()
