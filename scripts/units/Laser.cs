@@ -8,21 +8,17 @@ public partial class Laser : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> cells = new();
+    int frontDir = Side ? -1 : 1;
 
-    if (Side)
+    // The beam of each column reaches the first cell that blocks sight
+    for (int x = OccupiedMainCell.X; x <= OccupiedMainCell.X + 1; x++)
     {
-      for (int y = OccupiedMainCell.Y - 1; y >= 0; y--)
+      for (int y = OccupiedMainCell.Y + frontDir; GlobalFunctions.IsCellInsideGrid(new Vector2I(x, y)); y += frontDir)
       {
-        cells.Add(new Vector2I(OccupiedMainCell.X, y));
-        cells.Add(new Vector2I(OccupiedMainCell.X + 1, y));
-      }
-    }
-    else
-    {
-      for (int y = OccupiedMainCell.Y + 1; y < GlobalConstants.GridSize.Y; y++)
-      {
-        cells.Add(new Vector2I(OccupiedMainCell.X, y));
-        cells.Add(new Vector2I(OccupiedMainCell.X + 1, y));
+        Vector2I cell = new Vector2I(x, y);
+        cells.Add(cell);
+        if (LineOfSight.BlocksSight(cell, terrainGrid, propsGrid))
+          break;
       }
     }
 

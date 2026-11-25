@@ -17,6 +17,8 @@ public partial class Paladin : Unit
     if (result.Count == 0)
       return result;
     Vector2I primary = result[0];
+    if (unitsGrid[primary.X, primary.Y] == null)
+      return result;
 
     // Determine direction for the extra cells
     Unit? primaryUnit = unitsGrid[primary.X, primary.Y];

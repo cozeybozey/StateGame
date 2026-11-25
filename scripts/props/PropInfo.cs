@@ -17,6 +17,8 @@ public partial class PropInfo : RefCounted
 	public bool Damagable { get; set; }
 	public bool Movable { get; set; }
 	public bool Blocking { get; set; }
+	// Hides the units behind it
+	public bool BlocksSight { get; set; }
   public List<string> Types { get; set; }
 
   public PropInfo(
@@ -34,6 +36,7 @@ public partial class PropInfo : RefCounted
 		bool damagable,
 		bool movable,
 		bool blocking,
+		bool blocksSight,
     List<string> types
   )
 	{
@@ -51,6 +54,7 @@ public partial class PropInfo : RefCounted
 		Damagable = damagable;
 		Movable = movable;
 		Blocking = blocking;
+		BlocksSight = blocksSight;
     Types = types;
 	}
 }

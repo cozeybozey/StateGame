@@ -7,14 +7,7 @@ public partial class Sniper : Unit
 {
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> result = new();
-
-    Tuple<Unit, Vector2I>? farthestEnemy = GetFarthestUnit(units, u => u.Side != Side);
-
-    if (farthestEnemy != null)
-      result.Add(farthestEnemy.Item2);
-
-    return result;
+    return SelectTarget(LineOfSight.FindFarthest(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

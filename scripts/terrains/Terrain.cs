@@ -29,7 +29,7 @@ public partial class Terrain : GridEntity
 
 	public TerrainInfo GetInfo()
 	{
-		return new TerrainInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Description, Rarity, Blocking, Types);
+		return new TerrainInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, Description, Rarity, Blocking, StartTerrainInfo.BlocksSight, Types);
 	}
 
   public TerrainInfo GetStartInfo()

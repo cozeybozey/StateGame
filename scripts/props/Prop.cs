@@ -36,7 +36,7 @@ public partial class Prop : GridEntity
 	public PropInfo GetInfo()
 	{
 		return new PropInfo(Id, DisplayName, Texture, ScenePath, OccupiedCells, MaxHealth, Health, 
-      Damage, Armor, Description, Rarity, Damagable, Movable, Blocking, Types);
+      Damage, Armor, Description, Rarity, Damagable, Movable, Blocking, StartPropInfo.BlocksSight, Types);
 	}
 
   public PropInfo GetStartInfo()

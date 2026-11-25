@@ -11,6 +11,8 @@ public partial class TerrainInfo : RefCounted
 	public string Description { get; set; }
 	public string Rarity { get; set; }
 	public bool Blocking { get; set; }
+	// Hides the units behind it
+	public bool BlocksSight { get; set; }
 	public List<string> Types { get; set; }
 
 	public TerrainInfo(
@@ -22,6 +24,7 @@ public partial class TerrainInfo : RefCounted
 		string description,
 		string rarity,
 		bool blocking,
+		bool blocksSight,
 		List<string> types
 	)
 	{
@@ -33,6 +36,7 @@ public partial class TerrainInfo : RefCounted
 		Description = description;
     Rarity = rarity;
 		Blocking = blocking;
+		BlocksSight = blocksSight;
 		Types = types;
 	}
 }

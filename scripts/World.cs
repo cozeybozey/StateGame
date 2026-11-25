@@ -123,6 +123,10 @@ public partial class World : Node2D
       GetNode<InfoGui>("CanvasLayer/SelectionUi/HBoxContainer/InfoContainer"));
     AddChild(selection);
 
+    SightPreview sightPreview = new SightPreview { Name = "SightPreview" };
+    sightPreview.Initialize(_board, _gridOverlay);
+    AddChild(sightPreview);
+
     _levelEditor.Initialize(_board, selection, _gridOverlay, _decksHandler, _popup);
 
     _battle = new Battle(_board, _activeUnitLayer, _targetedCellsLayer);

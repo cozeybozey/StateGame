@@ -40,6 +40,7 @@ public static class GameData
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
         cost, health, health, damage, armor, speed, description, rarity, types, stage);
+      GlobalConstants.UnitsData[unitId].NeedsSight = unitData.ContainsKey("needs_sight") && (bool)unitData["needs_sight"];
 
       // Link unit info score placement function to unit specific class function using reflection
       string fileName = scenePath.GetFile().GetBaseName();
@@ -72,12 +73,13 @@ public static class GameData
       string description = (string)terrainData["description"];
       string rarity = (string)terrainData["rarity"];
       bool blocking = (bool)terrainData["blocking"];
+      bool blocksSight = terrainData.ContainsKey("blocks_sight") && (bool)terrainData["blocks_sight"];
       List<string> types = terrainData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
 
       List<Vector2I> occupiedCells = ParseCells(terrainData);
 
       GlobalConstants.TerrainsData[terrainId] = new TerrainInfo(terrainId, displayName, texture, scenePath, 
-        occupiedCells, description, rarity, blocking, types);
+        occupiedCells, description, rarity, blocking, blocksSight, types);
     }
   }
 
@@ -100,12 +102,13 @@ public static class GameData
       bool damagable = (bool)propData["damagable"];
       bool movable = (bool)propData["movable"];
       bool blocking = (bool)propData["blocking"];
+      bool blocksSight = propData.ContainsKey("blocks_sight") && (bool)propData["blocks_sight"];
       List<string> types = propData["types"].AsGodotArray().Select(t => t.AsString()).ToList();
 
       List<Vector2I> occupiedCells = ParseCells(propData);
 
       GlobalConstants.PropsData[propsId] = new PropInfo(propsId, displayName, texture, scenePath,
-        occupiedCells, health, health, damage, armor, description, rarity, damagable, movable, blocking, types);
+        occupiedCells, health, health, damage, armor, description, rarity, damagable, movable, blocking, blocksSight, types);
     }
   }
 

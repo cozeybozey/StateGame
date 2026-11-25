@@ -190,6 +190,9 @@ public partial class Unit : GridEntity
 
   // Cell this action moves to before striking, set by GetTargets of units that jump at their target
   protected Vector2I? _moveTarget = null;
+
+  // Whether this action attacks a prop that hides every enemy
+  private bool _attacksObstacle = false;
   private bool _movedThisAction = false;
 
   // If another unit took the destination during the wind-up, pick a new spot and target. Returns whether the unit moved.
@@ -230,6 +233,7 @@ public partial class Unit : GridEntity
   {
     _moveTarget = null;
     _movedThisAction = false;
+    _attacksObstacle = false;
     _selectedTargets = GetTargets(_unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
     PulseActionBar();
 
@@ -266,7 +270,10 @@ public partial class Unit : GridEntity
     fx?.ShowStrike(this, _selectedTargets, _actionColor, _unitsGrid);
     PlayLunge(_selectedTargets);
 
-    Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
+    if (_attacksObstacle)
+      AttackObstacle(_selectedTargets[0]);
+    else
+      Act(_selectedTargets, _unitsGrid, _terrainGrid, _propsGrid, _units, _removedUnits);
 
     foreach (Unit target in targetUnits)
     {
@@ -279,6 +286,14 @@ public partial class Unit : GridEntity
     }
 
     AfterAct();
+  }
+
+  // Always does at least 1 damage, so every unit can break through
+  private void AttackObstacle(Vector2I cell)
+  {
+    Prop obstacle = _propsGrid[cell.X, cell.Y];
+    if (obstacle != null)
+      obstacle.ChangeHealth(-Mathf.Max(Damage, obstacle.Armor + 1), this);
   }
 
   private void AfterAct()
@@ -458,30 +473,15 @@ public partial class Unit : GridEntity
 
 	public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
-    if (Side)
-    {
-      for (int y = GlobalConstants.GridSize.Y - 1; y >= 0; y--)
-      {
-				for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-				{
-					if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
-						return [new Vector2I(x, y)];
-				}
-      }
-    }
-		else
-		{
-			for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-			{
-				for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-				{ 
-					if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
-						return [new Vector2I(x, y)];
-				}
-      }
-    }
+    return SelectTarget(LineOfSight.FindFrontmost(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
+  }
 
-		return [];
+  protected List<Vector2I> SelectTarget(LineOfSight.Target? target)
+  {
+    if (target == null)
+      return [];
+    _attacksObstacle = target.Obstacle;
+    return [target.Cell];
   }
 
   public override void TurnEnd(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

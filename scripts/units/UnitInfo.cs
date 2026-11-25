@@ -19,6 +19,8 @@ public partial class UnitInfo : RefCounted
 	public string Rarity { get; set; }
 	public List<string> Types { get; set; }
 	public int Stage { get; set; }
+	// Only attacks enemies it can see
+	public bool NeedsSight { get; set; } = false;
   public Func<Vector2I, UnitInfo, UnitInfo[,], TerrainInfo[,], PropInfo[,], int> ScorePlacement { get; set; } = (pos, unitInfo, unitsGrid, terrainGrid, propsGrid) => 0;
 
   public UnitInfo(

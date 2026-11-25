@@ -72,7 +72,8 @@
 		"cells": [[0, 0]],
 		"stage": 0,
 		"blocking": true,
-		"description": "Units cannot traverse this terrain.",
+		"blocks_sight": true,
+		"description": "Units cannot traverse or see through this terrain.",
 		"rarity": "common",
 		"types": [
 			"rocky"
@@ -85,7 +86,8 @@
 		"cells": [[0, 0]],
 		"stage": 0,
 		"blocking": true,
-		"description": "Units cannot traverse this terrain.",
+		"blocks_sight": true,
+		"description": "Units cannot traverse or see through this terrain.",
 		"rarity": "common",
 		"types": [
 			"rocky"
