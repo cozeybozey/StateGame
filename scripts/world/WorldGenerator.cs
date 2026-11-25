@@ -10,6 +10,7 @@ public class WorldGenerator
   public const int NumSections = 5;
   public static readonly string[] SectionNames = ["Earth", "Heaven", "Future", "Graveyard", "Hell"];
 
+  private const int LevelsPerChoice = 2;
   private const int CoinsPerWin = 20;
   private const int GauntletLevels = 4;
 
@@ -38,16 +39,10 @@ public class WorldGenerator
     return index >= 0 ? index : null;
   }
 
-  // Number of levels a section has in a layer
+  // Number of levels a section has in a layer. Layers alternate between a choice and a single level that every path goes through.
   public static int GetNodesInLayer(int layer)
   {
-    if (layer <= 1 || layer == NumLayers - 1)
-      return 1;
-    if (layer == 2)
-      return 3;
-    if (layer < NumLayers * 0.75f - 1)
-      return GetNodesInLayer(layer - 1) + 1;
-    return GetNodesInLayer(layer - 1) - 2; // After a while the layers converge to one boss layer
+    return layer % 2 == 1 && layer < NumLayers - 1 ? LevelsPerChoice : 1;
   }
 
   // A level outside the world, to try out a design
@@ -71,15 +66,7 @@ public class WorldGenerator
     {
       List<List<LevelInfo>> sectionLayers = new();
 
-      // Layer 1: one entry node per section
-      string entryId = $"Q{q}_L1_N0";
-      levels[entryId] = CreateLevelInfo(entryId, 1, 0, false, q);
-      levels[startId].NextNodes.Add(entryId);
-      sectionLayers.Add(new List<LevelInfo> { levels[entryId] });
-      nodesPerLayer[1, q] = 1;
-
-      // Remaining layers expand like a cone
-      for (int layer = 2; layer < NumLayers; layer++)
+      for (int layer = 1; layer < NumLayers; layer++)
       {
         bool isBoss = layer % (NumLayers - 1) == 0;
         int nodesInLayer = GetNodesInLayer(layer);
@@ -94,7 +81,10 @@ public class WorldGenerator
           layerNodes.Add(levels[nodeId]);
         }
 
-        ConnectRings(sectionLayers[^1], layerNodes, isBoss);
+        if (layer == 1)
+          levels[startId].NextNodes.AddRange(layerNodes.Select(l => l.Id));
+        else
+          ConnectRings(sectionLayers[^1], layerNodes, isBoss);
         sectionLayers.Add(layerNodes);
         nodesPerLayer[layer, q] = nodesInLayer;
       }
