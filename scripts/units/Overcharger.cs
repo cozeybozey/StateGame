@@ -9,7 +9,7 @@ public partial class Overcharger : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> randomUnits = units
-      .Where(u => u.Side == Side && u.Types.Contains("machinery"))
+      .Where(u => u.Side == Side && u.Types.Contains("machinery") && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
       .OrderBy(_ => GD.Randi())
       .Take(3)
       .Select(u => u.OccupiedMainCell)

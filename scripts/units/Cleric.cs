@@ -7,10 +7,11 @@ public partial class Cleric : Unit
 {
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    // Every injured ally that can be seen, once
+    // Every cell of an injured ally that can be seen, so a big ally is healed once for each of its cells
     return units
-      .Where(u => u.Side == Side && u.Health < u.MaxHealth && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
-      .Select(u => u.OccupiedMainCell)
+      .Where(u => u.Side == Side && u.Health < u.MaxHealth)
+      .SelectMany(u => u.GetOccupiedCells())
+      .Where(cell => LineOfSight.CanSee(GetOccupiedCells(), cell, terrainGrid, propsGrid))
       .ToList();
   }
 

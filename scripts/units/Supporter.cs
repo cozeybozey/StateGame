@@ -7,7 +7,7 @@ public partial class Supporter : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     // Predicate makes sure closest unit has to be friendly
-    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.Side == Side);
+    Tuple<Unit, Vector2I>? closest = GetClosestUnit(units, u => u.Side == Side && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid));
 
     if (closest == null)
       return new List<Vector2I>();

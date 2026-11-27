@@ -13,7 +13,7 @@ public partial class Sergeant : Unit
     List<Vector2I> result = new();
 
     // Target the ally with the most ticks until its next action (TicksUntilAction, which accounts for speed).
-    // Units that never act (speed 0) are skipped.
+    // Units that never act (speed 0) and allies it cannot see are skipped.
     Unit? targetAlly = null;
     int longestWait = int.MinValue;
 
@@ -22,7 +22,7 @@ public partial class Sergeant : Unit
       for (int x = 0; x < GlobalConstants.GridSize.X; x++)
       {
         Unit unit = unitsGrid[x, y];
-        if (unit != null && unit.Side == Side && unit != this && unit.Speed > 0)
+        if (unit != null && unit.Side == Side && unit != this && unit.Speed > 0 && LineOfSight.CanSeeUnit(GetOccupiedCells(), unit, terrainGrid, propsGrid))
         {
           int wait = unit.TicksUntilAction(1);
           if (wait > longestWait)
