@@ -17,14 +17,7 @@ public partial class EarthElemental : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> randomUnit = units
-    .Where(u => u.Side != Side)
-    .OrderBy(_ => GD.Randi())
-    .Take(1)
-    .Select(u => u.OccupiedMainCell)
-    .ToList();
-
-    return randomUnit;
+    return SelectTarget(LineOfSight.FindRandomVisible(GetOccupiedCells(), Side, units, terrainGrid, propsGrid, _rng));
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

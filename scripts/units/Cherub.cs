@@ -10,26 +10,8 @@ public partial class Cherub : Unit
 {
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> targets = new();
-    int frontDir = Side ? -1 : 1;
-
-    // Find frontmost unit in same column
-    foreach (Vector2I cell in GetOccupiedCells())
-    {
-      int checkY = cell.Y + frontDir;
-      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(cell.X, checkY)))
-      {
-        Unit unit = unitsGrid[cell.X, checkY];
-        if (unit != null)
-        {
-          targets.Add(unit.OccupiedMainCell);
-          return targets;
-        }
-        checkY += frontDir;
-      }
-    }
-
-    return targets;
+    LineOfSight.Target? target = LineOfSight.FindInColumn(GetOccupiedCells(), Side, unitsGrid, terrainGrid, propsGrid, hitsProps: false);
+    return target == null ? [] : [target.Cell];
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

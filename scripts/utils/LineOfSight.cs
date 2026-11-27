@@ -55,34 +55,73 @@ public static class LineOfSight
     return new Target(end, false);
   }
 
-  // The first enemy straight in front of one of these cells, or the prop in the way. Allies do not block.
-  public static Target? FindInColumn(List<Vector2I> cells, bool side, Unit[,] units, Terrain[,] terrain, Prop[,] props)
+  // The first unit straight in front of one of these cells, friend or foe. A prop that blocks sight in the way is
+  // the target when hitsProps, and otherwise stops it, like terrain that blocks sight.
+  public static Target? FindInColumn(List<Vector2I> cells, bool side, Unit[,] units, Terrain[,] terrain, Prop[,] props, bool hitsProps)
   {
     Target? closest = null;
     int closestDistance = int.MaxValue;
     foreach (Vector2I cell in cells)
     {
       List<Vector2I> column = GetColumn(cell, side, terrain, props);
-      for (int i = 0; i < column.Count; i++)
+      for (int i = 0; i < column.Count && i < closestDistance; i++)
       {
         Vector2I target = column[i];
         Unit unit = units[target.X, target.Y];
-        bool blocks = BlocksSight(target, terrain, props);
-        if ((unit == null || unit.Side == side) && !blocks)
-          continue;
-
-        bool obstacle = unit == null || unit.Side == side;
-        if (obstacle && !BlocksSight(props[target.X, target.Y]))
-          break;
-        if (i < closestDistance)
+        if (unit != null && !cells.Contains(target))
         {
-          closest = new Target(target, obstacle);
+          closest = new Target(target, false);
           closestDistance = i;
         }
+        else if (BlocksSight(target, terrain, props))
+        {
+          if (hitsProps && BlocksSight(props[target.X, target.Y]))
+          {
+            closest = new Target(target, true);
+            closestDistance = i;
+          }
+        }
+        else
+          continue;
         break;
       }
     }
     return closest;
+  }
+
+  // Every enemy that can be seen, with the cell of it that is seen
+  public static List<Target> FindVisibleEnemies(List<Vector2I> cells, bool side, IEnumerable<Unit> units, Terrain[,] terrain, Prop[,] props)
+  {
+    List<Target> visible = new();
+    foreach (Unit enemy in units.Where(u => u.Side != side))
+    {
+      foreach ((Vector2I from, Vector2I to, int _) in Pairs(cells, enemy))
+      {
+        if (CanSee(from, to, terrain, props))
+        {
+          visible.Add(new Target(to, false));
+          break;
+        }
+      }
+    }
+    return visible;
+  }
+
+  // A random enemy that can be seen. When none can be seen, the frontmost enemy's way is broken open first.
+  public static Target? FindRandomVisible(List<Vector2I> cells, bool side, IEnumerable<Unit> units, Terrain[,] terrain, Prop[,] props, RandomNumberGenerator rng)
+  {
+    List<Target> visible = FindVisibleEnemies(cells, side, units, terrain, props);
+    if (visible.Count > 0)
+      return visible[rng.RandiRange(0, visible.Count - 1)];
+    return FindFrontmost(cells, side, units, terrain, props);
+  }
+
+  // The cells on the other half of the board that can be seen
+  public static List<Vector2I> GetVisibleCells(List<Vector2I> cells, bool side, Terrain[,] terrain, Prop[,] props)
+  {
+    return Board.Cells
+      .Where(cell => cell.Y < GlobalConstants.GridSize.Y / 2 == side && CanSee(cells, cell, terrain, props))
+      .ToList();
   }
 
   // The cells straight in front of a cell, up to and with the first one that blocks sight

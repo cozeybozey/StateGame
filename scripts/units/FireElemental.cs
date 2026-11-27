@@ -28,7 +28,7 @@ public partial class FireElemental : Unit
       for (int y = ystart; y < yend; y++)
       {
         Vector2I cell = new Vector2I(x, y);
-        if (GlobalFunctions.CanSpawnProp(_fireInfo, cell, unitsGrid, terrainGrid, propsGrid))
+        if (GlobalFunctions.CanSpawnProp(_fireInfo, cell, unitsGrid, terrainGrid, propsGrid) && LineOfSight.CanSee(GetOccupiedCells(), cell, terrainGrid, propsGrid))
           candidates.Add(cell);
       }
     }

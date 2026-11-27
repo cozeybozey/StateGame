@@ -7,17 +7,12 @@ public partial class Bomber : Unit
 {
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    Random random = new();
-
-    List<Vector2I> enemies = new();
-    for (int y = 0; y < GlobalConstants.GridSize.Y; y++)
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-        if (unitsGrid[x, y] != null && unitsGrid[x, y].Side != Side)
-          enemies.Add(new Vector2I(x, y));
-
-    if (enemies.Count == 0) return [];
-
-    Vector2I target = enemies[random.Next(enemies.Count)];
+    LineOfSight.Target? found = LineOfSight.FindRandomVisible(GetOccupiedCells(), Side, units, terrainGrid, propsGrid, _rng);
+    if (found == null)
+      return [];
+    if (found.Obstacle)
+      return SelectTarget(found);
+    Vector2I target = found.Cell;
 
     List<Vector2I> cells = new();
     for (int dy = -1; dy <= 1; dy++)

@@ -80,14 +80,15 @@ public partial class SightPreview : Node2D
     }
   }
 
-  // The cells this unit can hit: what it sees, or only the cells its beam or column passes
+  // The cells this unit can hit: what it sees, or only the cells its beam or column passes. Random attacks pick from these.
   private HashSet<Vector2I> GetReach(List<Vector2I> cells)
   {
     Terrain[,] terrain = _board.TerrainGrid;
     Prop[,] props = _board.PropsGrid;
     IEnumerable<Vector2I> reach = _unit!.Targeting switch
     {
-      "column" => cells.SelectMany(cell => LineOfSight.GetColumn(cell, _side, terrain, props)),
+      "column" or "column_units" => cells.SelectMany(cell => UpToFirstUnit(LineOfSight.GetColumn(cell, _side, terrain, props))),
+      "above" => Board.Cells.Where(cell => cell.Y < GlobalConstants.GridSize.Y / 2 == _side),
       "beam" => new[] { _cell, _cell + Vector2I.Right }.SelectMany(cell => LineOfSight.GetColumn(cell, _side, terrain, props)),
       "rows" => cells.SelectMany(cell => Enumerable.Range(0, GlobalConstants.GridSize.X)
         .Select(x => new Vector2I(x, GlobalConstants.GridSize.Y - cell.Y - 1))),
@@ -105,18 +106,29 @@ public partial class SightPreview : Node2D
     {
       "frontmost" => LineOfSight.FindFrontmost(cells, _side, _board.Units, terrain, props),
       "farthest" => LineOfSight.FindFarthest(cells, _side, _board.Units, terrain, props),
-      "column" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props),
+      "column" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props, hitsProps: true),
+      "column_units" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props, hitsProps: false),
       _ => null,
     };
 
     if (target != null)
       return [CellsOf(target.Cell, target.Obstacle)];
 
-    // Beams and rows hit every enemy they reach
+    if (_unit.Targeting is "column" or "column_units" or "random_cells" or "above")
+      return [];
+
+    // Beams and rows hit every enemy they reach, and random attacks pick one of them
     return _board.Units
       .Where(u => IsInstanceValid(u) && u.Side != _side && u.GetOccupiedCells().Any(reach.Contains))
       .Select(u => u.GetOccupiedCells())
       .ToList();
+  }
+
+  // The column ends at the first unit in it
+  private List<Vector2I> UpToFirstUnit(List<Vector2I> column)
+  {
+    int end = column.FindIndex(cell => _board.UnitsGrid[cell.X, cell.Y] != null);
+    return end < 0 ? column : column.GetRange(0, end + 1);
   }
 
   private List<Vector2I> CellsOf(Vector2I cell, bool obstacle)

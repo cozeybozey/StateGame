@@ -12,7 +12,7 @@ public partial class Betrayer : Unit
     List<Unit> availableUnits = new List<Unit>();
     foreach (Unit unit in units)
     {
-      if (unit != this)
+      if (unit != this && LineOfSight.CanSee(GetOccupiedCells(), unit.OccupiedMainCell, terrainGrid, propsGrid))
         availableUnits.Add(unit);
     }
 

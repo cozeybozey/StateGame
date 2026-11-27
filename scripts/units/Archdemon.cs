@@ -19,16 +19,14 @@ public partial class Archdemon : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Unit> enemies = units
-        .Where(u => u.Side != Side)
-        .OrderBy(_ => GD.Randi())
-        .Take(3)
-        .ToList();
+    List<LineOfSight.Target> visible = LineOfSight.FindVisibleEnemies(GetOccupiedCells(), Side, units, terrainGrid, propsGrid);
+    if (visible.Count == 0)
+      return SelectTarget(LineOfSight.FindFrontmost(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
 
     List<Vector2I> targets = new();
-    foreach (Unit enemy in enemies)
+    foreach (LineOfSight.Target enemy in visible.OrderBy(_ => GD.Randi()).Take(3))
     {
-      Vector2I center = enemy.OccupiedMainCell;
+      Vector2I center = enemy.Cell;
       targets.Add(center);
       targets.Add(new Vector2I(center.X + 1, center.Y));
       targets.Add(new Vector2I(center.X - 1, center.Y));

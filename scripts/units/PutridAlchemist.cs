@@ -11,7 +11,7 @@ public partial class PutridAlchemist : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    LineOfSight.Target? target = LineOfSight.FindInColumn(GetOccupiedCells(), Side, unitsGrid, terrainGrid, propsGrid);
+    LineOfSight.Target? target = LineOfSight.FindInColumn(GetOccupiedCells(), Side, unitsGrid, terrainGrid, propsGrid, hitsProps: true);
     List<Vector2I> targets = SelectTarget(target);
     _attackTargetFound = target != null;
 
