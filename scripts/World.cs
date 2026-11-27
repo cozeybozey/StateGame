@@ -346,8 +346,7 @@ public partial class World : Node2D
   {
     _popup.Close();
     _roundDeck = deck;
-    _decksHandler.SelectDeck(deck);
-    _decksHandler.LoadAfterLevel();
+    _decksHandler.SwitchDeck(deck);
     SetUpLevel();
   }
 

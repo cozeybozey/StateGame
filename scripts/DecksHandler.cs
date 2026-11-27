@@ -160,6 +160,17 @@ public partial class DecksHandler : PanelContainer
     _processUnitChanges = true;
   }
 
+  // Shows another deck on the board. The old deck's units leave the board without being taken out of that deck.
+  public void SwitchDeck(string deckName)
+  {
+    _processUnitChanges = false;
+    _selectedDeck = deckName;
+    ClearUnitsSelection();
+    _gridOverlay.LoadDeck(Decks[deckName]);
+    AddUnitsSelection(Decks[deckName], false);
+    _processUnitChanges = true;
+  }
+
   private void OnChangeDeckPressed()
   {
     ClearUnitsSelection();
