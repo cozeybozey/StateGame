@@ -4,11 +4,13 @@ using System.Collections.Generic;
 
 public partial class Turret : Unit
 {
+  protected override int HitsPerAttack => 3;
+
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     foreach (Vector2I target in targets)
     {
-      for (int i = 0; i < 3; i++)
+      for (int i = 0; i < HitsPerAttack; i++)
       {
         Unit targetUnit = unitsGrid[target.X, target.Y];
         if (targetUnit != null)

@@ -9,7 +9,7 @@ public partial class BloodPriest : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Unit? highestHealth = units
-        .Where(u => u.Side == Side)
+        .Where(u => u.Side == Side && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
         .OrderByDescending(u => (float)u.Health / u.MaxHealth)
         .ThenByDescending(u => u.MaxHealth)
         .FirstOrDefault();
@@ -17,7 +17,7 @@ public partial class BloodPriest : Unit
     if (highestHealth == null) return [];
 
     Unit? lowestHealth = units
-        .Where(u => u.Side == Side && u != highestHealth && u.Health < u.MaxHealth)
+        .Where(u => u.Side == Side && u != highestHealth && u.Health < u.MaxHealth && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
         .OrderBy(u => (float)u.Health / u.MaxHealth)
         .ThenByDescending(u => u.MaxHealth)
         .FirstOrDefault();

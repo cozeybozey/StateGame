@@ -8,13 +8,13 @@ public static class LineOfSight
   // The cell an attack goes to. An obstacle is a prop that hides every enemy, and has to be destroyed first.
   public record Target(Vector2I Cell, bool Obstacle);
 
-  // The frontmost enemy that can be seen, or the closest one of those in the same row
-  public static Target? FindFrontmost(List<Vector2I> cells, bool side, IEnumerable<Unit> units, Terrain[,] terrain, Prop[,] props)
+  // The closest enemy that can be seen. Of enemies just as close, the frontmost one, and then the leftmost one.
+  public static Target? FindClosest(List<Vector2I> cells, bool side, IEnumerable<Unit> units, Terrain[,] terrain, Prop[,] props)
   {
     List<Unit> enemies = units
       .Where(u => u.Side != side)
-      .OrderBy(u => side ? -u.GetOccupiedCells().Max(c => c.Y) : u.GetOccupiedCells().Min(c => c.Y))
-      .ThenBy(u => Pairs(cells, u).First().Distance)
+      .OrderBy(u => Pairs(cells, u).First().Distance)
+      .ThenBy(u => side ? -u.GetOccupiedCells().Max(c => c.Y) : u.GetOccupiedCells().Min(c => c.Y))
       .ThenBy(u => u.OccupiedMainCell.X)
       .ToList();
     return FindFirstVisible(cells, enemies, terrain, props);
@@ -45,7 +45,7 @@ public static class LineOfSight
     if (enemies.Count == 0)
       return null;
 
-    // No enemy can be seen: break through to the first one. If only mountains are in the way, shoot over them.
+    // No enemy can be seen: break through to the first one, the closest. If only mountains are in the way, shoot over them.
     (Vector2I start, Vector2I end, int _) = Pairs(cells, enemies[0]).First();
     foreach (Vector2I cell in CellsBetween(start, end))
     {
@@ -107,13 +107,13 @@ public static class LineOfSight
     return visible;
   }
 
-  // A random enemy that can be seen. When none can be seen, the frontmost enemy's way is broken open first.
+  // A random enemy that can be seen. When none can be seen, the way to the closest enemy is broken open first.
   public static Target? FindRandomVisible(List<Vector2I> cells, bool side, IEnumerable<Unit> units, Terrain[,] terrain, Prop[,] props, RandomNumberGenerator rng)
   {
     List<Target> visible = FindVisibleEnemies(cells, side, units, terrain, props);
     if (visible.Count > 0)
       return visible[rng.RandiRange(0, visible.Count - 1)];
-    return FindFrontmost(cells, side, units, terrain, props);
+    return FindClosest(cells, side, units, terrain, props);
   }
 
   // The cells on the other half of the board that can be seen
@@ -136,6 +136,12 @@ public static class LineOfSight
         break;
     }
     return column;
+  }
+
+  // Whether any cell of the unit can be seen from these cells
+  public static bool CanSeeUnit(List<Vector2I> cells, Unit unit, Terrain[,] terrain, Prop[,] props)
+  {
+    return unit.GetOccupiedCells().Any(cell => CanSee(cells, cell, terrain, props));
   }
 
   public static bool CanSee(List<Vector2I> cells, Vector2I target, Terrain[,] terrain, Prop[,] props)

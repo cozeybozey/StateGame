@@ -21,7 +21,7 @@ public partial class Archdemon : Unit
   {
     List<LineOfSight.Target> visible = LineOfSight.FindVisibleEnemies(GetOccupiedCells(), Side, units, terrainGrid, propsGrid);
     if (visible.Count == 0)
-      return SelectTarget(LineOfSight.FindFrontmost(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
+      return SelectTarget(LineOfSight.FindClosest(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
 
     List<Vector2I> targets = new();
     foreach (LineOfSight.Target enemy in visible.OrderBy(_ => GD.Randi()).Take(3))

@@ -8,7 +8,7 @@ public partial class Lifebinder : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     List<Vector2I> injuredAllies = units
-        .Where(u => u.Side == Side && u.Health < u.MaxHealth)
+        .Where(u => u.Side == Side && u.Health < u.MaxHealth && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
         .OrderBy(u => u.GetHealthPercentage())
         .ThenByDescending(u => u.MaxHealth)
         .ThenByDescending(u => Side ? u.OccupiedMainCell.Y : -u.OccupiedMainCell.Y)

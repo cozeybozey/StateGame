@@ -288,12 +288,19 @@ public partial class Unit : GridEntity
     AfterAct();
   }
 
-  // Always does at least 1 damage, so every unit can break through
+  // Number of times an attack hits
+  protected virtual int HitsPerAttack => 1;
+
+  // Always does at least 1 damage per hit, so every unit can break through
   private void AttackObstacle(Vector2I cell)
   {
-    Prop obstacle = _propsGrid[cell.X, cell.Y];
-    if (obstacle != null)
+    for (int i = 0; i < HitsPerAttack; i++)
+    {
+      Prop obstacle = _propsGrid[cell.X, cell.Y];
+      if (obstacle == null || !IsInstanceValid(obstacle))
+        return;
       obstacle.ChangeHealth(-Mathf.Max(Damage, obstacle.Armor + 1), this);
+    }
   }
 
   private void AfterAct()
@@ -473,7 +480,7 @@ public partial class Unit : GridEntity
 
 	public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
 	{
-    return SelectTarget(LineOfSight.FindFrontmost(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
+    return SelectTarget(LineOfSight.FindClosest(GetOccupiedCells(), Side, units, terrainGrid, propsGrid));
   }
 
   protected List<Vector2I> SelectTarget(LineOfSight.Target? target)

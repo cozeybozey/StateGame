@@ -2,8 +2,8 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 
-// While placing units: darkens the cells on the other half that the dragged or hovered unit cannot reach,
-// and outlines what it would attack first.
+// Darkens the cells that the dragged or hovered unit cannot reach, and outlines what it would attack first.
+// Healers show the allies they can see on their own half instead. Hovering also works during a battle.
 public partial class SightPreview : Node2D
 {
   private Board _board = null!;
@@ -28,14 +28,14 @@ public partial class SightPreview : Node2D
   private void FindUnit()
   {
     _unit = null;
-    if (_board.InBattle || !_grid.IsVisibleInTree())
+    if (!_grid.IsVisibleInTree())
       return;
 
     Control hovered = GetViewport().GuiGetHoveredControl();
     Viewport viewport = GetViewport();
     Vector2I cell = _grid.GetCellUnderMouse(_grid.GetLocalMousePosition());
 
-    if (viewport.GuiIsDragging())
+    if (viewport.GuiIsDragging() && !_board.InBattle)
     {
       if (viewport.GuiGetDragData().Obj is not DragPayload payload || !GlobalFunctions.IsCellInsideGrid(cell) || !_grid.CanPlace(payload, cell))
         return;
@@ -66,17 +66,18 @@ public partial class SightPreview : Node2D
     HashSet<Vector2I> reach = GetReach(cells);
     Vector2 tile = new(GlobalConstants.TileSize, GlobalConstants.TileSize);
 
+    bool healer = _unit.Targeting == "allies";
     foreach (Vector2I cell in Board.Cells)
     {
       bool otherHalf = cell.Y < GlobalConstants.GridSize.Y / 2 == _side;
-      if (otherHalf && !reach.Contains(cell))
+      if (otherHalf != healer && !reach.Contains(cell))
         DrawRect(new Rect2(CombatFx.CellCenter(cell) - tile / 2, tile), new Color(0, 0, 0, 0.5f));
     }
 
     foreach (List<Vector2I> target in GetTargets(cells, reach))
     {
       foreach (var edge in OverlayLayer.GetOutlineEdges(target, CombatFx.CellCenter, tile))
-        DrawLine(edge.Item1, edge.Item2, GamePalette.Enemy, 3f);
+        DrawLine(edge.Item1, edge.Item2, healer ? GamePalette.Support : GamePalette.Enemy, 3f);
     }
   }
 
@@ -104,7 +105,7 @@ public partial class SightPreview : Node2D
     Prop[,] props = _board.PropsGrid;
     LineOfSight.Target? target = _unit!.Targeting switch
     {
-      "frontmost" => LineOfSight.FindFrontmost(cells, _side, _board.Units, terrain, props),
+      "closest" => LineOfSight.FindClosest(cells, _side, _board.Units, terrain, props),
       "farthest" => LineOfSight.FindFarthest(cells, _side, _board.Units, terrain, props),
       "column" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props, hitsProps: true),
       "column_units" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props, hitsProps: false),
@@ -116,6 +117,15 @@ public partial class SightPreview : Node2D
 
     if (_unit.Targeting is "column" or "column_units" or "random_cells" or "above")
       return [];
+
+    // Healers can heal every ally they see
+    if (_unit.Targeting == "allies")
+    {
+      return _board.Units
+        .Where(u => IsInstanceValid(u) && u.Side == _side && !u.GetOccupiedCells().SequenceEqual(cells) && u.GetOccupiedCells().Any(reach.Contains))
+        .Select(u => u.GetOccupiedCells())
+        .ToList();
+    }
 
     // Beams and rows hit every enemy they reach, and random attacks pick one of them
     return _board.Units

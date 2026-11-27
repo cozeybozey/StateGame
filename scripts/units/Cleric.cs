@@ -1,27 +1,17 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class Cleric : Unit
 {
-  List<Vector2I> _targets = new List<Vector2I>();
-
-  protected override void Start()
-  {
-    int ystart = (Side) ? Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5) : 0;
-    int yend = (Side) ? GlobalConstants.GridSize.Y : Mathf.FloorToInt(GlobalConstants.GridSize.Y * 0.5);
-    for (int y = ystart; y < yend; y++)
-    {
-      for (int x = 0; x < GlobalConstants.GridSize.X; x++)
-      {
-        _targets.Add(new Vector2I(x, y));
-      }
-    }
-  }
-
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    return [.._targets];
+    // Every injured ally that can be seen, once
+    return units
+      .Where(u => u.Side == Side && u.Health < u.MaxHealth && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
+      .Select(u => u.OccupiedMainCell)
+      .ToList();
   }
 
   public override void Act(List<Vector2I> targets, Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)

@@ -21,7 +21,7 @@ public partial class PutridAlchemist : Unit
 
     // Find frontmost allied unit
     Unit? frontmostAlly = units
-        .Where(u => u.Side == Side && u.Health < u.MaxHealth)
+        .Where(u => u.Side == Side && u.Health < u.MaxHealth && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
         .OrderByDescending(u => Side ? -u.OccupiedMainCell.Y : u.OccupiedMainCell.Y)
         .ThenBy(u => u.OccupiedMainCell.X)
         .FirstOrDefault();

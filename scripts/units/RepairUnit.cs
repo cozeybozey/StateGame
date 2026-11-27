@@ -8,7 +8,7 @@ public partial class RepairUnit : Unit
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
     Unit? lowestHealthMachine = units
-        .Where(u => u.Side == Side && u.Types.Contains("machinery"))
+        .Where(u => u.Side == Side && u.Types.Contains("machinery") && LineOfSight.CanSeeUnit(GetOccupiedCells(), u, terrainGrid, propsGrid))
         .OrderBy(u => (float)u.Health / u.MaxHealth)
         .ThenByDescending(u => u.MaxHealth)
         .FirstOrDefault();
