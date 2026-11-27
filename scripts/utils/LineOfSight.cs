@@ -55,6 +55,50 @@ public static class LineOfSight
     return new Target(end, false);
   }
 
+  // The first enemy straight in front of one of these cells, or the prop in the way. Allies do not block.
+  public static Target? FindInColumn(List<Vector2I> cells, bool side, Unit[,] units, Terrain[,] terrain, Prop[,] props)
+  {
+    Target? closest = null;
+    int closestDistance = int.MaxValue;
+    foreach (Vector2I cell in cells)
+    {
+      List<Vector2I> column = GetColumn(cell, side, terrain, props);
+      for (int i = 0; i < column.Count; i++)
+      {
+        Vector2I target = column[i];
+        Unit unit = units[target.X, target.Y];
+        bool blocks = BlocksSight(target, terrain, props);
+        if ((unit == null || unit.Side == side) && !blocks)
+          continue;
+
+        bool obstacle = unit == null || unit.Side == side;
+        if (obstacle && !BlocksSight(props[target.X, target.Y]))
+          break;
+        if (i < closestDistance)
+        {
+          closest = new Target(target, obstacle);
+          closestDistance = i;
+        }
+        break;
+      }
+    }
+    return closest;
+  }
+
+  // The cells straight in front of a cell, up to and with the first one that blocks sight
+  public static List<Vector2I> GetColumn(Vector2I cell, bool side, Terrain[,] terrain, Prop[,] props)
+  {
+    List<Vector2I> column = new();
+    int frontDir = side ? -1 : 1;
+    for (Vector2I next = cell + new Vector2I(0, frontDir); GlobalFunctions.IsCellInsideGrid(next); next.Y += frontDir)
+    {
+      column.Add(next);
+      if (BlocksSight(next, terrain, props))
+        break;
+    }
+    return column;
+  }
+
   public static bool CanSee(List<Vector2I> cells, Vector2I target, Terrain[,] terrain, Prop[,] props)
   {
     return cells.Any(cell => CanSee(cell, target, terrain, props));

@@ -40,7 +40,7 @@ public static class GameData
 
       GlobalConstants.UnitsData[unitId] = new UnitInfo(unitId, displayName, texture, scenePath, occupiedCells, 
         cost, health, health, damage, armor, speed, description, rarity, types, stage);
-      GlobalConstants.UnitsData[unitId].NeedsSight = unitData.ContainsKey("needs_sight") && (bool)unitData["needs_sight"];
+      GlobalConstants.UnitsData[unitId].Targeting = unitData.ContainsKey("targeting") ? (string)unitData["targeting"] : "";
 
       // Link unit info score placement function to unit specific class function using reflection
       string fileName = scenePath.GetFile().GetBaseName();

@@ -7,22 +7,10 @@ public partial class Laser : Unit
 {
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> cells = new();
-    int frontDir = Side ? -1 : 1;
-
     // The beam of each column reaches the first cell that blocks sight
-    for (int x = OccupiedMainCell.X; x <= OccupiedMainCell.X + 1; x++)
-    {
-      for (int y = OccupiedMainCell.Y + frontDir; GlobalFunctions.IsCellInsideGrid(new Vector2I(x, y)); y += frontDir)
-      {
-        Vector2I cell = new Vector2I(x, y);
-        cells.Add(cell);
-        if (LineOfSight.BlocksSight(cell, terrainGrid, propsGrid))
-          break;
-      }
-    }
-
-    return cells;
+    return LineOfSight.GetColumn(OccupiedMainCell, Side, terrainGrid, propsGrid)
+      .Concat(LineOfSight.GetColumn(OccupiedMainCell + Vector2I.Right, Side, terrainGrid, propsGrid))
+      .ToList();
   }
 
   public static new int ScorePlacement(Vector2I pos, UnitInfo unitInfo, UnitInfo[,] unitsGrid, TerrainInfo[,] terrainGrid, PropInfo[,] propsGrid)

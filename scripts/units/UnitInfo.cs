@@ -19,8 +19,8 @@ public partial class UnitInfo : RefCounted
 	public string Rarity { get; set; }
 	public List<string> Types { get; set; }
 	public int Stage { get; set; }
-	// Only attacks enemies it can see
-	public bool NeedsSight { get; set; } = false;
+	// How the unit picks what it attacks: frontmost, farthest, column, beam or rows. Empty for units the preview shows nothing for.
+	public string Targeting { get; set; } = "";
   public Func<Vector2I, UnitInfo, UnitInfo[,], TerrainInfo[,], PropInfo[,], int> ScorePlacement { get; set; } = (pos, unitInfo, unitsGrid, terrainGrid, propsGrid) => 0;
 
   public UnitInfo(

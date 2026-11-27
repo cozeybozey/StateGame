@@ -11,25 +11,13 @@ public partial class PutridAlchemist : Unit
 
   public override List<Vector2I> GetTargets(Unit[,] unitsGrid, Terrain[,] terrainGrid, Prop[,] propsGrid, List<Unit> units, List<Unit> deadUnits)
   {
-    List<Vector2I> targets = new();
-    int frontDir = Side ? -1 : 1;
+    LineOfSight.Target? target = LineOfSight.FindInColumn(GetOccupiedCells(), Side, unitsGrid, terrainGrid, propsGrid);
+    List<Vector2I> targets = SelectTarget(target);
+    _attackTargetFound = target != null;
 
-    // Find frontmost enemy in same column
-    foreach (Vector2I cell in GetOccupiedCells())
-    {
-      int checkY = cell.Y + frontDir;
-      while (GlobalFunctions.IsCellInsideGrid(new Vector2I(cell.X, checkY)))
-      {
-        Unit unit = unitsGrid[cell.X, checkY];
-        if (unit != null)
-        {
-          targets.Add(unit.OccupiedMainCell);
-          _attackTargetFound = true;
-          break;
-        }
-        checkY += frontDir;
-      }
-    }
+    // Hitting a prop heals nobody
+    if (target == null || target.Obstacle)
+      return targets;
 
     // Find frontmost allied unit
     Unit? frontmostAlly = units

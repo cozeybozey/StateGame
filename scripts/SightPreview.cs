@@ -1,7 +1,8 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
-// While placing units: darkens the cells on the other half that the dragged or hovered unit cannot see,
+// While placing units: darkens the cells on the other half that the dragged or hovered unit cannot reach,
 // and outlines what it would attack first.
 public partial class SightPreview : Node2D
 {
@@ -52,7 +53,7 @@ public partial class SightPreview : Node2D
       _side = unit.Side;
     }
 
-    if (_unit is not { NeedsSight: true })
+    if (_unit is not { Targeting: not "" })
       _unit = null;
   }
 
@@ -62,29 +63,65 @@ public partial class SightPreview : Node2D
       return;
 
     List<Vector2I> cells = _unit.OccupiedCells.ConvertAll(offset => _cell + offset);
+    HashSet<Vector2I> reach = GetReach(cells);
     Vector2 tile = new(GlobalConstants.TileSize, GlobalConstants.TileSize);
 
     foreach (Vector2I cell in Board.Cells)
     {
       bool otherHalf = cell.Y < GlobalConstants.GridSize.Y / 2 == _side;
-      if (otherHalf && !LineOfSight.CanSee(cells, cell, _board.TerrainGrid, _board.PropsGrid))
+      if (otherHalf && !reach.Contains(cell))
         DrawRect(new Rect2(CombatFx.CellCenter(cell) - tile / 2, tile), new Color(0, 0, 0, 0.5f));
     }
 
-    LineOfSight.Target? target = FindTarget(cells);
-    if (target == null)
-      return;
-
-    Unit targetUnit = _board.UnitsGrid[target.Cell.X, target.Cell.Y];
-    List<Vector2I> targetCells = targetUnit != null && !target.Obstacle ? targetUnit.GetOccupiedCells() : [target.Cell];
-    foreach (var edge in OverlayLayer.GetOutlineEdges(targetCells, CombatFx.CellCenter, tile))
-      DrawLine(edge.Item1, edge.Item2, GamePalette.Enemy, 3f);
+    foreach (List<Vector2I> target in GetTargets(cells, reach))
+    {
+      foreach (var edge in OverlayLayer.GetOutlineEdges(target, CombatFx.CellCenter, tile))
+        DrawLine(edge.Item1, edge.Item2, GamePalette.Enemy, 3f);
+    }
   }
 
-  private LineOfSight.Target? FindTarget(List<Vector2I> cells)
+  // The cells this unit can hit: what it sees, or only the cells its beam or column passes
+  private HashSet<Vector2I> GetReach(List<Vector2I> cells)
   {
-    return _unit!.Id == "sniper"
-      ? LineOfSight.FindFarthest(cells, _side, _board.Units, _board.TerrainGrid, _board.PropsGrid)
-      : LineOfSight.FindFrontmost(cells, _side, _board.Units, _board.TerrainGrid, _board.PropsGrid);
+    Terrain[,] terrain = _board.TerrainGrid;
+    Prop[,] props = _board.PropsGrid;
+    IEnumerable<Vector2I> reach = _unit!.Targeting switch
+    {
+      "column" => cells.SelectMany(cell => LineOfSight.GetColumn(cell, _side, terrain, props)),
+      "beam" => new[] { _cell, _cell + Vector2I.Right }.SelectMany(cell => LineOfSight.GetColumn(cell, _side, terrain, props)),
+      "rows" => cells.SelectMany(cell => Enumerable.Range(0, GlobalConstants.GridSize.X)
+        .Select(x => new Vector2I(x, GlobalConstants.GridSize.Y - cell.Y - 1))),
+      _ => Board.Cells.Where(cell => LineOfSight.CanSee(cells, cell, terrain, props)),
+    };
+    return reach.ToHashSet();
+  }
+
+  // The cells of each enemy or prop that the next action would hit
+  private List<List<Vector2I>> GetTargets(List<Vector2I> cells, HashSet<Vector2I> reach)
+  {
+    Terrain[,] terrain = _board.TerrainGrid;
+    Prop[,] props = _board.PropsGrid;
+    LineOfSight.Target? target = _unit!.Targeting switch
+    {
+      "frontmost" => LineOfSight.FindFrontmost(cells, _side, _board.Units, terrain, props),
+      "farthest" => LineOfSight.FindFarthest(cells, _side, _board.Units, terrain, props),
+      "column" => LineOfSight.FindInColumn(cells, _side, _board.UnitsGrid, terrain, props),
+      _ => null,
+    };
+
+    if (target != null)
+      return [CellsOf(target.Cell, target.Obstacle)];
+
+    // Beams and rows hit every enemy they reach
+    return _board.Units
+      .Where(u => IsInstanceValid(u) && u.Side != _side && u.GetOccupiedCells().Any(reach.Contains))
+      .Select(u => u.GetOccupiedCells())
+      .ToList();
+  }
+
+  private List<Vector2I> CellsOf(Vector2I cell, bool obstacle)
+  {
+    Unit unit = _board.UnitsGrid[cell.X, cell.Y];
+    return unit != null && !obstacle ? unit.GetOccupiedCells() : [cell];
   }
 }
