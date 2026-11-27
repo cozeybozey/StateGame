@@ -165,7 +165,7 @@ public partial class LevelInfoContainer : PanelContainer
     string type = levelInfo.Boss ? "Boss" : levelInfo.Tournament ? $"Tournament, {levelInfo.Units.Count} rounds" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : WorldGenerator.IsGatekeeper(levelInfo) ? "Gatekeeper" : "Regular";
     System.Collections.Generic.List<string> tags = [type];
     if (levelInfo.Tournament)
-      tags.Add("Each unit fights once");
+      tags.Add($"Submit {levelInfo.Units.Count} decks without shared units");
     if (levelInfo.Completed)
       tags.Add("Completed");
     UiHelpers.ShowTags(_tags, tags);

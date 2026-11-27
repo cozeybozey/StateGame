@@ -1,7 +1,7 @@
-using System.Linq;
 using Godot;
 using Godot.NativeInterop;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Principal;
 
@@ -269,8 +269,7 @@ public partial class DecksHandler : PanelContainer
     AddUnitsSelection(placedUnitsGrid, reloadLevel);
   }
 
-  // In a tournament, the units that fought in earlier rounds leave the board, and every other unit you own can be placed
-  public void LoadBeforeLevel(List<UnitInfo>? tournamentUsed = null)
+  public void LoadBeforeLevel()
   {
     _processUnitChanges = false;
     _changeDeckButton.Visible = false;
@@ -278,21 +277,7 @@ public partial class DecksHandler : PanelContainer
     _unitsSelectionContainer.Show();
     //_gridOverlay.ClearUnits();
     ClearUnitsSelection();
-    if (tournamentUsed == null)
-    {
-      AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
-      return;
-    }
-
-    _gridOverlay.RemovePlacedUnits(tournamentUsed);
-    List<UnitInfo> placed = _gridOverlay.GetPlacedUnits();
-    foreach (UnitInfo unit in AvailableUnits)
-    {
-      UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
-      unitGui!.Info = unit;
-      unitGui.Amount = Mathf.Max(0, AmountPerUnit[unit.Id] - tournamentUsed.Count(u => u.Id == unit.Id) - placed.Count(u => u.Id == unit.Id));
-      _unitsList.AddChild(unitGui);
-    }
+    AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
   }
 
   public void LoadAfterLevel()
@@ -310,6 +295,29 @@ public partial class DecksHandler : PanelContainer
   {
     ResetUnitsSelection(unitsGrid, true);
     _gridOverlay.LoadDeck(unitsGrid);
+  }
+
+  // Each owned unit can be in only one of these decks: together they never use a unit more often than you own it
+  public bool AreSeparate(IEnumerable<string> deckNames)
+  {
+    Dictionary<string, int> used = new();
+    foreach (string deckName in deckNames)
+    {
+      foreach (UnitInfo unit in Decks[deckName])
+      {
+        if (unit == null)
+          continue;
+        used[unit.Id] = used.GetValueOrDefault(unit.Id) + 1;
+        if (used[unit.Id] > AmountPerUnit.GetValueOrDefault(unit.Id))
+          return false;
+      }
+    }
+    return true;
+  }
+
+  public bool IsEmpty(string deckName)
+  {
+    return Decks[deckName].Cast<UnitInfo>().All(unit => unit == null);
   }
 
   public void AddUnit(UnitInfo unitInfo)

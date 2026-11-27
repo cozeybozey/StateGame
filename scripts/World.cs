@@ -23,8 +23,11 @@ public partial class World : Node2D
   private LevelInfo _activeLevel = null!;
   private int _gauntletIndex = 0;
 
-  // Units that fought in earlier rounds of the current tournament
-  private readonly List<UnitInfo> _tournamentUsed = new();
+  // A tournament is fought with decks submitted at its start, one per round, and each deck can win only one round
+  private List<string> _tournamentDecks = new();
+  private readonly HashSet<string> _tournamentWinners = new();
+  private string _roundDeck = "";
+  private string? _deckBeforeTournament = null;
 
   // Fighting a level from the editor, without rewards or progress
   private bool _testing = false;
@@ -236,6 +239,14 @@ public partial class World : Node2D
     else if (level.Completed)
       AskToRedoLevel(level);
     else
+      StartLevel(level);
+  }
+
+  private void StartLevel(LevelInfo level)
+  {
+    if (level.Tournament)
+      SubmitTournamentDecks(level, new List<string>());
+    else
       EnterLevel(level);
   }
 
@@ -257,7 +268,7 @@ public partial class World : Node2D
     {
       _popup.Close();
       UpdateCoins(-cost);
-      EnterLevel(level);
+      StartLevel(level);
     }
 
     void Cancel()
@@ -274,15 +285,85 @@ public partial class World : Node2D
     CloseMap();
     _activeLevel = level;
     _gauntletIndex = 0;
-    _tournamentUsed.Clear();
+    if (level.Tournament)
+      ChooseRoundDeck();
+    else
+      SetUpLevel();
+  }
+
+  // ---- Tournament
+
+  // Asks for one deck per round, one at a time. Only decks that share no units with the decks submitted so far can be picked.
+  private void SubmitTournamentDecks(LevelInfo level, List<string> submitted)
+  {
+    int rounds = level.Units.Count;
+    if (submitted.Count == rounds)
+    {
+      _tournamentDecks = submitted;
+      _tournamentWinners.Clear();
+      _deckBeforeTournament = _decksHandler.SelectedDeck;
+      _popup.Close();
+      EnterLevel(level);
+      return;
+    }
+
+    List<string> options = _decksHandler.Decks.Keys
+      .Where(deck => !submitted.Contains(deck) && !_decksHandler.IsEmpty(deck) && _decksHandler.AreSeparate(submitted.Append(deck)))
+      .ToList();
+    if (options.Count == 0)
+    {
+      string text = submitted.Count == 0 ? "You have no decks with units yet." : "None of your other decks can be added without using a unit twice.";
+      _popup.ShowMessage($"{text}\nThis tournament needs {rounds} decks that do not share units. Make them on the deck screen first.", ("Okay", CancelTournament));
+      return;
+    }
+
+    string chosen = submitted.Count == 0 ? "" : $"\nSubmitted: {string.Join(", ", submitted)}";
+    (string, Action)[] buttons = options
+      .Select(deck => (deck, (Action)(() => SubmitTournamentDecks(level, submitted.Append(deck).ToList()))))
+      .Append(("Cancel", CancelTournament))
+      .ToArray();
+    _popup.ShowMessage($"Submit deck {submitted.Count + 1} of {rounds} for this tournament.\nSubmitted decks cannot share units.{chosen}", buttons);
+  }
+
+  private void CancelTournament()
+  {
+    _popup.Close();
+    OpenMap();
+  }
+
+  // Every round, one of the submitted decks that has not won yet is picked
+  private void ChooseRoundDeck()
+  {
+    int rounds = _activeLevel.Units.Count;
+    (string, Action)[] buttons = _tournamentDecks
+      .Where(deck => !_tournamentWinners.Contains(deck))
+      .Select(deck => (deck, (Action)(() => PlayRound(deck))))
+      .ToArray();
+    _popup.ShowMessage($"Round {_gauntletIndex + 1} of {rounds}. Which deck fights this round?\nEvery deck can win one round.", buttons);
+  }
+
+  private void PlayRound(string deck)
+  {
+    _popup.Close();
+    _roundDeck = deck;
+    _decksHandler.SelectDeck(deck);
+    _decksHandler.LoadAfterLevel();
     SetUpLevel();
+  }
+
+  // Goes back to the deck that was selected before the tournament
+  private void EndTournament()
+  {
+    if (_deckBeforeTournament != null && _decksHandler.Decks.ContainsKey(_deckBeforeTournament))
+      _decksHandler.SelectDeck(_deckBeforeTournament);
+    _deckBeforeTournament = null;
   }
 
   // With keepPlacement, the player's units from before the last battle are already on the board
   private void SetUpLevel(bool keepPlacement = false)
   {
     if (!keepPlacement)
-      _decksHandler.LoadBeforeLevel(_activeLevel.Tournament ? _tournamentUsed : null);
+      _decksHandler.LoadBeforeLevel();
     _board.SpawnLevel(_activeLevel.Terrains[_gauntletIndex], _activeLevel.Props[_gauntletIndex], _activeLevel.Units[_gauntletIndex]);
     ShowButtons(_startButton, _quitButton);
   }
@@ -318,7 +399,10 @@ public partial class World : Node2D
     if (_testing)
       EndTest();
     else
+    {
+      EndTournament();
       LeaveLevel();
+    }
   }
 
   // ---- Level editor
@@ -436,6 +520,12 @@ public partial class World : Node2D
     EndBattle();
     if (_testing)
       _popup.ShowMessage("Defeat", ("Try again", Retry), ("Back to editor", EndTest));
+    else if (_activeLevel.Tournament && _tournamentDecks.Count(deck => !_tournamentWinners.Contains(deck)) > 1)
+      _popup.ShowMessage("Defeat", ("Try again", Retry), ("Other deck", () =>
+      {
+        LeaveLevel();
+        ChooseRoundDeck();
+      }));
     else
       _popup.ShowMessage("Defeat", ("Try again", Retry));
   }
@@ -443,8 +533,7 @@ public partial class World : Node2D
   private void Retry()
   {
     LeaveLevel(keepPlacement: true);
-    // A tournament lists the units that may still fight again
-    SetUpLevel(keepPlacement: !_activeLevel.Tournament);
+    SetUpLevel(keepPlacement: true);
   }
 
   private void Win()
@@ -475,6 +564,8 @@ public partial class World : Node2D
 
     bool gainsSlot = WorldGenerator.IsGatekeeper(_activeLevel) && !_activeLevel.Completed;
     string title = gainsSlot ? "Gatekeeper beaten! You gain a unit slot. Choose your reward" : "Victory! Choose your reward";
+    if (_activeLevel.Tournament)
+      EndTournament();
     _popup.ShowRewards(title, GetRewards(), reward =>
     {
       _decksHandler.AddUnit(reward);
@@ -502,21 +593,16 @@ public partial class World : Node2D
     }));
   }
 
-  // The units that fought rest for the rest of the tournament
+  // The deck that won is done for this tournament
   private void ShowNextTournamentRound()
   {
-    foreach (UnitInfo unit in _playerUnitsBeforeBattle)
-    {
-      if (unit != null)
-        _tournamentUsed.Add(GlobalConstants.UnitsData[unit.Id]);
-    }
-
+    _tournamentWinners.Add(_roundDeck);
     _gauntletIndex++;
     int rounds = _activeLevel.Units.Count;
-    _popup.ShowMessage($"You won round {_gauntletIndex} of {rounds}.\nThe units that fought cannot fight again in this tournament.", ("Next round", () =>
+    _popup.ShowMessage($"You won round {_gauntletIndex} of {rounds} with {_roundDeck}.", ("Next round", () =>
     {
       LeaveLevel();
-      SetUpLevel();
+      ChooseRoundDeck();
     }));
   }
 
