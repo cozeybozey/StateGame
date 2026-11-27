@@ -274,6 +274,7 @@ public partial class MainMenu : Control
             { "layerIndex", level.Value.LayerIndex },
             { "boss", level.Value.Boss },
             { "gauntlet", level.Value.Gauntlet },
+            { "tournament", level.Value.Tournament },
             { "rewards", rewardsList },
             { "coinsReward", level.Value.CoinsReward},
             { "levelSection", level.Value.LevelSection},
@@ -430,7 +431,8 @@ public partial class MainMenu : Control
           nextNodes: nextNodes,
           terrains: terrains,
           props: props,
-          units: units
+          units: units,
+          tournament: levelData.ContainsKey("tournament") && levelData["tournament"].AsBool()
       );
     }
 

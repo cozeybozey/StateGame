@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using Godot.NativeInterop;
 using System.Collections.Generic;
@@ -268,7 +269,8 @@ public partial class DecksHandler : PanelContainer
     AddUnitsSelection(placedUnitsGrid, reloadLevel);
   }
 
-  public void LoadBeforeLevel()
+  // In a tournament, the units that fought in earlier rounds leave the board, and every other unit you own can be placed
+  public void LoadBeforeLevel(List<UnitInfo>? tournamentUsed = null)
   {
     _processUnitChanges = false;
     _changeDeckButton.Visible = false;
@@ -276,7 +278,21 @@ public partial class DecksHandler : PanelContainer
     _unitsSelectionContainer.Show();
     //_gridOverlay.ClearUnits();
     ClearUnitsSelection();
-    AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
+    if (tournamentUsed == null)
+    {
+      AddUnitsSelectionBeforeLevel(Decks[_selectedDeck]);
+      return;
+    }
+
+    _gridOverlay.RemovePlacedUnits(tournamentUsed);
+    List<UnitInfo> placed = _gridOverlay.GetPlacedUnits();
+    foreach (UnitInfo unit in AvailableUnits)
+    {
+      UnitGui unitGui = GD.Load<PackedScene>(_unitsSelectionScenePath).Instantiate() as UnitGui;
+      unitGui!.Info = unit;
+      unitGui.Amount = Mathf.Max(0, AmountPerUnit[unit.Id] - tournamentUsed.Count(u => u.Id == unit.Id) - placed.Count(u => u.Id == unit.Id));
+      _unitsList.AddChild(unitGui);
+    }
   }
 
   public void LoadAfterLevel()

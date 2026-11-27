@@ -15,6 +15,7 @@ public partial class LevelEditor : PanelContainer
   // Layers where designed levels can replace random ones: all except the start and the boss
   private const int FirstLayer = 1;
   private const int LastLayer = WorldGenerator.NumLayers - 2;
+  private const int MaxRounds = 3;
 
   public event Action? Closed;
   public event Action<LevelInfo>? TestRequested;
@@ -29,6 +30,7 @@ public partial class LevelEditor : PanelContainer
   private LineEdit _nameEdit = null!;
   private OptionButton _sectionButton = null!;
   private OptionButton _layerButton = null!;
+  private OptionButton _roundButton = null!;
   private LineEdit _search = null!;
   private Control _brushRow = null!;
   private OptionButton _brushSizeButton = null!;
@@ -61,6 +63,7 @@ public partial class LevelEditor : PanelContainer
     _nameEdit = GetNode<LineEdit>("Content/LevelName");
     _sectionButton = GetNode<OptionButton>("Content/Place/Section");
     _layerButton = GetNode<OptionButton>("Content/Place/Layer");
+    _roundButton = GetNode<OptionButton>("Content/Place/Round");
     _search = GetNode<LineEdit>("Content/Search");
     _brushRow = GetNode<Control>("Content/BrushRow");
     _brushSizeButton = GetNode<OptionButton>("Content/BrushRow/Size");
@@ -75,6 +78,7 @@ public partial class LevelEditor : PanelContainer
     _levelButton.ItemSelected += _ => OnLevelChosen();
     _sectionButton.ItemSelected += _ => OnSectionChosen();
     _layerButton.ItemSelected += _ => ShowPlaceHint();
+    _roundButton.ItemSelected += _ => ShowPlaceHint();
     _search.TextChanged += _ => FilterUnits();
     _testButton.Pressed += Test;
     _deleteButton.Pressed += OnDeletePressed;
@@ -166,6 +170,9 @@ public partial class LevelEditor : PanelContainer
       _sectionButton.AddItem(section);
     for (int layer = FirstLayer; layer <= LastLayer; layer++)
       _layerButton.AddItem($"Layer {layer + 1}", layer);
+    _roundButton.AddItem("Single", 0);
+    for (int round = 1; round <= MaxRounds; round++)
+      _roundButton.AddItem($"Round {round}", round);
   }
 
   private void FillLevels()
@@ -202,6 +209,7 @@ public partial class LevelEditor : PanelContainer
     _nameEdit.Text = level.Name;
     _sectionButton.Select(level.Section + 1);
     _layerButton.Select(_layerButton.GetItemIndex(level.Layer));
+    _roundButton.Select(_roundButton.GetItemIndex(level.Round));
     _deleteButton.Disabled = _levelId == "" || WorldGenerator.IsBossLevel(_levelId);
     SelectCurrentLevel();
 
@@ -251,6 +259,7 @@ public partial class LevelEditor : PanelContainer
       Name = _nameEdit.Text.Trim(),
       Section = _sectionButton.Selected - 1,
       Layer = _layerButton.GetSelectedId(),
+      Round = _roundButton.GetSelectedId(),
       Units = _board.GetUnits(playerSide: false),
     };
     foreach (Vector2I cell in Board.Cells)
@@ -271,7 +280,7 @@ public partial class LevelEditor : PanelContainer
     DesignedLevel level = ReadLevel();
     IEnumerable<string> cells = Board.Cells
       .Select(c => $"{level.Units[c.X, c.Y]?.Id},{level.Terrain[c.X, c.Y]?.Id},{level.Props[c.X, c.Y]?.Id}");
-    return $"{level.Name}|{level.Section}|{level.Layer}|{string.Join(";", cells)}";
+    return $"{level.Name}|{level.Section}|{level.Layer}|{level.Round}|{string.Join(";", cells)}";
   }
 
   private void ConfirmDiscard(Action onConfirmed, Action onCanceled)
@@ -350,6 +359,7 @@ public partial class LevelEditor : PanelContainer
   private void ShowPlaceHint()
   {
     _layerButton.Disabled = _sectionButton.Selected == 0;
+    _roundButton.Disabled = _sectionButton.Selected == 0;
     if (WorldGenerator.IsBossLevel(_levelId))
       _status.Text = "This is a boss. It always appears at the end of its section.";
     else if (_sectionButton.Selected == 0)
@@ -358,7 +368,17 @@ public partial class LevelEditor : PanelContainer
     {
       int layer = _layerButton.GetSelectedId();
       int room = WorldGenerator.GetNodesInLayer(layer);
-      int used = _store.Levels.Count(l => l.Id != _levelId && l.Section == _sectionButton.Selected - 1 && l.Layer == layer);
+      List<DesignedLevel> here = _store.Levels.Where(l => l.Id != _levelId && l.Section == _sectionButton.Selected - 1 && l.Layer == layer).ToList();
+      bool tournament = here.Any(l => l.Round > 0);
+      int used = here.Count(l => l.Round == 0) + (tournament ? 1 : 0);
+      int round = _roundButton.GetSelectedId();
+      if (round > 0)
+      {
+        _status.Text = !tournament && used >= room
+          ? $"All {room} places in this layer are already taken."
+          : $"Round {round} of the tournament in this layer. Its rounds are fought in order, with each unit once.";
+        return;
+      }
       _status.Text = used < room
         ? $"Uses place {used + 1} of {room} in new worlds (restart the game)."
         : $"All {room} places in this layer are already taken.";

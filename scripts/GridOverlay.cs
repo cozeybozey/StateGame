@@ -192,6 +192,34 @@ public partial class GridOverlay : ReferenceRect, IUnitDragSource
     _unitsCounter.Text = $"0/{MaxUnitSlots}";
   }
 
+  // The units placed on the edited half
+  public List<UnitInfo> GetPlacedUnits()
+  {
+    List<UnitInfo> placed = new();
+    HashSet<Unit> seen = new();
+    foreach (Unit unit in _unitsGrid)
+    {
+      if (unit != null && IsInstanceValid(unit) && unit.Side == !EditsEnemySide && seen.Add(unit))
+        placed.Add(unit.GetStartInfo());
+    }
+    return placed;
+  }
+
+  // Takes one placed unit off the board for each of these units
+  public void RemovePlacedUnits(List<UnitInfo> units)
+  {
+    List<string> left = units.ConvertAll(u => u.Id);
+    HashSet<Unit> seen = new();
+    foreach (Unit unit in _unitsGrid)
+    {
+      if (unit == null || !IsInstanceValid(unit) || unit.Side == EditsEnemySide || !seen.Add(unit) || !left.Remove(unit.GetStartInfo().Id))
+        continue;
+      _currentUnitSlotsCount -= unit.GetOccupiedCells().Count;
+      unit.Remove();
+    }
+    _unitsCounter.Text = $"{_currentUnitSlotsCount}/{MaxUnitSlots}";
+  }
+
   public void SetInteractionLocked(bool locked)
   {
     _interactionLocked = locked;

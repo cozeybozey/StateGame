@@ -17,6 +17,7 @@ public class WorldGenerator
   private const int LevelsPerChoice = 2;
   private const int CoinsPerWin = 20;
   private const int GauntletLevels = 4;
+  private const int TournamentCoinsFactor = 3;
 
   // Name and levels.json id of each section's boss
   private static readonly (string Name, string LevelId)[] Bosses =
@@ -182,6 +183,18 @@ public class WorldGenerator
     }
   }
 
+  // Levels of several boards offer 3 different units from all of them
+  private List<UnitInfo> PickRewards(List<LevelBoard> boards)
+  {
+    return boards
+      .SelectMany(board => board.Units.Cast<UnitInfo>())
+      .Where(u => u != null)
+      .DistinctBy(u => u.Id)
+      .OrderBy(_ => _rng.Next())
+      .Take(3)
+      .ToList();
+  }
+
   private LevelInfo CreateLevelInfo(string nodeId, int layer, int node, bool isBoss, int section)
   {
     if (isBoss)
@@ -191,8 +204,15 @@ public class WorldGenerator
       return MakeLevel(bossName, boss: true, gauntlet: false, rewards: [], CoinsPerWin, [board]);
     }
 
-    // Designed levels take the first places of their layer, random ones fill up the rest
-    DesignedLevel? designed = _levelStore.Levels.Where(l => l.Section == section && l.Layer == layer).ElementAtOrDefault(node);
+    // Designed levels take the first places of their layer, random ones fill up the rest. The rounds of a tournament take one place together.
+    List<DesignedLevel> here = _levelStore.Levels.Where(l => l.Section == section && l.Layer == layer).ToList();
+    List<DesignedLevel> rounds = here.Where(l => l.Round > 0).OrderBy(l => l.Round).ToList();
+    if (layer > 0 && rounds.Count > 0 && node == 0)
+    {
+      List<LevelBoard> roundBoards = rounds.Select(round => _levelGenerator.CreateDesignedLevel(round, section)).ToList();
+      return MakeLevel(rounds[0].Name, boss: false, gauntlet: false, PickRewards(roundBoards), CoinsPerWin * TournamentCoinsFactor, roundBoards, tournament: true);
+    }
+    DesignedLevel? designed = here.Where(l => l.Round == 0).ElementAtOrDefault(rounds.Count > 0 ? node - 1 : node);
     if (layer > 0 && designed != null)
       return MakeLevel(designed.Name, boss: false, gauntlet: false, rewards: [], CoinsPerWin, [_levelGenerator.CreateDesignedLevel(designed, section)]);
 
@@ -202,21 +222,13 @@ public class WorldGenerator
       for (int i = 0; i < GauntletLevels; i++)
         boards.Add(_levelGenerator.CreateRandomLevel(layer, section));
 
-      List<UnitInfo> rewardUnits = boards
-          .SelectMany(board => board.Units.Cast<UnitInfo>())
-          .Where(u => u != null)
-          .DistinctBy(u => u.Id)
-          .OrderBy(_ => _rng.Next())
-          .Take(3)
-          .ToList();
-
-      return MakeLevel($"{SectionNames[section]}\nLayer {layer + 1}\nGauntlet {node + 1}", boss: false, gauntlet: true, rewardUnits, CoinsPerWin * 5, boards);
+      return MakeLevel($"{SectionNames[section]}\nLayer {layer + 1}\nGauntlet {node + 1}", boss: false, gauntlet: true, PickRewards(boards), CoinsPerWin * 5, boards);
     }
 
     string name = layer == 0 ? "Start" : $"{SectionNames[section]}\nLayer {layer + 1}\nLevel {node + 1}";
     return MakeLevel(name, boss: false, gauntlet: false, rewards: [], CoinsPerWin, [_levelGenerator.CreateRandomLevel(layer + 1, section)]);
 
-    LevelInfo MakeLevel(string levelName, bool boss, bool gauntlet, List<UnitInfo> rewards, int coinsReward, List<LevelBoard> boards)
+    LevelInfo MakeLevel(string levelName, bool boss, bool gauntlet, List<UnitInfo> rewards, int coinsReward, List<LevelBoard> boards, bool tournament = false)
     {
       return new LevelInfo(
           id: nodeId,
@@ -233,7 +245,8 @@ public class WorldGenerator
           nextNodes: new List<string>(),
           terrains: boards.Select(b => b.Terrain).ToList(),
           props: boards.Select(b => b.Props).ToList(),
-          units: boards.Select(b => b.Units).ToList()
+          units: boards.Select(b => b.Units).ToList(),
+          tournament: tournament
       );
     }
   }

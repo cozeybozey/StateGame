@@ -23,6 +23,9 @@ public partial class World : Node2D
   private LevelInfo _activeLevel = null!;
   private int _gauntletIndex = 0;
 
+  // Units that fought in earlier rounds of the current tournament
+  private readonly List<UnitInfo> _tournamentUsed = new();
+
   // Fighting a level from the editor, without rewards or progress
   private bool _testing = false;
 
@@ -240,7 +243,7 @@ public partial class World : Node2D
   {
     CloseMap();
 
-    int cost = level.Gauntlet ? Mathf.FloorToInt(LevelRedoCost * GauntletRedoCostFactor) : LevelRedoCost;
+    int cost = level.Gauntlet || level.Tournament ? Mathf.FloorToInt(LevelRedoCost * GauntletRedoCostFactor) : LevelRedoCost;
     if (Coins < cost)
     {
       _popup.ShowMessage($"You have already completed this level. You do not have the required {cost} coins to repeat this level.", ("Okay", Cancel));
@@ -271,6 +274,7 @@ public partial class World : Node2D
     CloseMap();
     _activeLevel = level;
     _gauntletIndex = 0;
+    _tournamentUsed.Clear();
     SetUpLevel();
   }
 
@@ -278,7 +282,7 @@ public partial class World : Node2D
   private void SetUpLevel(bool keepPlacement = false)
   {
     if (!keepPlacement)
-      _decksHandler.LoadBeforeLevel();
+      _decksHandler.LoadBeforeLevel(_activeLevel.Tournament ? _tournamentUsed : null);
     _board.SpawnLevel(_activeLevel.Terrains[_gauntletIndex], _activeLevel.Props[_gauntletIndex], _activeLevel.Units[_gauntletIndex]);
     ShowButtons(_startButton, _quitButton);
   }
@@ -439,7 +443,8 @@ public partial class World : Node2D
   private void Retry()
   {
     LeaveLevel(keepPlacement: true);
-    SetUpLevel(keepPlacement: true);
+    // A tournament lists the units that may still fight again
+    SetUpLevel(keepPlacement: !_activeLevel.Tournament);
   }
 
   private void Win()
@@ -455,7 +460,7 @@ public partial class World : Node2D
       return;
     }
 
-    if (_activeLevel.Gauntlet && _gauntletIndex + 1 < _activeLevel.Units.Count)
+    if ((_activeLevel.Gauntlet || _activeLevel.Tournament) && _gauntletIndex + 1 < _activeLevel.Units.Count)
     {
       ShowNextGauntletLevel();
       return;
@@ -481,10 +486,34 @@ public partial class World : Node2D
 
   private void ShowNextGauntletLevel()
   {
+    if (_activeLevel.Tournament)
+    {
+      ShowNextTournamentRound();
+      return;
+    }
+
     _gauntletIndex++;
     int levelsLeft = _activeLevel.Units.Count - _gauntletIndex;
     string levelText = levelsLeft > 1 ? "levels" : "level";
     _popup.ShowMessage($"You won level {_gauntletIndex} of the gauntlet.\n{levelsLeft} more {levelText} to go.", ("Next level", () =>
+    {
+      LeaveLevel();
+      SetUpLevel();
+    }));
+  }
+
+  // The units that fought rest for the rest of the tournament
+  private void ShowNextTournamentRound()
+  {
+    foreach (UnitInfo unit in _playerUnitsBeforeBattle)
+    {
+      if (unit != null)
+        _tournamentUsed.Add(GlobalConstants.UnitsData[unit.Id]);
+    }
+
+    _gauntletIndex++;
+    int rounds = _activeLevel.Units.Count;
+    _popup.ShowMessage($"You won round {_gauntletIndex} of {rounds}.\nThe units that fought cannot fight again in this tournament.", ("Next round", () =>
     {
       LeaveLevel();
       SetUpLevel();

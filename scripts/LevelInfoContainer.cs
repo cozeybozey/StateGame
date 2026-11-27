@@ -40,13 +40,13 @@ public partial class LevelInfoContainer : PanelContainer
       child.Free();
 
     // Show separate list of units for every level in the gauntlet
-    if (levelInfo.Gauntlet)
+    if (levelInfo.Gauntlet || levelInfo.Tournament)
     {
       int levelIndex = 1;
       foreach (UnitInfo[,] grid in levelInfo.Units)
       {
         Label levelLabel = new();
-        levelLabel.Text = $"Level {levelIndex++}";
+        levelLabel.Text = levelInfo.Tournament ? $"Round {levelIndex++}" : $"Level {levelIndex++}";
         _units.AddChild(levelLabel);
 
         System.Collections.Generic.Dictionary<string, (UnitInfo info, int count)> unitCounts = new();
@@ -162,8 +162,13 @@ public partial class LevelInfoContainer : PanelContainer
     _startLevelButton.Disabled = locked;
     _startLevelButton.Text = levelInfo.Completed ? "Replay level" : "Start level";
 
-    string type = levelInfo.Boss ? "Boss" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : WorldGenerator.IsGatekeeper(levelInfo) ? "Gatekeeper" : "Regular";
-    UiHelpers.ShowTags(_tags, levelInfo.Completed ? [type, "Completed"] : [type]);
+    string type = levelInfo.Boss ? "Boss" : levelInfo.Tournament ? $"Tournament, {levelInfo.Units.Count} rounds" : levelInfo.Gauntlet ? $"Gauntlet, {levelInfo.Units.Count} levels" : WorldGenerator.IsGatekeeper(levelInfo) ? "Gatekeeper" : "Regular";
+    System.Collections.Generic.List<string> tags = [type];
+    if (levelInfo.Tournament)
+      tags.Add("Each unit fights once");
+    if (levelInfo.Completed)
+      tags.Add("Completed");
+    UiHelpers.ShowTags(_tags, tags);
 
     DisplayUnits(levelInfo);
     DisplayRewards(levelInfo);

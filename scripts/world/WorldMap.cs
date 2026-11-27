@@ -153,7 +153,7 @@ public partial class WorldMap : Panel
     if (level.Boss)
       return $"BOSS\n{level.Name}";
     if (WorldGenerator.IsGatekeeper(level))
-      return $"Gate {WorldGenerator.GetTier(level.Layer) + 1}";
+      return level.Tournament ? $"Gate {WorldGenerator.GetTier(level.Layer) + 1}\nTournament" : $"Gate {WorldGenerator.GetTier(level.Layer) + 1}";
     string number = $"{level.Layer + 1}-{level.LayerIndex + 1}";
     return level.Gauntlet ? $"Gauntlet\n{number}" : number;
   }

@@ -11,6 +11,8 @@ public partial class LevelInfo : RefCounted
 	public int LayerIndex { get; set; }
   public bool Boss { get; set; }
   public bool Gauntlet { get; set; }
+  // Several rounds, and every unit can fight in only one of them
+  public bool Tournament { get; set; }
 	public List<UnitInfo> Rewards { get; set; }
 	public int CoinsReward { get; set; }
   public int LevelSection { get; set; }
@@ -34,7 +36,8 @@ public partial class LevelInfo : RefCounted
 		List<string> nextNodes,
     List<TerrainInfo[,]> terrains,
     List<PropInfo[,]> props,
-    List<UnitInfo[,]> units)
+    List<UnitInfo[,]> units,
+    bool tournament = false)
 	{
 		Id = id;
 		Name = name;
@@ -44,6 +47,7 @@ public partial class LevelInfo : RefCounted
 		LayerIndex = layerIndex;
 		Boss = boss;
 		Gauntlet = gauntlet;
+		Tournament = tournament;
 		Rewards = rewards;
 		CoinsReward = coinsReward;
 		LevelSection = levelSection;

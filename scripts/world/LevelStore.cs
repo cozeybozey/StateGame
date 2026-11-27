@@ -14,6 +14,9 @@ public class DesignedLevel
   public string Name = "";
   public int Section = NoSection;
   public int Layer = 1;
+
+  // Rounds of a tournament share their place in the world and are fought one after another. 0 is a single level.
+  public int Round = 0;
   public UnitInfo[,] Units = new UnitInfo[GlobalConstants.GridSize.X, GlobalConstants.GridSize.Y];
 
   // Cells without an entry have the section's base terrain, or no prop
@@ -72,6 +75,7 @@ public class LevelStore
       Name = data.ContainsKey("name") ? data["name"].AsString() : id.Capitalize(),
       Section = data.ContainsKey("section") ? data["section"].AsInt32() : DesignedLevel.NoSection,
       Layer = data.ContainsKey("layer") ? data["layer"].AsInt32() : 1,
+      Round = data.ContainsKey("round") ? data["round"].AsInt32() : 0,
     };
     foreach (Dictionary unit in data["units"].AsGodotArray())
     {
@@ -110,6 +114,10 @@ public class LevelStore
       data["section"] = level.Section;
       data["layer"] = level.Layer;
     }
+    if (level.Round > 0 && level.Section != DesignedLevel.NoSection)
+      data["round"] = level.Round;
+    else
+      data.Remove("round");
     _data[level.Id] = data;
     return Write();
   }
