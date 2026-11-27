@@ -2,14 +2,12 @@ using Godot;
 using System.Collections.Generic;
 
 // Shows the dragged unit above all other UI, and marks the cells it would occupy: green when it can be
-// placed there, red when it cannot. Replaces the mouse cursor during a drag, so the operating system's
-// "forbidden" cursor never shows.
+// placed there, red when it cannot. The mouse cursor stays visible on top of it (see GameCursor).
 public partial class UnitDragPreview : CanvasLayer
 {
   private GridOverlay _grid = null!;
   private Control _canvas = null!;
   private DragPayload? _payload = null;
-  private bool _cursorHidden = false;
 
   public override void _Ready()
   {
@@ -24,13 +22,6 @@ public partial class UnitDragPreview : CanvasLayer
   {
     Viewport viewport = GetViewport();
     _payload = viewport.GuiIsDragging() ? viewport.GuiGetDragData().Obj as DragPayload : null;
-    bool dragging = _payload != null;
-
-    if (dragging != _cursorHidden)
-    {
-      Input.MouseMode = dragging ? Input.MouseModeEnum.Hidden : Input.MouseModeEnum.Visible;
-      _cursorHidden = dragging;
-    }
     _canvas.QueueRedraw();
   }
 

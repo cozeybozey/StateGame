@@ -62,6 +62,7 @@ public partial class World : Node2D
     ConnectButtons();
 
     GameData.Load();
+    GameCursor.Apply();
 
     // Start with 2 archers
     _decksHandler.AddUnit(GlobalConstants.UnitsData["archer"]);
